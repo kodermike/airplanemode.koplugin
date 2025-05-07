@@ -8,6 +8,9 @@
 
 ### 🩹 Fixes
 
-* Changed how we reactivate - reading old config back to new vs overwriting
+* Existential nihilism
 
-<!-- version 0.0.1 (DATE) -->
+## v0.0.1-alpha (2025.05.06)
+
+* Initial testing release
+
