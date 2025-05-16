@@ -5,6 +5,7 @@ local Dispatcher = require("dispatcher")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local NetworkMgr = require("ui/network/manager")
+local PluginLoader = require("pluginloader")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local dump = require("dump")
@@ -68,13 +69,17 @@ function AirPlaneMode:turnon()
 
         G_reader_settings:saveSetting("auto_restore_wifi",false)
         G_reader_settings:saveSetting("auto_disable_wifi",true)
+        G_reader_settings:saveSetting("wifi_was_on",false)
         G_reader_settings:saveSetting("http_proxy_enabled",false)
-        G_reader_settings:saveSetting("kosync",{auto_sync = false})
-
+        G_reader_settings:saveSetting("kosync",{auto_sync = false, checksum_method = "0", sync_backward="3", sync_forward = "1"})
+        if Device:isEmulator() then
+            G_reader_settings:saveSetting("emulator_fake_wifi_connected",false)
+        end
         local check_plugins = {"goodreads","newsdownloader","wallabag","calibre","kosync","opds","SSH","timesync","httpinspector"}
         local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
 
         for __, plugin in ipairs(check_plugins) do
+            logger.dbg("AirPlane Mode - checking plugin ",plugin)
             if not plugins_disabled[plugin] == true then
                 plugins_disabled[plugin] = true
                 logger.dbg("AirPlane Mode - adding to plugin list ",plugin)
@@ -136,6 +141,15 @@ function AirPlaneMode:turnoff()
         G_reader_settings:delSetting("auto_disable_wifi")
     end
 
+    -- got to watch out for our emulator friends :) (ie, me, testing)
+    if BK_Settings:has("emulator_fake_wifi_connected") then
+        local old_emulator_fake_wifi_connected = BK_Settings:readSetting("emulator_fake_wifi_connected")
+        -- flip the real config
+        G_reader_settings:saveSetting("emulator_fake_wifi_connected",old_emulator_fake_wifi_connected)
+    else
+        G_reader_settings:delSetting("emulator_fake_wifi_connected")
+    end
+
     if BK_Settings:has("wifi_enable_action") then
         local wifi_enable_action = BK_Settings:readSetting("wifi_enable_action")
         G_reader_settings:saveSetting("wifi_enable_action",wifi_enable_action)
@@ -159,10 +173,26 @@ function AirPlaneMode:turnoff()
     end
 
     if BK_Settings:has("kosync",{auto_sync}) then
-        local old_kosync =  BK_Settings:readSetting("kosync",{auto_sync})
+        local old_auto_sync =  BK_Settings:readSetting("kosync",{auto_sync})
         -- flip the real config
-        G_reader_settings:saveSetting("kosync",old_kosync)
+        G_reader_settings:saveSetting("kosync",old_auto_sync)
     end
+    if BK_Settings:has("kosync",{checksum_method}) then
+        local old_checksum_method =  BK_Settings:readSetting("kosync",{checksum_method})
+        -- flip the real config
+        G_reader_settings:saveSetting("kosync",old_checksum_method)
+    end
+    if BK_Settings:has("kosync",{sync_backward}) then
+        local old_sync_backward =  BK_Settings:readSetting("kosync",{sync_backward})
+        -- flip the real config
+        G_reader_settings:saveSetting("kosync",old_sync_backward)
+    end
+    if BK_Settings:has("kosync",{sync_forward}) then
+        local old_sync_forward =  BK_Settings:readSetting("kosync",{sync_forward})
+        -- flip the real config
+        G_reader_settings:saveSetting("kosync",old_sync_forward)
+    end
+
     local old_check_plugins = {"goodreads","newsdownloader","wallabag","calibre","kosync","opds","SSH","timesync","httpinspector"}
     -- remove the disables from airplane mode
     for __, oldplugin in ipairs(old_check_plugins) do
@@ -242,9 +272,9 @@ local function airplanemode_status()
     end
     ---------
     if settings_bk_exists == true and airplanemode_active == true then
-        return true
+        return "Off"
     elseif airplanemode_active == false then
-        return false
+        return "On"
     end
 end
 
@@ -252,10 +282,9 @@ function AirPlaneMode:onShowAirPlaneModeMenu(settings_file,settings_bk)
     local plugin_dialog
     local title = _("Are we testing?")
 
-
-
-    local onoff = "Off"
-    if airplanemode_status() then onoff = "On" end
+    local onoff = "On"
+    onoff = airplanemode_status()
+    logger.dbg("AirPlane Mode - onoff ",onoff," and status ",airplanemode_status())
     plugin_dialog = ButtonDialog:new{
         --checked_func = function() return airplanemode_status() end,
         title = title,
@@ -264,9 +293,25 @@ function AirPlaneMode:onShowAirPlaneModeMenu(settings_file,settings_bk)
                 {
                     text = T(_("Toggle %1"),onoff ),
                     callback = function()
-                        UIManager:close(plugin_dialog)
-                        self:toggleMode(menu_items)
-                    end
+                        if Device:isAndroid() then
+                            UIManager:show(ConfirmBox:new{
+                                dismissable = false,
+                                text = _("AirPlane Mode should be managed in your device's network settings."),
+                                ok_text = _("OK"),
+                                ok_callback = function()
+                                    UIManager:close()
+                                end
+                            })
+                        else
+                            if onoff == "Off" then
+                                --airplanemode = true
+                                self:turnoff()
+                            else
+                                --airplanemode = false
+                                self:turnon()
+                            end
+                        end
+                    end,
                 },
                 {
                     text = _("Select plugins"),
@@ -289,35 +334,11 @@ function AirPlaneMode:onShowAirPlaneModeMenu(settings_file,settings_bk)
     return true
 end
 
-function AirPlaneMode:toggleMode(menu_items) --TODO have to rename before testing!!
-    menu_items.airplanemode = {
-        --text = _("AirPlane Mode"),
-        --sorting_hint = "network",
-
-        callback = function()
-            if Device:isAndroid() then
-                UIManager:show(ConfirmBox:new{
-                    dismissable = false,
-                    text = _("AirPlane Mode should be managed in your device's network settings."),
-                    ok_text = _("OK"),
-                    ok_callback = function()
-                        UIManager:close()
-                    end
-                })
-            else
-                if airplanemode_status() then
-                    --airplanemode = true
-                    self:turnoff()
-                else
-                    --airplanemode = false
-                    self:turnon()
-                end
-            end
-        end,
-    }
-end
-
 function AirPlaneMode:editPluginList(menu_items)
+    -- get the list of plugins
+    -- get the list of plugins we've already said we want to disable if it exists
+    -- present list, marking the already marked
+    -- save changes
     menu_items.airplanemode = {
         callback = function()
             UIManager:show(ConfirmBox:new{
