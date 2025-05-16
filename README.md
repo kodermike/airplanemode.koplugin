@@ -21,3 +21,7 @@ If I missed a network using plugin, just open an issue and I'll add it! And of c
 ## Known Caveat
 
 Currently, AirPlane mode attemtpts to re-enable yoru WiFi device when exiting. I may change this behavior in the future and let your previous setting handle whether to reconnect.
+
+## TODO
+
+* Add the ability to choose what is disabled with airplane mode
