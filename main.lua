@@ -1,20 +1,23 @@
-local Dispatcher = require("dispatcher")
-local Device = require("device")
-local NetworkMgr = require("ui/network/manager")
-local LuaSettings = require("luasettings")
+local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
-local UIManager = require("ui/uimanager")
+local Device = require("device")
+local Dispatcher = require("dispatcher")
 local InfoMessage = require("ui/widget/infomessage")
+local LuaSettings = require("luasettings")
+local NetworkMgr = require("ui/network/manager")
+local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local dump = require("dump")
+local ffiutil = require("ffi/util")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
-local ffiutil = require("ffi/util")
-local dump = require("dump")
-local lfs = require("libs/libkoreader-lfs")
-local airplanemode = false
 local T = ffiutil.template
-
+local rootpath = lfs.currentdir()
+local settings_file = rootpath.."/settings.reader.lua"
+local settings_bk = rootpath.."/settings.reader.lua.airplane"
+local settings_bk_exists = false
 -- establish the main settings file
 local DataStorage = require("datastorage")
 if G_reader_settings == nil then
@@ -42,22 +45,22 @@ function AirPlaneMode:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function AirPlaneMode:backup(settings_file,backup_file)
+function AirPlaneMode:backup()
     -- settings_file = settings_file or self.settings_file
     if isFile(settings_file) then
-        if isFile(backup_file) then
-            os.remove(backup_file)
+        if isFile(settings_bk) then
+            os.remove(settings_bk)
         end
-        ffiutil.copyFile(settings_file,backup_file )
-        return isFile(backup_file) and true or false
+        ffiutil.copyFile(settings_file,settings_bk )
+        return isFile(settings_bk) and true or false
     else
         logger.err("AirPlane Mode [ERROR] - Failed to find settings file at: ",settings_file)
         return false
     end
 end
 
-function AirPlaneMode:turnon(settings_file,backup_file)
-    local current_config = self:backup(settings_file,backup_file)
+function AirPlaneMode:turnon()
+    local current_config = self:backup()
     if current_config then
         -- mark airplane as active
         G_reader_settings:saveSetting("airplanemode",true)
@@ -86,8 +89,8 @@ function AirPlaneMode:turnon(settings_file,backup_file)
         if Device:hasWifiManager() then
                 NetworkMgr:disableWifi()
         end
-        self.settings_bk_exists = true
-        self.airplanemode_active = true
+        --settings_bk_exists = true
+        --airplanemode_active = true
         if Device:canRestart() then
             UIManager:show(ConfirmBox:new{
                 dismissable = false,
@@ -112,7 +115,7 @@ function AirPlaneMode:turnon(settings_file,backup_file)
     end
 end
 
-function AirPlaneMode:turnoff(settings_file,backup_file)
+function AirPlaneMode:turnoff()
     G_reader_settings:saveSetting("airplanemode",false)
     local BK_Settings = require("luasettings"):open(DataStorage:getDataDir().."/settings.reader.lua.airplane")
     --BK_Settings = require("luasettings"):open(DataStorage:getDataDir().."/settings.reader.lua")
@@ -174,15 +177,19 @@ function AirPlaneMode:turnoff(settings_file,backup_file)
         G_reader_settings:saveSetting("plugins_disabled", disable_again)
     end
 
-    if isFile(backup_file) then
-        os.remove(backup_file)
+    if isFile(settings_bk) then
+        os.remove(settings_bk)
     end
 
     if Device:hasWifiManager() then
         NetworkMgr:enableWifi()
     end
-    self.settings_bk_exists = false
-    self.airplanemode_active = false
+    settings_bk_exists = false
+    local airplanemode_active = false
+    if G_reader_settings:readSetting("airplanemode") then
+        airplanemode_active = G_reader_settings:readSetting("airplanemode")
+    end
+    airplanemode_active = false
     if Device:canRestart() then
         UIManager:show(ConfirmBox:new{
             dismissable = false,
@@ -204,39 +211,89 @@ function AirPlaneMode:turnoff(settings_file,backup_file)
     end
 end
 
-
 function AirPlaneMode:addToMainMenu(menu_items)
-    local rootpath = lfs.currentdir()
-    self.settings_file = rootpath.."/settings.reader.lua"
-    self.settings_bk = rootpath.."/settings.reader.lua.airplane"
-    local airplanemode_status = function()
-        -- test we can see the real settings file.
-        if not isFile(self.settings_file) then
-            logger.err("AirPlane Mode [ERROR] - Settings file not found! Abort!", self.settings_file)
-        end
-
-        -- check if we currently have a backup of our settings running
-        self.settings_bk_exists = false
-        if isFile(self.settings_bk) then
-            self.settings_bk_exists = true
-        end
-
-        -- also verify if the airplanemode flag is set. we will use this to decide if something is funky
-        self.airplanemode_active = false
-        if G_reader_settings:readSetting("airplanemode") then
-            self.airplanemode_active = G_reader_settings:readSetting("airplanemode")
-        end
-        ---------
-        if self.settings_bk_exists == true and self.airplanemode_active == true then
-            return true
-        elseif self.airplanemode_active == false then
-            return false
-        end
+    if not self.ui.document then -- FileManager menu only
+        menu_items.airplanemode = {
+            text = _("AirPlane Mode"),
+            sorting_hint = "network",
+            callback = function()
+                self:onShowAirPlaneModeMenu(settings_file, settings_bk)
+            end,
+        }
     end
+end
+
+local function airplanemode_status()
+    -- test we can see the real settings file.
+    if not isFile(settings_file) then
+        logger.err("AirPlane Mode [ERROR] - Settings file not found! Abort!", settings_file)
+    end
+
+    -- check if we currently have a backup of our settings running
+
+    if isFile(settings_bk) then
+        settings_bk_exists = true
+    end
+
+    -- also verify if the airplanemode flag is set. we will use this to decide if something is funky
+    local airplanemode_active = false
+    if G_reader_settings:readSetting("airplanemode") then
+        airplanemode_active = G_reader_settings:readSetting("airplanemode")
+    end
+    ---------
+    if settings_bk_exists == true and airplanemode_active == true then
+        return true
+    elseif airplanemode_active == false then
+        return false
+    end
+end
+
+function AirPlaneMode:onShowAirPlaneModeMenu(settings_file,settings_bk)
+    local plugin_dialog
+    local title = _("Are we testing?")
+
+
+
+    local onoff = "Off"
+    if airplanemode_status() then onoff = "On" end
+    plugin_dialog = ButtonDialog:new{
+        --checked_func = function() return airplanemode_status() end,
+        title = title,
+        buttons = {
+            {
+                {
+                    text = T(_("Toggle %1"),onoff ),
+                    callback = function()
+                        UIManager:close(plugin_dialog)
+                        self:toggleMode(menu_items)
+                    end
+                },
+                {
+                    text = _("Select plugins"),
+                    callback = function()
+                        UIManager:close(plugin_dialog)
+                        self:editPluginList(menu_items)
+                    end
+                },
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(plugin_dialog)
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(plugin_dialog)
+    return true
+end
+
+function AirPlaneMode:toggleMode(menu_items) --TODO have to rename before testing!!
     menu_items.airplanemode = {
-        text = _("AirPlane Mode"),
-        sorting_hint = "network",
-        checked_func = function() return airplanemode_status() end,
+        --text = _("AirPlane Mode"),
+        --sorting_hint = "network",
+
         callback = function()
             if Device:isAndroid() then
                 UIManager:show(ConfirmBox:new{
@@ -245,18 +302,33 @@ function AirPlaneMode:addToMainMenu(menu_items)
                     ok_text = _("OK"),
                     ok_callback = function()
                         UIManager:close()
-                    end,
+                    end
                 })
             else
                 if airplanemode_status() then
                     --airplanemode = true
-                    self:turnoff(self.settings_file, self.settings_bk)
+                    self:turnoff()
                 else
                     --airplanemode = false
-                    self:turnon(self.settings_file, self.settings_bk)
+                    self:turnon()
                 end
             end
         end,
+    }
+end
+
+function AirPlaneMode:editPluginList(menu_items)
+    menu_items.airplanemode = {
+        callback = function()
+            UIManager:show(ConfirmBox:new{
+                dismissable = false,
+                text = _("This part not yet written. Sorry!"),
+                ok_text = _("OK"),
+                ok_callback = function()
+                    UIManager:close()
+                end
+            })
+        end
     }
 end
 
