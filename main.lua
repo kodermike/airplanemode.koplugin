@@ -1,3 +1,9 @@
+-- TODO - init the plugins file
+-- TODO - move our current list of plugins to disable to the init process for the config
+-- TODO - in editPluginList, loop our config and compare to os config for final list
+    -- TODO - skip plugins already disabled in main config
+-- TODO - change the off function to just loop through our config + wireless settings
+
 local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -6,6 +12,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local NetworkMgr = require("ui/network/manager")
 local PluginLoader = require("pluginloader")
+local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local dump = require("dump")
@@ -38,10 +45,12 @@ local function isFile(filename)
 end
 
 function AirPlaneMode:onDispatcherRegisterActions()
+    logger.dbg("AirPlane - dispatching")
     Dispatcher:registerAction("airplanemode_action", { category="none", event="SwitchAirPlane", title=_("AirPlane Mode"), general=true,})
 end
 
 function AirPlaneMode:init()
+    logger.dbg("AirPlane - init'ing")
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 end
@@ -241,18 +250,6 @@ function AirPlaneMode:turnoff()
     end
 end
 
-function AirPlaneMode:addToMainMenu(menu_items)
-    if not self.ui.document then -- FileManager menu only
-        menu_items.airplanemode = {
-            text = _("AirPlane Mode"),
-            sorting_hint = "network",
-            callback = function()
-                self:onShowAirPlaneModeMenu(settings_file, settings_bk)
-            end,
-        }
-    end
-end
-
 local function airplanemode_status()
     -- test we can see the real settings file.
     if not isFile(settings_file) then
@@ -272,22 +269,48 @@ local function airplanemode_status()
     end
     ---------
     if settings_bk_exists == true and airplanemode_active == true then
-        return "Off"
+        return true
     elseif airplanemode_active == false then
-        return "On"
+        return false
     end
 end
 
-function AirPlaneMode:onShowAirPlaneModeMenu(settings_file,settings_bk)
+function AirPlaneMode:onMenuHold()
+    local edit_dialog
+    local title = _("Edit Plugins To Decactivate")
+    if airplanemode_status() == true then
+        edit_dialog = {
+            title = title,
+            callback = function()
+                UIManager:show(InfoMessage:new{
+                    text = _("AirPlane Mode can't be configured while running"),
+                })
+            end,
+        }
+        UIManager:show(edit_dialog)
+    else -- TODO replace with call to the menu page for plugins
+        edit_dialog = {
+            title = title,
+            callback = function()
+                UIManager:show(InfoMessage:new{
+                    text = _("For now nothing can be configured in AirPlane Mode"),
+                })
+            end,
+        }
+        UIManager:show(edit_dialog)
+    end
+end
+
+function AirPlaneMode:onShowAirPlaneModeMenu()
     local plugin_dialog
     local title = _("Are we testing?")
-
-    local onoff = "On"
-    onoff = airplanemode_status()
-    logger.dbg("AirPlane Mode - onoff ",onoff," and status ",airplanemode_status())
     plugin_dialog = ButtonDialog:new{
         --checked_func = function() return airplanemode_status() end,
         title = title,
+        is_popout = false,
+        is_borderless = true,
+        title_bar_fm_style = true,
+        _manager = self,
         buttons = {
             {
                 {
@@ -334,22 +357,114 @@ function AirPlaneMode:onShowAirPlaneModeMenu(settings_file,settings_bk)
     return true
 end
 
+-- TODO - remove?
+-- This is verbatim borrowed, but since it was a local function I don't another way of referencing it
+-- Deprecated plugins are still available, but show a hint about deprecation.
+local function getMenuTable(plugin)
+    local t = {}
+    t.name = plugin.name
+    t.fullname = string.format("%s%s", plugin.fullname or plugin.name,
+        plugin.deprecated and " (" .. _("outdated") .. ")" or "")
+
+    local deprecated, message = deprecationFmt(plugin.deprecated)
+    t.description = string.format("%s%s", plugin.description,
+        deprecated and "\n\n" .. message or "")
+    return t
+end
+
 function AirPlaneMode:editPluginList(menu_items)
+    -- check if airplane mode is on - if so, tell the user we can't configure while running
     -- get the list of plugins
     -- get the list of plugins we've already said we want to disable if it exists
     -- present list, marking the already marked
     -- save changes
-    menu_items.airplanemode = {
-        callback = function()
-            UIManager:show(ConfirmBox:new{
-                dismissable = false,
-                text = _("This part not yet written. Sorry!"),
-                ok_text = _("OK"),
-                ok_callback = function()
-                    UIManager:close()
+
+    local os_sub_item_table = PluginLoader:genPluginManagerSubItem()
+
+    local plugin_dialog
+    local title = _("Are we testing?")
+    plugin_dialog = ButtonDialog:new{
+        --checked_func = function() return airplanemode_status() end,
+        title = title,
+        is_popout = false,
+        is_borderless = true,
+        title_bar_fm_style = true,
+        _manager = self,
+        buttons = {
+    if airplanemode_status() == true then
+        return {
+                callback = function()
+                    UIManager:show(InfoMessage:new{
+                        text = _("AirPlane Mode can't be configured while running"),
+                    })
                 end
-            })
-        end
+        }
+    else
+        menu_items.editPluginList = {
+            callback = function()
+                UIManager:show(ConfirmBox:new{
+                    dismissable = false,
+                    text = _("This part not yet written. Sorry!"),
+                })
+            end,
+            keep_menu_open = true,
+            separator = true
+        }
+    end
+end
+
+function AirPlaneMode:addToMainMenu(menu_items)
+    local rootpath = lfs.currentdir()
+    settings_file = rootpath.."/settings.reader.lua"
+    settings_bk = rootpath.."/settings.reader.lua.airplane"
+
+    menu_items.airplanemode = {
+        text = _("AirPlane Mode"),
+        sorting_hint = "network",
+        checked_func = function() return airplanemode_status() end,
+        callback = function()
+            if Device:isAndroid() then
+                UIManager:show(ConfirmBox:new{
+                    dismissable = false,
+                    text = _("AirPlane Mode should be managed in your device's network settings."),
+                    ok_text = _("OK"),
+                    ok_callback = function()
+                        UIManager:close()
+                    end,
+                })
+            else
+                if airplanemode_status() then
+                    --airplanemode = true
+                    self:turnoff()
+                else
+                    --airplanemode = false
+                    self:turnon()
+                end
+            end
+        end,
+        hold_callback = function()
+            --local edit_dialog
+            local title = _("Edit Plugins To Decactivate")
+            if airplanemode_status() == true then
+                UIManager:show(InfoMessage:new{
+                    title = title,
+                    text = _("AirPlane Mode can't be configured while running"),
+                    ok_text = _("OK"),
+                    ok_callback = function()
+                        UIManager:close()
+                    end,
+                })
+            else
+                UIManager:show(InfoMessage:new{
+                    title = title,
+                    text = _("For now nothing can be configured in AirPlane Mode"),
+                    ok_text = _("OK"),
+                    ok_callback = function()
+                        UIManager:close()
+                    end,
+                })
+            end
+        end,
     }
 end
 
