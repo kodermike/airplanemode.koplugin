@@ -38,6 +38,7 @@ local AirPlaneMode = WidgetContainer:extend{
 }
 
 local function isFile(filename)
+    logger.dbg("Airplane - checking existence of ",filename)
     if lfs.attributes(filename, "mode") == "file" then
         return true
     end
@@ -53,7 +54,38 @@ function AirPlaneMode:init()
     logger.dbg("AirPlane - init'ing")
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
+    self.airplane_plugins_file = rootpath.."/settings/airplane_plugins.lua"
+    logger.dbg("AirPlane - plugins file is ",self.airplane_plugins_file)
+    -- MPC REMOVE
+    -- TODO
+
+    --self.airplane_plugins = require("luasettings"):open(DataStorage:getSettingsDir() .. "/airplane_plugins.lua")
+
 end
+
+function AirPlaneMode:initSettingsFile()
+    logger.dbg("AirPlane - setting up plugin tracker ",self.airplane_plugins_file)
+    if isFile(self.airplane_plugins_file) == true then
+        logger.dbg("AirPlane - plugin tracker already exists")
+        return
+    else
+        logger.dbg("Airplane - Opening settings file ",self.airplane_plugins_file)
+        local airplane_plugins = require("luasettings"):open(self.airplane_plugins_file)
+        airplane_plugins:saveSetting("goodreads",true)
+        airplane_plugins:saveSetting("newsdownloader",true)
+        airplane_plugins:saveSetting("wallabag",true)
+        airplane_plugins:saveSetting("calibre",true)
+        airplane_plugins:saveSetting("kosync",true)
+        airplane_plugins:saveSetting("opds",true)
+        airplane_plugins:saveSetting("SSH",true)
+        airplane_plugins:saveSetting("timesync",true)
+        airplane_plugins:saveSetting("httpinspector",true)
+        airplane_plugins:flush()
+    end
+end
+
+
+
 
 function AirPlaneMode:backup()
     -- settings_file = settings_file or self.settings_file
@@ -289,6 +321,7 @@ function AirPlaneMode:onMenuHold()
         }
         UIManager:show(edit_dialog)
     else -- TODO replace with call to the menu page for plugins
+
         edit_dialog = {
             title = title,
             callback = function()
@@ -391,26 +424,30 @@ function AirPlaneMode:editPluginList(menu_items)
         title_bar_fm_style = true,
         _manager = self,
         buttons = {
-    if airplanemode_status() == true then
-        return {
-                callback = function()
-                    UIManager:show(InfoMessage:new{
-                        text = _("AirPlane Mode can't be configured while running"),
-                    })
-                end
-        }
-    else
-        menu_items.editPluginList = {
-            callback = function()
-                UIManager:show(ConfirmBox:new{
-                    dismissable = false,
-                    text = _("This part not yet written. Sorry!"),
-                })
-            end,
-            keep_menu_open = true,
-            separator = true
-        }
-    end
+            {
+                {
+                    callback = function()
+                        if airplanemode_status() == true then
+                            UIManager:show(InfoMessage:new{
+                                text = _("AirPlane Mode can't be configured while running"),
+                            })
+                        else
+                            menu_items.editPluginList = {
+                                callback = function()
+                                    UIManager:show(ConfirmBox:new{
+                                        dismissable = false,
+                                        text = _("This part not yet written. Sorry!"),
+                                    })
+                                end,
+                                keep_menu_open = true,
+                                separator = true
+                            }
+                        end
+                    end,
+                },
+            },
+        },
+    }
 end
 
 function AirPlaneMode:addToMainMenu(menu_items)
@@ -455,9 +492,11 @@ function AirPlaneMode:addToMainMenu(menu_items)
                     end,
                 })
             else
+                logger.dbg("Airplane - checking settings file")
+                self:initSettingsFile()
                 UIManager:show(InfoMessage:new{
                     title = title,
-                    text = _("For now nothing can be configured in AirPlane Mode"),
+                    text = _("For now nothing can be configured in AirPlane Mode, sorry"),
                     ok_text = _("OK"),
                     ok_callback = function()
                         UIManager:close()
