@@ -306,36 +306,11 @@ local function airplanemode_status()
     end
     ---------
     if settings_bk_exists == true and airplanemode_active == true then
+        logger.dbg("Airplane - returning airplanemode_status as true")
         return true
     elseif airplanemode_active == false then
+        logger.dbg("Airplane - returning airplanemode_status as false")
         return false
-    end
-end
-
-function AirPlaneMode:onMenuHold()
-    local edit_dialog
-    local title = _("Edit Plugins To Decactivate")
-    if airplanemode_status() == true then
-        edit_dialog = {
-            title = title,
-            callback = function()
-                UIManager:show(InfoMessage:new{
-                    text = _("AirPlane Mode can't be configured while running"),
-                })
-            end,
-        }
-        UIManager:show(edit_dialog)
-    else -- TODO replace with call to the menu page for plugins
-
-        edit_dialog = {
-            title = title,
-            callback = function()
-                UIManager:show(InfoMessage:new{
-                    text = _("For now nothing can be configured in AirPlane Mode"),
-                })
-            end,
-        }
-        UIManager:show(edit_dialog)
     end
 end
 
@@ -352,12 +327,6 @@ local function getMenuTable(plugin)
     t.fullname = string.format("%s", plugin.fullname or plugin.name)
     t.description = string.format("%s", plugin.description)
     return t
-end
-
-local function tablelength(T)
-  local count = 0
-  for _ in pairs(T) do count = count + 1 end
-  return count
 end
 
 function AirPlaneMode:getSubMenuItems()
@@ -470,6 +439,7 @@ function AirPlaneMode:addToMainMenu(menu_items)
         sorting_hint = "network",
         checked_func = function() return airplanemode_status() end,
         callback = function()
+        --checked_func = function()
             if Device:isAndroid() then
                 UIManager:show(ConfirmBox:new{
                     dismissable = false,
@@ -480,7 +450,7 @@ function AirPlaneMode:addToMainMenu(menu_items)
                     end,
                 })
             else
-                if airplanemode_status() then
+                if airplanemode_status() == true then
                     --airplanemode = true
                     self:turnoff()
                 else
