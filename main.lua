@@ -40,7 +40,7 @@ local AirPlaneMode = WidgetContainer:extend{
 }
 
 local function isFile(filename)
-    logger.dbg("Airplane - checking existence of ",filename)
+    --logger.dbg("Airplane - checking existence of ",filename)
     if lfs.attributes(filename, "mode") == "file" then
         return true
     end
@@ -73,15 +73,12 @@ function AirPlaneMode:initSettingsFile()
     else
         logger.dbg("Airplane - Opening settings file ",self.airplane_plugins_file)
         local airplane_plugins = require("luasettings"):open(self.airplane_plugins_file)
-        airplane_plugins:saveSetting("goodreads",true)
-        airplane_plugins:saveSetting("newsdownloader",true)
-        airplane_plugins:saveSetting("wallabag",true)
-        airplane_plugins:saveSetting("calibre",true)
-        airplane_plugins:saveSetting("kosync",true)
-        airplane_plugins:saveSetting("opds",true)
-        airplane_plugins:saveSetting("SSH",true)
-        airplane_plugins:saveSetting("timesync",true)
-        airplane_plugins:saveSetting("httpinspector",true)
+        local default_disable = {}
+        local default_disable_list = {"goodreads","newsdownloader","wallabag","calibre","kosync","opds","SSH","timesync","httpinspector"}
+        for __, plugin in ipairs(default_disable_list) do
+            default_disable[plugin] = true
+        end
+        airplane_plugins:saveSetting("disabled_plugins",default_disable)
         airplane_plugins:flush()
         airplane_plugins:close()
     end
@@ -117,24 +114,38 @@ function AirPlaneMode:turnon()
         G_reader_settings:saveSetting("auto_disable_wifi",true)
         G_reader_settings:saveSetting("wifi_was_on",false)
         G_reader_settings:saveSetting("http_proxy_enabled",false)
-        G_reader_settings:saveSetting("kosync",{auto_sync = false, checksum_method = "0", sync_backward="3", sync_forward = "1"})
+        --G_reader_settings:saveSetting("kosync",{auto_sync = false, checksum_method = "0", sync_backward="3", sync_forward = "1"})
         if Device:isEmulator() then
             G_reader_settings:saveSetting("emulator_fake_wifi_connected",false)
         end
-        local check_plugins = {"goodreads","newsdownloader","wallabag","calibre","kosync","opds","SSH","timesync","httpinspector"}
+
+        -- open our disable list
+        -- loop through list and disable everything
+        -- profit
+
+        local airplane_plugins = require("luasettings"):open(self.airplane_plugins_file)
+        local check_plugins = airplane_plugins:readSetting("disabled_plugins") or {}
         local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
 
-        for __, plugin in ipairs(check_plugins) do
-            logger.dbg("AirPlane Mode - checking plugin ",plugin)
-            if not plugins_disabled[plugin] == true then
-                plugins_disabled[plugin] = true
-                logger.dbg("AirPlane Mode - adding to plugin list ",plugin)
+        if type(check_plugins) == "string" then
+            logger.dbg("AirPlane Mode - adding to plugin list ",check_plugins)
+            if not plugins_disabled[check_plugins] == true then
+                plugins_disabled[check_plugins] = true
+                logger.dbg("AirPlane Mode - added to plugin list ",check_plugins)
+            end
+        else
+            for plugin, __ in pairs(check_plugins) do
+                --logger.dbg("AirPlane Mode - checking plugin ",plugin," not key",key)
+                if not plugins_disabled[plugin] == true then
+                    plugins_disabled[plugin] = true
+                    logger.dbg("AirPlane Mode - adding to plugin list ",plugin)
+                end
             end
         end
         G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
         G_reader_settings:saveSetting("wifi_enable_action","prompt")
         G_reader_settings:saveSetting("wifi_disable_action","turn_off")
-
+        G_reader_settings:flush()
 
 
         if Device:hasWifiManager() then
@@ -217,7 +228,7 @@ function AirPlaneMode:turnoff()
         -- flip the real config
         G_reader_settings:saveSetting("http_proxy_enabled",old_http_proxy_enabled)
     end
-
+--[[
     if BK_Settings:has("kosync",{auto_sync}) then
         local old_auto_sync =  BK_Settings:readSetting("kosync",{auto_sync})
         -- flip the real config
@@ -247,7 +258,18 @@ function AirPlaneMode:turnoff()
         end
     end
     -- Now add back our saved disbles
-
+]]
+    local airplane_plugins = require("luasettings"):open(self.airplane_plugins_file)
+    local check_plugins = airplane_plugins:readSetting("disabled_plugins") or {}
+    if type(check_plugins) == "string" then
+        G_reader_settings:delSetting("plugins_disabled", check_plugins)
+    else
+        for plugin, __ in pairs(check_plugins) do
+            --logger.dbg("AirPlane Mode - checking plugin ",plugin," not key",key)
+            G_reader_settings:delSetting("plugins_disabled", plugin)
+        end
+    end
+    -- Just in case we somehow have a plugin in both airplane's disable and the backup disable
     local disable_again = BK_Settings:readSetting("plugins_disabled")
     if disable_again then
         G_reader_settings:saveSetting("plugins_disabled", disable_again)
@@ -337,10 +359,12 @@ function AirPlaneMode:getSubMenuItems()
     -- save changes
     self:initSettingsFile()
     local airplane_plugins = require("luasettings"):open(self.airplane_plugins_file)
-    airplane_plugins:flush()
+    local check_plugins = airplane_plugins:readSetting("disabled_plugins") or {}
+    --airplane_plugins:flush()
     --local os_sub_item_table = PluginLoader:genPluginManagerSubItem()
     local os_enabled_plugins, os_disabled_plugins = PluginLoader:loadPlugins()
     local os_all_plugins = {}
+
     --Loop through os plugins that are enabled and mark that
     logger.dbg("Airplane - Looping through plugins to remove available")
     for _, plugin in ipairs(os_enabled_plugins) do
@@ -353,24 +377,25 @@ function AirPlaneMode:getSubMenuItems()
     logger.dbg("Airplane - Looping through plugins to remove already disabled plugins")
     for _, plugin in ipairs(os_disabled_plugins) do
         local element = getMenuTable(plugin)
-        if not airplane_plugins:has(element.name) then
+        if not check_plugins[plugin.name] then
             logger.dbg("Airplane - Removing ",element.name," from our private disable list")
-            airplane_plugins:saveSetting(element.name,true)
+            check_plugins[element.name] = true
+            --airplane_plugins:saveSetting("disabled_plugins",element.name)
         end
-        element.enable = false
+        element.enable = nil
         table.insert(os_all_plugins, element)
     end
+    airplane_plugins:saveSetting("disabled_plugins",check_plugins)
+
     -- finally loop through all plugins and mark them disabled if we have them recorded
     logger.dbg("Airplane - Starting with all plugins as",os_all_plugins)
     logger.dbg("Airplane - Looping through plugins to mark already disabled")
     for _, plugin in ipairs(os_all_plugins) do
         local element = getMenuTable(plugin)
         logger.dbg("Airplane - Checking for plugin ",element.name)
-        if element.enable == true and airplane_plugins:has(element.name) then
+        if element.enable == true and check_plugins[element.name] == true then
             logger.dbg("Airplane - Disabling plugin ",element.name)
-            element.enable = false
-        else
-            element.enable = true
+            element.enable = nil
         end
         --table.insert(os_all_plugins, element)
         os_all_plugins[element.name] = element.enable
@@ -379,12 +404,14 @@ function AirPlaneMode:getSubMenuItems()
 
     table.sort(os_all_plugins, function(v1, v2) return v1.fullname < v2.fullname end)
     logger.dbg("Airplane - Building UI for plugins")
+
     -- loop through settings, print checked or unchecked based on airplane_plugins:has and then readSetting value
-    local airplane_plugin_table = {
-        {
+    local airplane_plugin_table = {}
+    if airplanemode_status() == true then
+        table.insert(airplane_plugin_table,{
             text = _("AirPlane Mode Plugin Manager"),
 
-            hold_callback = function()
+            callback = function()
                 UIManager:show(InfoMessage:new{
                     title = title,
                     text = _("For now nothing can be configured in AirPlane Mode, sorry"),
@@ -394,38 +421,60 @@ function AirPlaneMode:getSubMenuItems()
                     end,
                 })
             end,
-        },
-    }
-    logger.dbg("Airplane - Building table of plugins")
-    logger.dbg("Airplane -starting with",os_all_plugins)
-    for __, plugin in ipairs(os_all_plugins) do
-        logger.dbg("Airplane - adding ",plugin.fullname," to the gui table with value",plugin.enable)
-        table.insert(airplane_plugin_table,
-            {
-                text = plugin.fullname,
-                checked_func = function()
-                    return plugin.enable
-                end,
-                callback = function()
-                    --plugin.enable = not plugin.enable
-                    if plugin.enable == false then
-                        --logger.dbg("Airplane - Globally plugin",plugin.name,"is enabled")
-                        if airplane_plugins:has(plugin.name) then
-                            logger.dbg("Airplane - Removed plugin",plugin.name,"from our settings file")
-                            airplane_plugins:delSetting(plugin.name)
+        })
+    else
+        logger.dbg("Airplane - Building table of plugins")
+        logger.dbg("Airplane -starting with",os_all_plugins)
+
+        for __, plugin in ipairs(os_all_plugins) do
+            logger.dbg("Airplane - adding ",plugin.fullname," to the gui table with value",plugin.enable)
+
+            table.insert(airplane_plugin_table,
+                {
+                    text = _(plugin.fullname),
+                    checked_func = function()
+                        --logger.dbg("Airplane - plugin",plugin.name,"is set as",check_plugins[plugin.name])
+                        return check_plugins[plugin.name]
+                    end,
+                    enabled_func = function()
+                        if plugin.name == "airplanemode" then
+                            return false
+                        else
+                            return true
                         end
-                    else
-                        logger.dbg("Airplane - Adding plugin",plugin.name,"to our settings file")
-                        airplane_plugins:saveSetting(plugin.name,true)
-                    end
-                    airplane_plugins:flush()
-                end,
-                help_text = plugin.description,
-            }
-        )
+                    end,
+                    callback = function(touchmenu_instance)
+                        logger.dbg("Airplane - ",plugin.name,"is enabled?",plugin.enable)
+
+                        --plugin.enable = not plugin.enable
+                        --if not plugin.enable == true then
+                        if check_plugins[plugin.name] then
+                            --[[
+                            --logger.dbg("Airplane - Globally plugin",plugin.name,"is enabled")
+                            if airplane_plugins:has("disabled_plugins",plugin.name) then
+                                logger.dbg("Airplane - Removed plugin",plugin.name,"from our settings file")
+
+                                airplane_plugins:delSetting(plugin.name)
+                                airplane_plugins:flush()
+                            end]]
+                            check_plugins[plugin.name] = nil
+                            --airplane_plugins:saveSetting("disabled_plugins",check_plugins)
+                        else
+                            --logger.dbg("Airplane - Adding plugin",plugin.name,"to our settings file")
+                            check_plugins[plugin.name] = true
+                            --airplane_plugins:saveSetting("disabled_plugins",plugin.name)
+                        end
+                        airplane_plugins:saveSetting("disabled_plugins",check_plugins)
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                        airplane_plugins:flush()
+                    end,
+                    help_text = plugin.description,
+                }
+            )
+        end
+        logger.dbg("Airplane -ended with",os_all_plugins)
+        logger.dbg("Airplane - finalizing the plugin menu, returning",airplane_plugin_table)
     end
-    logger.dbg("Airplane -ended with",os_all_plugins)
-    logger.dbg("Airplane - finalizing the plugin menu, returning",airplane_plugin_table)
     return airplane_plugin_table
 end
 
@@ -438,55 +487,50 @@ function AirPlaneMode:addToMainMenu(menu_items)
         text = _("AirPlane Mode"),
         sorting_hint = "network",
         checked_func = function() return airplanemode_status() end,
-        callback = function()
-        --checked_func = function()
-            if Device:isAndroid() then
-                UIManager:show(ConfirmBox:new{
-                    dismissable = false,
-                    text = _("AirPlane Mode should be managed in your device's network settings."),
-                    ok_text = _("OK"),
-                    ok_callback = function()
-                        UIManager:close()
-                    end,
-                })
-            else
-                if airplanemode_status() == true then
-                    --airplanemode = true
-                    self:turnoff()
-                else
-                    --airplanemode = false
-                    self:turnon()
-                end
-            end
-        end,
-        --sub_item_table = {
-         --   {
-                --local edit_dialog
-                --text_func = function()
-                sub_item_table_func = function()
-                    if airplanemode_status() == true then
-                    UIManager:show(InfoMessage:new{
-                        text = _("AirPlane Mode can't be configured while running"),
-                        ok_text = _("OK"),
-                        ok_callback = function()
-                            UIManager:close()
-                        end,
-                    })
+        sub_item_table = {
+            {
+                text = _("AirPlane Mode Enabled"),
+                checked_func = function() return airplanemode_status() end,
+                callback = function()
+                    if Device:isAndroid() then
+                        UIManager:show(ConfirmBox:new{
+                            dismissable = false,
+                            text = _("AirPlane Mode should be managed in your device's network settings."),
+                            ok_text = _("OK"),
+                            ok_callback = function()
+                                UIManager:close()
+                            end,
+                        })
                     else
-                        logger.dbg("Airplane - checking settings file")
-                        return self:getSubMenuItems()
-                        --UIManager:show(InfoMessage:new{
-                        --    title = title,
-                        --    text = _("For now nothing can be configured in AirPlane Mode, sorry"),
-                        --    ok_text = _("OK"),
-                        --    ok_callback = function()
-                        --        UIManager:close()
-                        --    end,
-                        --})
+                        if airplanemode_status() == true then
+                            --airplanemode = true
+                            self:turnoff()
+                        else
+                            --airplanemode = false
+                            self:turnon()
+                        end
                     end
                 end,
-           -- },
-       -- }
+            },
+            {
+                text = _("AirPlane Mode Plugin Manager"),
+                sub_item_table_func = function()
+                    return self:getSubMenuItems()
+                    --if airplanemode_status() == true then
+                    --UIManager:show(InfoMessage:new{
+                    --    text = _("AirPlane Mode can't be configured while running"),
+                    --    ok_text = _("OK"),
+                    --    ok_callback = function()
+                    --        UIManager:close()
+                    --    end,
+                    --})
+                    --else
+                        --logger.dbg("Airplane - checking settings file")
+                        --sub_item_table_func = function() return self:getSubMenuItems() end,
+                    --end
+                end,
+            },
+        },
     }
 end
 
