@@ -17,7 +17,7 @@ there is no list file
 
 ### 🩹 Fixes
 
-* 
+* cleaned up all of the commented code and debug statements :-)
 
 ## v0.0.1-alpha (2025.05.06)
 

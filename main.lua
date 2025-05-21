@@ -9,6 +9,7 @@ local PluginLoader = require("pluginloader")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiutil = require("ffi/util")
+local T = ffiutil.template
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
@@ -29,7 +30,6 @@ local AirPlaneMode = WidgetContainer:extend{
 }
 
 local function isFile(filename)
-    --logger.dbg("Airplane - checking existence of ",filename)
     if lfs.attributes(filename, "mode") == "file" then
         return true
     end
@@ -37,7 +37,6 @@ local function isFile(filename)
 end
 
 function AirPlaneMode:onDispatcherRegisterActions()
-    logger.dbg("AirPlane - dispatching")
     Dispatcher:registerAction("airplanemode_action", { category="none", event="SwitchAirPlane", title=_("AirPlane Mode"), general=true,})
 end
 
@@ -48,12 +47,9 @@ function AirPlaneMode:init()
 end
 
 function AirPlaneMode:initSettingsFile()
-    logger.dbg("AirPlane - setting up plugin tracker ",self.airplane_plugins_file)
     if isFile(self.airplane_plugins_file) == true then
-        logger.dbg("AirPlane - plugin tracker already exists")
         return
     else
-        logger.dbg("Airplane - Opening settings file ",self.airplane_plugins_file)
         local airplane_plugins = LuaSettings:open(self.airplane_plugins_file)
         local default_disable = {}
         local default_disable_list = {"goodreads","newsdownloader","wallabag","calibre","kosync","opds","SSH","timesync","httpinspector"}
@@ -66,11 +62,7 @@ function AirPlaneMode:initSettingsFile()
     end
 end
 
-
-
-
 function AirPlaneMode:backup()
-    -- settings_file = settings_file or self.settings_file
     if isFile(settings_file) then
         if isFile(settings_bk) then
             os.remove(settings_bk)
@@ -94,7 +86,6 @@ function AirPlaneMode:turnon()
         G_reader_settings:saveSetting("auto_disable_wifi",true)
         G_reader_settings:saveSetting("wifi_was_on",false)
         G_reader_settings:saveSetting("http_proxy_enabled",false)
-        --G_reader_settings:saveSetting("kosync",{auto_sync = false, checksum_method = "0", sync_backward="3", sync_forward = "1"})
         if Device:isEmulator() then
             G_reader_settings:saveSetting("emulator_fake_wifi_connected",false)
         end
@@ -114,6 +105,9 @@ function AirPlaneMode:turnon()
                 end
             end
         end
+        airplane_plugins:flush()
+        airplane_plugins:close()
+
         G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
         G_reader_settings:saveSetting("wifi_enable_action","prompt")
         G_reader_settings:saveSetting("wifi_disable_action","turn_off")
@@ -176,7 +170,6 @@ function AirPlaneMode:turnoff()
         G_reader_settings:delSetting("wifi_enable_action")
     end
 
-
     if BK_Settings:has("wifi_disable_action") then
         local wifi_disable_action = BK_Settings:readSetting("wifi_disable_action")
         G_reader_settings:saveSetting("wifi_disable_action",wifi_disable_action)
@@ -184,43 +177,12 @@ function AirPlaneMode:turnoff()
         G_reader_settings:delSetting("wifi_disable_action")
     end
 
-
     if BK_Settings:has("http_proxy_enabled") then
         local old_http_proxy_enabled = BK_Settings:readSetting("http_proxy_enabled")
         -- flip the real config
         G_reader_settings:saveSetting("http_proxy_enabled",old_http_proxy_enabled)
     end
---[[
-    if BK_Settings:has("kosync",{auto_sync}) then
-        local old_auto_sync =  BK_Settings:readSetting("kosync",{auto_sync})
-        -- flip the real config
-        G_reader_settings:saveSetting("kosync",old_auto_sync)
-    end
-    if BK_Settings:has("kosync",{checksum_method}) then
-        local old_checksum_method =  BK_Settings:readSetting("kosync",{checksum_method})
-        -- flip the real config
-        G_reader_settings:saveSetting("kosync",old_checksum_method)
-    end
-    if BK_Settings:has("kosync",{sync_backward}) then
-        local old_sync_backward =  BK_Settings:readSetting("kosync",{sync_backward})
-        -- flip the real config
-        G_reader_settings:saveSetting("kosync",old_sync_backward)
-    end
-    if BK_Settings:has("kosync",{sync_forward}) then
-        local old_sync_forward =  BK_Settings:readSetting("kosync",{sync_forward})
-        -- flip the real config
-        G_reader_settings:saveSetting("kosync",old_sync_forward)
-    end
 
-    local old_check_plugins = {"goodreads","newsdownloader","wallabag","calibre","kosync","opds","SSH","timesync","httpinspector"}
-    -- remove the disables from airplane mode
-    for __, oldplugin in ipairs(old_check_plugins) do
-        if not BK_Settings:readSetting("plugins_disabled",oldplugin) == true then
-            G_reader_settings:delSetting("plugins_disabled", oldplugin)
-        end
-    end
-    -- Now add back our saved disbles
-]]
     local airplane_plugins = LuaSettings:open(self.airplane_plugins_file)
     local check_plugins = airplane_plugins:readSetting("disabled_plugins") or {}
     if type(check_plugins) == "string" then
@@ -230,6 +192,9 @@ function AirPlaneMode:turnoff()
             G_reader_settings:delSetting("plugins_disabled", plugin)
         end
     end
+    airplane_plugins:flush()
+    airplane_plugins:close()
+
     -- Just in case we somehow have a plugin in both airplane's disable and the backup disable
     local disable_again = BK_Settings:readSetting("plugins_disabled")
     if disable_again then
@@ -250,7 +215,7 @@ function AirPlaneMode:turnoff()
     end
     airplanemode_active = false
     if Device:canRestart() then
-        UIManager:askForRestart(_("KOReader needs to restart to finish disabling AirPlane Mode."))
+        UIManager:askForRestart(_("KOReader needs to restart to finish disabling plugins for AirPlane Mode."))
     else
         UIManager:show(ConfirmBox:new{
             dismissable = false,
@@ -279,14 +244,11 @@ local function airplanemode_status()
     end
     --
     if settings_bk_exists == true and airplanemode_active == true then
-        logger.dbg("Airplane - returning airplanemode_status as true")
         return true
     elseif airplanemode_active == false then
-        logger.dbg("Airplane - returning airplanemode_status as false")
         return false
     end
 end
-
 
 -- Lifted whole from pluginloader because it was the only way to dup the function :/
 local function getMenuTable(plugin)
@@ -305,10 +267,8 @@ function AirPlaneMode:getSubMenuItems()
     local os_all_plugins = {}
 
     --Loop through os plugins that are enabled and mark that
-    logger.dbg("Airplane - Looping through plugins to remove available")
     for _, plugin in ipairs(os_enabled_plugins) do
         local element = getMenuTable(plugin)
-        logger.dbg("Airplane - Adding ",element.name," to our list")
         element.enable = true
         table.insert(os_all_plugins, element)
     end
@@ -321,53 +281,47 @@ function AirPlaneMode:getSubMenuItems()
         element.enable = nil
         table.insert(os_all_plugins, element)
     end
-    -- finally loop through our own disabled plugins and mark those
     airplane_plugins:saveSetting("disabled_plugins",check_plugins)
-    for _, plugin in ipairs(os_all_plugins) do
-        local element = getMenuTable(plugin)
-        if element.enable == true and check_plugins[element.name] == true then
-            element.enable = nil
-        end
-        os_all_plugins[element.name] = element.enable
-    end
+
     table.sort(os_all_plugins, function(v1, v2) return v1.fullname < v2.fullname end)
+
     local airplane_plugin_table = {}
     for __, plugin in ipairs(os_all_plugins) do
-        table.insert(airplane_plugin_table,
-            {
-                text = _(plugin.fullname),
-                checked_func = function()
-                    return check_plugins[plugin.name]
-                end,
-                enabled_func = function()
-                    if plugin.name == "airplanemode" then
-                        return false
-                    else
-                        return true
-                    end
-                end,
-                callback = function(touchmenu_instance)
-                    if check_plugins[plugin.name] then
-                        check_plugins[plugin.name] = nil
-                    else
-                        check_plugins[plugin.name] = true
-                    end
-                    airplane_plugins:saveSetting("disabled_plugins",check_plugins)
-                    if touchmenu_instance then touchmenu_instance:updateItems() end
-                    airplane_plugins:flush()
-                end,
-                help_text = plugin.description,
-            }
-        )
+        if plugin.name ~= "airplanemode" then
+            table.insert(airplane_plugin_table,
+                {
+                    text = _(plugin.fullname),
+                    checked_func = function()
+                        return check_plugins[plugin.name]
+                    end,
+                    enabled_func = function()
+                        if (plugin.enable == false) or (plugin.enable == nil) then
+                            return false
+                        else
+                            return true
+                        end
+                    end,
+                    callback = function(touchmenu_instance)
+                        if check_plugins[plugin.name] then
+                            check_plugins[plugin.name] = nil
+                        else
+                            check_plugins[plugin.name] = true
+                        end
+                        airplane_plugins:saveSetting("disabled_plugins",check_plugins)
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                        airplane_plugins:flush()
+                    end,
+                    help_text = T(_("%1\n\nThis plugin is already disabled in KOReader"),plugin.description),
+                }
+            )
+        end
     end
+    airplane_plugins:flush()
+    airplane_plugins:close()
     return airplane_plugin_table
 end
 
 function AirPlaneMode:addToMainMenu(menu_items)
-    local rootpath = lfs.currentdir()
-    settings_file = rootpath.."/settings.reader.lua"
-    settings_bk = rootpath.."/settings.reader.lua.airplane"
-
     menu_items.airplanemode = {
         text_func = function()
                     if airplanemode_status() == true then
