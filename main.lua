@@ -52,7 +52,7 @@ function AirPlaneMode:initSettingsFile()
     else
         local airplane_plugins = LuaSettings:open(self.airplane_plugins_file)
         local default_disable = {}
-        local default_disable_list = {"goodreads","newsdownloader","wallabag","calibre","kosync","opds","SSH","timesync","httpinspector"}
+        local default_disable_list = {"newsdownloader","wallabag","calibre","kosync","opds","SSH","timesync","httpinspector"}
         for __, plugin in ipairs(default_disable_list) do
             default_disable[plugin] = true
         end

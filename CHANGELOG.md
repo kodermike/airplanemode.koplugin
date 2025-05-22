@@ -15,6 +15,8 @@ there is no list file
 
 * Added paperplane icons to indicate status
 
+* Documentation updated!
+
 ### 🩹 Fixes
 
 * cleaned up all of the commented code and debug statements :-)
