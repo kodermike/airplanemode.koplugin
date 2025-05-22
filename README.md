@@ -16,6 +16,10 @@ For this iteration, I changed how we manage the plugins to disable/enable when s
 1. Copy the `airplanemode.koplugin` directory to `.adds/koreader/plugins/` or unpack a release file in your plugins directory
 1. Disconnect USB
 
+## Known bugs
+
+The only known bug is I've had a report from Kindle users that the module deactivating isn't working. I can duplicate this behavior in the koreader emulator and will tackle it next, but wanted to get this release out first since it is a significant change in functionality as far as plugin management.
+
 ## Usage
 
 ### Enabling
