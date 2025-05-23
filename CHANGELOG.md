@@ -1,6 +1,25 @@
 # Changelog
 
-## v0.0.1
+## v0.0.2  (2025.05.22)
+
+### 🚀 Added
+
+* No additions today.
+
+### 🩹 Fixes
+
+* Replaced how we reference files from `rootpath` to the function for
+  `DataStorage:getDataDir` - I suspect this was causing some of the issues on
+  non-kobo devices (ie, worked on kobo does not mean it works everywhere)
+  
+* Removed a block from the original release that was causing the list of files
+  to be considered part of AirPlane Mode to include anything already disabled
+  - which also meant when exiting AirPlane Mode, it was erasing those entries
+  from the settings files
+
+* Removed a block that was setting a variable, replacing the value, resetting it, but never actually *using* it
+
+## v0.0.1 (2025.05.21)
 
 ### 🚀 Added
 

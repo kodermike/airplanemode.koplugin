@@ -13,12 +13,12 @@ For this iteration, I changed how we manage the plugins to disable/enable when s
 ## Installation
 
 1. Connect your device to USB
-1. Copy the `airplanemode.koplugin` directory to `.adds/koreader/plugins/` or unpack a release file in your plugins directory
+1. Copy the `airplanemode.koplugin` directory to `plugins/` or unpack a release file in your plugins directory. On Kobo, this would be in `.adds/koreader/plugins`, on kindle's it is usually in `/mnt/us/koreader/plugins` (if you use a different architecture, let me know and I'll add it :) 
 1. Disconnect USB
 
 ## Known bugs
 
-The only known bug is I've had a report from Kindle users that the module deactivating isn't working. I can duplicate this behavior in the koreader emulator and will tackle it next, but wanted to get this release out first since it is a significant change in functionality as far as plugin management.
+None reported (yet).
 
 ## Usage
 
@@ -28,7 +28,7 @@ In the Nework tab, tap or click the menu for `AirPlane Mode`.
 
 ![Screenshot of the Network tab with AirPlane Mode installed](<https://raw.githubusercontent.com/kodermike/kodermike.github.io/refs/heads/master/images/airplane_network_menu.png>)
 
-The `AirPlane Mode` menu is very simple - toggle `AirPlane Mode` and control which plugins will be disabled while it's running.
+The `AirPlane Mode` menu is very simple - you can toggle `AirPlane Mode` and control which plugins will be disabled while it's running.
 
 ![Screenshot of the AirPlane Mode menu when disabled](<https://raw.githubusercontent.com/kodermike/kodermike.github.io/refs/heads/master/images/airplane_disabled.png>)
 
@@ -38,7 +38,7 @@ Tapping on `Enable` will start `AirPlane Mode` and prompt to restart your device
 
 ### Disabliing
 
-Turning AirPlane Mode off is simple. Return to the `AirPlane Menu` in `Network` and tap the Disable the button. We will need to restart again since we are re-enabling plugins that were disabled while offline.
+Turning AirPlane Mode off is simple. Return to the `AirPlane Menu` in `Network` and tap the `Disable` the button. We will need to restart again since we are re-enabling plugins that were disabled while offline.
 
 ![Screenshot of the AirPlane Mode menu when disabled](<https://raw.githubusercontent.com/kodermike/kodermike.github.io/refs/heads/master/images/airplane_stopping.png>)
 
@@ -73,4 +73,4 @@ When you exit `AirPlane Mode`, any plugins that were not disabled before you sta
 
 Please open an issue in GitHub so we can start looking at what isn't working right.
 
-###### Updated 2025.05.21
+###### Updated 2025.05.22
