@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.0.2
+## v0.0.2  (2025.05.22)
 
 ### 🚀 Added
 
@@ -19,10 +19,7 @@
 
 * Removed a block that was setting a variable, replacing the value, resetting it, but never actually *using* it
 
-
-
-
-## v0.0.1
+## v0.0.1 (2025.05.21)
 
 ### 🚀 Added
 
