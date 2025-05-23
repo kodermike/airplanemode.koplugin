@@ -14,9 +14,8 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
 
-local rootpath = lfs.currentdir()
-local settings_file = rootpath.."/settings.reader.lua"
-local settings_bk = rootpath.."/settings.reader.lua.airplane"
+local settings_file = DataStorage:getDataDir().."/settings.reader.lua"
+local settings_bk = DataStorage:getDataDir().."/settings.reader.lua.airplane"
 local settings_bk_exists = false
 
 -- establish the main settings file
@@ -43,7 +42,7 @@ end
 function AirPlaneMode:init()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
-    self.airplane_plugins_file = rootpath.."/settings/airplane_plugins.lua"
+    self.airplane_plugins_file = DataStorage:getDataDir().."/settings/airplane_plugins.lua"
 end
 
 function AirPlaneMode:initSettingsFile()
@@ -209,11 +208,6 @@ function AirPlaneMode:turnoff()
         NetworkMgr:enableWifi()
     end
     settings_bk_exists = false
-    local airplanemode_active = false
-    if G_reader_settings:readSetting("airplanemode") then
-        airplanemode_active = G_reader_settings:readSetting("airplanemode")
-    end
-    airplanemode_active = false
     if Device:canRestart() then
         UIManager:askForRestart(_("KOReader needs to restart to finish disabling plugins for AirPlane Mode."))
     else
@@ -281,7 +275,6 @@ function AirPlaneMode:getSubMenuItems()
         element.enable = nil
         table.insert(os_all_plugins, element)
     end
-    airplane_plugins:saveSetting("disabled_plugins",check_plugins)
 
     table.sort(os_all_plugins, function(v1, v2) return v1.fullname < v2.fullname end)
 
