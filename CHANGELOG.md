@@ -16,6 +16,8 @@
 
 * Finally figured out enable/disble wifi so it works on different devices correctly. Tested on Clara and Kindle, plugin settings reverted correctly, wifi reconnected correctly, and wireless settings are not lost
 
+* Changed how we set and reset the disabled plugins list in the main settings.reader.lua. We were not always re-enabling plugins if they appeared in our own airplane module list.
+
 ## v0.0.2  (2025.05.22)
 
 ### 🚀 Added

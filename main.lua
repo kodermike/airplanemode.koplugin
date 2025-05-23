@@ -91,23 +91,35 @@ function AirPlaneMode:turnon()
 
         local airplane_plugins = LuaSettings:open(self.airplane_plugins_file)
         local check_plugins = airplane_plugins:readSetting("disabled_plugins") or {}
-        local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
+        local disabled_plugins = G_reader_settings:readSetting("plugins_disabled") or {}
 
+        -- a pair of loops for the logger
+        for plugin, __ in pairs(check_plugins) do
+            logger.dbg("Airplane - airplane plugins file had:",plugin)
+        end
+        for plugin, __ in pairs(disabled_plugins) do
+            logger.dbg("Airplane - main plugins file had:",plugin)
+        end
         if type(check_plugins) == "string" then
-            if not plugins_disabled[check_plugins] == true then
-                plugins_disabled[check_plugins] = true
+            if not disabled_plugins[check_plugins] == true then
+                disabled_plugins[check_plugins] = true
             end
         else
             for plugin, __ in pairs(check_plugins) do
-                if not plugins_disabled[plugin] == true then
-                    plugins_disabled[plugin] = true
+                if not disabled_plugins[plugin] == true then
+                    logger.dbg("Airplane - Adding",plugin,"to the disable list")
+                    disabled_plugins[plugin] = true
                 end
             end
         end
         airplane_plugins:flush()
         airplane_plugins:close()
 
-        G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
+        -- a loop for the logger
+        for plugin, __ in pairs(disabled_plugins) do
+            logger.dbg("Airplane - main plugins ended with:",plugin)
+        end
+        G_reader_settings:saveSetting("plugins_disabled", disabled_plugins)
         G_reader_settings:saveSetting("wifi_enable_action","prompt")
         G_reader_settings:saveSetting("wifi_disable_action","turn_off")
         G_reader_settings:flush()
@@ -186,22 +198,23 @@ function AirPlaneMode:turnoff()
         NetworkMgr:enableWifi(nil, true)
     end
 
-    local airplane_plugins = LuaSettings:open(self.airplane_plugins_file)
-    local check_plugins = airplane_plugins:readSetting("disabled_plugins") or {}
-    if type(check_plugins) == "string" then
-        G_reader_settings:delSetting("plugins_disabled", check_plugins)
-    else
-        for plugin, __ in pairs(check_plugins) do
-            G_reader_settings:delSetting("plugins_disabled", plugin)
-        end
-    end
-    airplane_plugins:flush()
-    airplane_plugins:close()
+    -- first remove *everything* currently disabled
 
-    -- Just in case we somehow have a plugin in both airplane's disable and the backup disable
+    local disable_current = G_reader_settings:readSetting("plugins_disabled")
+    G_reader_settings:saveSetting("plugins_disabled", disable_current)
+
+    -- Now add back the previous disables
     local disable_again = BK_Settings:readSetting("plugins_disabled")
     if disable_again then
         G_reader_settings:saveSetting("plugins_disabled", disable_again)
+    end
+    -- a loop for the logger
+    for plugin, __ in pairs(disable_again) do
+        logger.dbg("Airplane - backup plugins restored:",plugin)
+    end
+    local saved_plugins = G_reader_settings:readSetting("plugins_disabled") or {}
+    for plugin, __ in pairs(saved_plugins) do
+        logger.dbg("Airplane - Restored plugins restored:",plugin)
     end
 
     if isFile(settings_bk) then
