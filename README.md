@@ -4,7 +4,7 @@ This plugin is intended to give you the ability to quickly put your koreader int
 
 ---
 
-## IF YOU TESTED THE ALPHA
+## IF YOU TESTED THE FIRST ALPHA
 
 For this iteration, I changed how we manage the plugins to disable/enable when switching modes. If your device is currently in `AirPlane Mode`, please exit `AirPlane Mode` before upgrading.
 
@@ -15,10 +15,6 @@ For this iteration, I changed how we manage the plugins to disable/enable when s
 1. Connect your device to USB
 1. Copy the `airplanemode.koplugin` directory to `plugins/` or unpack a release file in your plugins directory. On Kobo, this would be in `.adds/koreader/plugins`, on kindle's it is usually in `/mnt/us/koreader/plugins` (if you use a different architecture, let me know and I'll add it :) 
 1. Disconnect USB
-
-## Known bugs
-
-None reported (yet).
 
 ## Usage
 
@@ -73,4 +69,4 @@ When you exit `AirPlane Mode`, any plugins that were not disabled before you sta
 
 Please open an issue in GitHub so we can start looking at what isn't working right.
 
-###### Updated 2025.05.22
+###### Updated 2025.05.23

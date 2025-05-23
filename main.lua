@@ -112,8 +112,8 @@ function AirPlaneMode:turnon()
         G_reader_settings:saveSetting("wifi_disable_action","turn_off")
         G_reader_settings:flush()
 
-        if Device:hasWifiManager() then
-                NetworkMgr:disableWifi()
+        if NetworkMgr:isWifiOn() then
+            NetworkMgr:disableWifi(nil, true)
         end
 
         if Device:canRestart() then
@@ -163,15 +163,15 @@ function AirPlaneMode:turnoff()
     end
 
     if BK_Settings:has("wifi_enable_action") then
-        local wifi_enable_action = BK_Settings:readSetting("wifi_enable_action")
-        G_reader_settings:saveSetting("wifi_enable_action",wifi_enable_action)
+        local old_wifi_enable_action = BK_Settings:readSetting("wifi_enable_action")
+        G_reader_settings:saveSetting("wifi_enable_action",old_wifi_enable_action)
     else
         G_reader_settings:delSetting("wifi_enable_action")
     end
 
     if BK_Settings:has("wifi_disable_action") then
-        local wifi_disable_action = BK_Settings:readSetting("wifi_disable_action")
-        G_reader_settings:saveSetting("wifi_disable_action",wifi_disable_action)
+        local old_wifi_disable_action = BK_Settings:readSetting("wifi_disable_action")
+        G_reader_settings:saveSetting("wifi_disable_action",old_wifi_disable_action)
     else
         G_reader_settings:delSetting("wifi_disable_action")
     end
@@ -180,6 +180,10 @@ function AirPlaneMode:turnoff()
         local old_http_proxy_enabled = BK_Settings:readSetting("http_proxy_enabled")
         -- flip the real config
         G_reader_settings:saveSetting("http_proxy_enabled",old_http_proxy_enabled)
+    end
+
+    if not NetworkMgr:isWifiOn() then
+        NetworkMgr:enableWifi(nil, true)
     end
 
     local airplane_plugins = LuaSettings:open(self.airplane_plugins_file)
@@ -204,9 +208,6 @@ function AirPlaneMode:turnoff()
         os.remove(settings_bk)
     end
 
-    if Device:hasWifiManager() then
-        NetworkMgr:enableWifi()
-    end
     settings_bk_exists = false
     if Device:canRestart() then
         UIManager:askForRestart(_("KOReader needs to restart to finish disabling plugins for AirPlane Mode."))

@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.0.3  (2025.05.??) - UNRELEASED CURRENTLY
+
+### TODO
+
+* action toggles are still not behaving
+
+* verify we aren't clobbering user settings for the plugins we turn off in our default init
+
+### 🚀 Added
+
+* No additions today.
+
+### 🩹 Fixes
+
+* Finally figured out enable/disble wifi so it works on different devices correctly. Tested on Clara and Kindle, plugin settings reverted correctly, wifi reconnected correctly, and wireless settings are not lost
+
 ## v0.0.2  (2025.05.22)
 
 ### 🚀 Added
