@@ -16,6 +16,10 @@
 
 * Fixed how the wifi settings are re-enabled when exiting
 
+* Restore wifi state to the same state it was when AirPlane started - off or on
+
+* Fixed deleting all temporary plugin disables before restoring
+
 ## v0.0.2  (2025.05.22)
 
 ### 🚀 Added

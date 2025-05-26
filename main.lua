@@ -85,7 +85,7 @@ function AirPlaneMode:Enable()
         -- disable plugins, wireless, all of it
 
         --G_reader_settings:saveSetting("auto_restore_wifi",false)
-        if G_reader_settings:isTrue("auto_restore_wifi") then --t
+        if Device:hasWifiRestore() and G_reader_settings:isTrue("auto_restore_wifi") then --t
             G_reader_settings:flipNilOrFalse("auto_restore_wifi")
         end
 
@@ -107,12 +107,12 @@ function AirPlaneMode:Enable()
 
         -- According to network manager, this setting always has a value and defaults to prompt
         local wifi_disable_action_setting = G_reader_settings:readSetting("wifi_disable_action") or "prompt"
-        if not wifi_disable_action_setting == "turn_off" then
+        if wifi_disable_action_setting ~= "turn_off" then
             G_reader_settings:saveSetting("wifi_disable_action","turn_off")
         end
 
-        if Device:isEmulator() then
-            G_reader_settings:saveSetting("emulator_fake_wifi_connected",false)
+        if Device:isEmulator() and G_reader_settings:isTrue("emulator_fake_wifi_connected") then
+            G_reader_settings:flipNilOrFalse("emulator_fake_wifi_connected",false)
         end
 
         local airplane_plugins = LuaSettings:open(self.airplane_plugins_file)
@@ -120,20 +120,13 @@ function AirPlaneMode:Enable()
         local disabled_plugins = G_reader_settings:readSetting("plugins_disabled") or {}
 
         -- a pair of loops for the logger
-        for plugin, __ in pairs(check_plugins) do
-            logger.dbg("Airplane - airplane plugins file had:",plugin)
-        end
-        for plugin, __ in pairs(disabled_plugins) do
-            logger.dbg("Airplane - main plugins file had:",plugin)
-        end
         if type(check_plugins) == "string" then
-            if not disabled_plugins[check_plugins] == true then
+            if disabled_plugins[check_plugins] ~= true then
                 disabled_plugins[check_plugins] = true
             end
         else
             for plugin, __ in pairs(check_plugins) do
-                if not disabled_plugins[plugin] == true then
-                    logger.dbg("Airplane - Adding",plugin,"to the disable list")
+                if disabled_plugins[plugin] ~= true then
                     disabled_plugins[plugin] = true
                 end
             end
@@ -141,10 +134,6 @@ function AirPlaneMode:Enable()
         airplane_plugins:flush()
         airplane_plugins:close()
 
-        -- a loop for the logger
-        for plugin, __ in pairs(disabled_plugins) do
-            logger.dbg("Airplane - main plugins ended with:",plugin)
-        end
         G_reader_settings:saveSetting("plugins_disabled", disabled_plugins)
         G_reader_settings:flush()
 
@@ -173,7 +162,7 @@ function AirPlaneMode:Disable()
     G_reader_settings:saveSetting("airplanemode",false)
     local BK_Settings = LuaSettings:open(DataStorage:getDataDir().."/settings.reader.lua.airplane")
 
-    if BK_Settings:isTrue("auto_restore_wifi") then
+    if Device:hasWifiRestore() and BK_Settings:isTrue("auto_restore_wifi") then
         G_reader_settings:makeTrue("auto_restore_wifi")
     end
 
@@ -196,37 +185,27 @@ function AirPlaneMode:Disable()
     G_reader_settings:saveSetting("wifi_disable_action",bk_wifi_disable_action_setting)
 
     -- got to watch out for our emulator friends :) (ie, me, testing)
-    if Device:isEmulator() then
-        if BK_Settings:has("emulator_fake_wifi_connected") then
-            local old_emulator_fake_wifi_connected = BK_Settings:readSetting("emulator_fake_wifi_connected")
-            -- flip the real config
-            G_reader_settings:saveSetting("emulator_fake_wifi_connected",old_emulator_fake_wifi_connected)
-        else
-            G_reader_settings:delSetting("emulator_fake_wifi_connected")
-        end
+    if Device:isEmulator() and BK_Settings:has("emulator_fake_wifi_connected") then
+        local old_emulator_fake_wifi_connected = BK_Settings:readSetting("emulator_fake_wifi_connected")
+        -- flip the real config
+        G_reader_settings:saveSetting("emulator_fake_wifi_connected",old_emulator_fake_wifi_connected)
+    else
+        G_reader_settings:delSetting("emulator_fake_wifi_connected")
     end
 
-    if not NetworkMgr:isWifiOn() then
+    if NetworkMgr:getWifiState() == false and BK_Settings:isTrue("wifi_was_on") then
         NetworkMgr:enableWifi(nil, true)
     end
 
     -- first remove *everything* currently disabled
 
     local disable_current = G_reader_settings:readSetting("plugins_disabled")
-    G_reader_settings:saveSetting("plugins_disabled", disable_current)
+    G_reader_settings:delSetting("plugins_disabled", disable_current)
 
     -- Now add back the previous disables
     local disable_again = BK_Settings:readSetting("plugins_disabled")
     if disable_again then
         G_reader_settings:saveSetting("plugins_disabled", disable_again)
-    end
-    -- a loop for the logger
-    for plugin, __ in pairs(disable_again) do
-        logger.dbg("Airplane - backup plugins restored:",plugin)
-    end
-    local saved_plugins = G_reader_settings:readSetting("plugins_disabled") or {}
-    for plugin, __ in pairs(saved_plugins) do
-        logger.dbg("Airplane - Restored plugins restored:",plugin)
     end
 
     if isFile(settings_bk) then
@@ -252,6 +231,7 @@ local function getStatus()
     -- test we can see the real settings file.
     if not isFile(settings_file) then
         logger.err("AirPlane Mode [ERROR] - Settings file not found! Abort!", settings_file)
+        return false
     end
     -- check if we currently have a backup of our settings running
     if isFile(settings_bk) then
@@ -368,15 +348,11 @@ function AirPlaneMode:addToMainMenu(menu_items)
         sorting_hint = "network",
         sub_item_table = {
             {
-                text = _("AirPlane Mode"),
-                separator = true,
-            },
-            {
                 text_func = function()
                     if getStatus() == true then
-                        return _("\u{F1D8} Disable")
+                        return _("\u{F1D8} Disable AirPlane Mode")
                     else
-                        return _("\u{F1D9} Enable")
+                        return _("\u{F1D9} Enable AirPlane Mode")
                     end
                 end,
                 checked_func = function() return getStatus() end,
