@@ -16,6 +16,10 @@ For this iteration, I changed how we manage the plugins to disable/enable when s
 1. Copy the `airplanemode.koplugin` directory to `plugins/` or unpack a release file in your plugins directory. On Kobo, this would be in `.adds/koreader/plugins`, on kindle's it is usually in `/mnt/us/koreader/plugins` (if you use a different architecture, let me know and I'll add it :) 
 1. Disconnect USB
 
+## Known bugs
+
+None reported (yet).
+
 ## Usage
 
 ### Enabling
@@ -68,5 +72,6 @@ When you exit `AirPlane Mode`, any plugins that were not disabled before you sta
 ## Find a bug?
 
 Please open an issue in GitHub so we can start looking at what isn't working right.
+
 
 ###### Updated 2025.05.23

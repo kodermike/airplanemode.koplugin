@@ -20,6 +20,7 @@
 
 * Fixed deleting all temporary plugin disables before restoring
 
+
 ## v0.0.2  (2025.05.22)
 
 ### 🚀 Added
