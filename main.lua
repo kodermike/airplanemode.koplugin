@@ -36,7 +36,9 @@ local function isFile(filename)
 end
 
 function AirPlaneMode:onDispatcherRegisterActions()
-    Dispatcher:registerAction("airplanemode_action", { category="none", event="SwitchAirPlane", title=_("AirPlane Mode"), general=true,})
+    Dispatcher:registerAction("airplanemode_enable", { category="none", event="Enable", title=_("AirPlane Mode Enable"), general=true,})
+    Dispatcher:registerAction("airplanemode_disable", { category="none", event="Disable", title=_("AirPlane Mode Disable"), general=true,separator=true,})
+    Dispatcher:registerAction("airplanemode_toggle", { category="none", event="Toggle", title=_("AirPlane Mode Toggle"), general=true,separator=true,})
 end
 
 function AirPlaneMode:init()
@@ -74,46 +76,69 @@ function AirPlaneMode:backup()
     end
 end
 
-function AirPlaneMode:turnon()
+function AirPlaneMode:Enable()
     local current_config = self:backup()
     if current_config then
         self:initSettingsFile()
         -- mark airplane as active
         G_reader_settings:saveSetting("airplanemode",true)
         -- disable plugins, wireless, all of it
-        G_reader_settings:saveSetting("auto_restore_wifi",false)
-        G_reader_settings:saveSetting("auto_disable_wifi",true)
-        G_reader_settings:saveSetting("wifi_was_on",false)
-        G_reader_settings:saveSetting("http_proxy_enabled",false)
-        if Device:isEmulator() then
-            G_reader_settings:saveSetting("emulator_fake_wifi_connected",false)
+
+        --G_reader_settings:saveSetting("auto_restore_wifi",false)
+        if Device:hasWifiRestore() and G_reader_settings:isTrue("auto_restore_wifi") then --t
+            G_reader_settings:flipNilOrFalse("auto_restore_wifi")
+        end
+
+        --G_reader_settings:saveSetting("auto_disable_wifi",true)
+        if G_reader_settings:nilOrFalse("auto_disable_wifi") then --f
+            G_reader_settings:flipNilOrFalse("auto_disable_wifi")
+        end
+
+        --G_reader_settings:saveSetting("http_proxy_enabled",false)
+        if G_reader_settings:isTrue("http_proxy_enabled") then --t
+            G_reader_settings:flipNilOrFalse("http_proxy_enabled")
+        end
+
+        -- According to network manager, this setting always has a value and defaults to prompt
+        local wifi_enable_action_setting = G_reader_settings:readSetting("wifi_enable_action") or "prompt"
+        if wifi_enable_action_setting == "turn_on" then
+            G_reader_settings:saveSetting("wifi_enable_action","prompt")
+        end
+
+        -- According to network manager, this setting always has a value and defaults to prompt
+        local wifi_disable_action_setting = G_reader_settings:readSetting("wifi_disable_action") or "prompt"
+        if wifi_disable_action_setting ~= "turn_off" then
+            G_reader_settings:saveSetting("wifi_disable_action","turn_off")
+        end
+
+        if Device:isEmulator() and G_reader_settings:isTrue("emulator_fake_wifi_connected") then
+            G_reader_settings:flipNilOrFalse("emulator_fake_wifi_connected",false)
         end
 
         local airplane_plugins = LuaSettings:open(self.airplane_plugins_file)
         local check_plugins = airplane_plugins:readSetting("disabled_plugins") or {}
-        local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
+        local disabled_plugins = G_reader_settings:readSetting("plugins_disabled") or {}
 
+        -- a pair of loops for the logger
         if type(check_plugins) == "string" then
-            if not plugins_disabled[check_plugins] == true then
-                plugins_disabled[check_plugins] = true
+            if disabled_plugins[check_plugins] ~= true then
+                disabled_plugins[check_plugins] = true
             end
         else
             for plugin, __ in pairs(check_plugins) do
-                if not plugins_disabled[plugin] == true then
-                    plugins_disabled[plugin] = true
+                if disabled_plugins[plugin] ~= true then
+                    disabled_plugins[plugin] = true
                 end
             end
         end
         airplane_plugins:flush()
         airplane_plugins:close()
 
-        G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
-        G_reader_settings:saveSetting("wifi_enable_action","prompt")
-        G_reader_settings:saveSetting("wifi_disable_action","turn_off")
+        G_reader_settings:saveSetting("plugins_disabled", disabled_plugins)
         G_reader_settings:flush()
 
-        if Device:hasWifiManager() then
-                NetworkMgr:disableWifi()
+        if NetworkMgr:isWifiOn() then
+            NetworkMgr:disableWifi(nil, true)
         end
 
         if Device:canRestart() then
@@ -133,28 +158,34 @@ function AirPlaneMode:turnon()
     end
 end
 
-function AirPlaneMode:turnoff()
+function AirPlaneMode:Disable()
     G_reader_settings:saveSetting("airplanemode",false)
     local BK_Settings = LuaSettings:open(DataStorage:getDataDir().."/settings.reader.lua.airplane")
 
-    if BK_Settings:has("auto_restore_wifi") then
-        local old_auto_restore_wifi = BK_Settings:readSetting("auto_restore_wifi")
-        -- flip the real config
-        G_reader_settings:saveSetting("auto_restore_wifi",old_auto_restore_wifi)
-    else
-        G_reader_settings:delSetting("auto_restore_wifi")
+    if Device:hasWifiRestore() and BK_Settings:isTrue("auto_restore_wifi") then
+        G_reader_settings:makeTrue("auto_restore_wifi")
     end
 
-    if BK_Settings:has("auto_disable_wifi") then
-        local old_auto_disable_wifi = BK_Settings:readSetting("auto_disable_wifi")
+    if BK_Settings:nilOrFalse("auto_disable_wifi") then
         -- flip the real config
-        G_reader_settings:saveSetting("auto_disable_wifi",old_auto_disable_wifi)
-    else
-        G_reader_settings:delSetting("auto_disable_wifi")
+        G_reader_settings:flipNilOrFalse("auto_disable_wifi")
     end
+
+    if BK_Settings:isTrue("http_proxy_enabled") then
+        -- flip the real config
+        G_reader_settings:makeTrue("http_proxy_enabled")
+    end
+
+    -- According to network manager, this setting always has a value and defaults to prompt
+    local bk_wifi_enable_action_setting = BK_Settings:readSetting("wifi_enable_action") or "prompt"
+    G_reader_settings:saveSetting("wifi_enable_action",bk_wifi_enable_action_setting)
+
+    -- According to network manager, this setting always has a value and defaults to prompt
+    local bk_wifi_disable_action_setting = BK_Settings:readSetting("wifi_disable_action") or "prompt"
+    G_reader_settings:saveSetting("wifi_disable_action",bk_wifi_disable_action_setting)
 
     -- got to watch out for our emulator friends :) (ie, me, testing)
-    if BK_Settings:has("emulator_fake_wifi_connected") then
+    if Device:isEmulator() and BK_Settings:has("emulator_fake_wifi_connected") then
         local old_emulator_fake_wifi_connected = BK_Settings:readSetting("emulator_fake_wifi_connected")
         -- flip the real config
         G_reader_settings:saveSetting("emulator_fake_wifi_connected",old_emulator_fake_wifi_connected)
@@ -162,39 +193,16 @@ function AirPlaneMode:turnoff()
         G_reader_settings:delSetting("emulator_fake_wifi_connected")
     end
 
-    if BK_Settings:has("wifi_enable_action") then
-        local wifi_enable_action = BK_Settings:readSetting("wifi_enable_action")
-        G_reader_settings:saveSetting("wifi_enable_action",wifi_enable_action)
-    else
-        G_reader_settings:delSetting("wifi_enable_action")
+    if NetworkMgr:getWifiState() == false and BK_Settings:isTrue("wifi_was_on") then
+        NetworkMgr:enableWifi(nil, true)
     end
 
-    if BK_Settings:has("wifi_disable_action") then
-        local wifi_disable_action = BK_Settings:readSetting("wifi_disable_action")
-        G_reader_settings:saveSetting("wifi_disable_action",wifi_disable_action)
-    else
-        G_reader_settings:delSetting("wifi_disable_action")
-    end
+    -- first remove *everything* currently disabled
 
-    if BK_Settings:has("http_proxy_enabled") then
-        local old_http_proxy_enabled = BK_Settings:readSetting("http_proxy_enabled")
-        -- flip the real config
-        G_reader_settings:saveSetting("http_proxy_enabled",old_http_proxy_enabled)
-    end
+    local disable_current = G_reader_settings:readSetting("plugins_disabled")
+    G_reader_settings:delSetting("plugins_disabled", disable_current)
 
-    local airplane_plugins = LuaSettings:open(self.airplane_plugins_file)
-    local check_plugins = airplane_plugins:readSetting("disabled_plugins") or {}
-    if type(check_plugins) == "string" then
-        G_reader_settings:delSetting("plugins_disabled", check_plugins)
-    else
-        for plugin, __ in pairs(check_plugins) do
-            G_reader_settings:delSetting("plugins_disabled", plugin)
-        end
-    end
-    airplane_plugins:flush()
-    airplane_plugins:close()
-
-    -- Just in case we somehow have a plugin in both airplane's disable and the backup disable
+    -- Now add back the previous disables
     local disable_again = BK_Settings:readSetting("plugins_disabled")
     if disable_again then
         G_reader_settings:saveSetting("plugins_disabled", disable_again)
@@ -204,9 +212,6 @@ function AirPlaneMode:turnoff()
         os.remove(settings_bk)
     end
 
-    if Device:hasWifiManager() then
-        NetworkMgr:enableWifi()
-    end
     settings_bk_exists = false
     if Device:canRestart() then
         UIManager:askForRestart(_("KOReader needs to restart to finish disabling plugins for AirPlane Mode."))
@@ -222,10 +227,11 @@ function AirPlaneMode:turnoff()
     end
 end
 
-local function airplanemode_status()
+local function getStatus()
     -- test we can see the real settings file.
     if not isFile(settings_file) then
         logger.err("AirPlane Mode [ERROR] - Settings file not found! Abort!", settings_file)
+        return false
     end
     -- check if we currently have a backup of our settings running
     if isFile(settings_bk) then
@@ -241,6 +247,22 @@ local function airplanemode_status()
         return true
     elseif airplanemode_active == false then
         return false
+    end
+end
+
+function AirPlaneMode:onEnable()
+    self:Enable()
+end
+
+function AirPlaneMode:onDisable()
+    self:Disable()
+end
+
+function AirPlaneMode:onToggle()
+    if getStatus() == true then
+        self:Disable()
+    else
+        self:Enable()
     end
 end
 
@@ -317,7 +339,7 @@ end
 function AirPlaneMode:addToMainMenu(menu_items)
     menu_items.airplanemode = {
         text_func = function()
-                    if airplanemode_status() == true then
+                    if getStatus() == true then
                         return _("\u{F1D8} Airplane Mode")
                     else
                         return _("\u{F1D9} Airplane Mode")
@@ -326,18 +348,14 @@ function AirPlaneMode:addToMainMenu(menu_items)
         sorting_hint = "network",
         sub_item_table = {
             {
-                text = _("AirPlane Mode"),
-                separator = true,
-            },
-            {
                 text_func = function()
-                    if airplanemode_status() == true then
-                        return _("\u{F1D8} Disable")
+                    if getStatus() == true then
+                        return _("\u{F1D8} Disable AirPlane Mode")
                     else
-                        return _("\u{F1D9} Enable")
+                        return _("\u{F1D9} Enable AirPlane Mode")
                     end
                 end,
-                checked_func = function() return airplanemode_status() end,
+                checked_func = function() return getStatus() end,
                 callback = function()
                     if Device:isAndroid() then
                         UIManager:show(ConfirmBox:new{
@@ -349,12 +367,12 @@ function AirPlaneMode:addToMainMenu(menu_items)
                             end,
                         })
                     else
-                        if airplanemode_status() == true then
+                        if getStatus() == true then
                             --airplanemode = true
-                            self:turnoff()
+                            self:Disable()
                         else
                             --airplanemode = false
-                            self:turnon()
+                            self:Enable()
                         end
                     end
                 end,
@@ -362,7 +380,7 @@ function AirPlaneMode:addToMainMenu(menu_items)
             {
                 text = _("AirPlane Mode Plugin Manager"),
                 sub_item_table_func = function()
-                    if airplanemode_status() == true then
+                    if getStatus() == true then
                     UIManager:show(InfoMessage:new{
                         text = _("AirPlane Mode cannot be configured while running"),
                         timeout = 3,
