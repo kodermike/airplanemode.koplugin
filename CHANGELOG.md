@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.0.3  (2025.05.26) - UNRELEASED CURRENTLY
+## v0.0.3  (2025.05.26)
 
 ### TODO
 
