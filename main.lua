@@ -29,16 +29,16 @@ local AirPlaneMode = WidgetContainer:extend{
 }
 
 local function isFile(filename)
-    if lfs.attributes(filename, "mode") == "file" then
+    if filename and (lfs.attributes(filename, "mode") == "file") then
         return true
     end
-    return false
+    --return false
 end
 
 function AirPlaneMode:onDispatcherRegisterActions()
-    Dispatcher:registerAction("airplanemode_enable", { category="none", event="Enable", title=_("AirPlane Mode Enable"), general=true,})
-    Dispatcher:registerAction("airplanemode_disable", { category="none", event="Disable", title=_("AirPlane Mode Disable"), general=true,separator=true,})
-    Dispatcher:registerAction("airplanemode_toggle", { category="none", event="Toggle", title=_("AirPlane Mode Toggle"), general=true,separator=true,})
+    Dispatcher:registerAction("airplanemode_enable", { category="none", event="Enable", title=_("AirPlane Mode Enable"), device=true,separator=true,})
+    Dispatcher:registerAction("airplanemode_disable", { category="none", event="Disable", title=_("AirPlane Mode Disable"), device=true,})
+    Dispatcher:registerAction("airplanemode_toggle", { category="none", event="Toggle", title=_("AirPlane Mode Toggle"), device=true,separator=true,})
 end
 
 function AirPlaneMode:init()
@@ -84,8 +84,8 @@ function AirPlaneMode:Enable()
         G_reader_settings:saveSetting("airplanemode",true)
         -- disable plugins, wireless, all of it
 
-        --G_reader_settings:saveSetting("auto_restore_wifi",false)
-        if Device:hasWifiRestore() and G_reader_settings:isTrue("auto_restore_wifi") then --t
+        --set this regardless of original setting to ensure no resumes
+        if Device:hasWifiRestore() then --t
             G_reader_settings:flipNilOrFalse("auto_restore_wifi")
         end
 
@@ -227,7 +227,7 @@ function AirPlaneMode:Disable()
     end
 end
 
-local function getStatus()
+function AirPlaneMode:getStatus()
     -- test we can see the real settings file.
     if not isFile(settings_file) then
         logger.err("AirPlane Mode [ERROR] - Settings file not found! Abort!", settings_file)
@@ -250,6 +250,7 @@ local function getStatus()
     end
 end
 
+
 function AirPlaneMode:onEnable()
     self:Enable()
 end
@@ -259,7 +260,7 @@ function AirPlaneMode:onDisable()
 end
 
 function AirPlaneMode:onToggle()
-    if getStatus() == true then
+    if self:getStatus() then
         self:Disable()
     else
         self:Enable()
@@ -337,9 +338,10 @@ function AirPlaneMode:getSubMenuItems()
 end
 
 function AirPlaneMode:addToMainMenu(menu_items)
+    local airmode = self:getStatus()
     menu_items.airplanemode = {
         text_func = function()
-                    if getStatus() == true then
+                    if airmode then
                         return _("\u{F1D8} Airplane Mode")
                     else
                         return _("\u{F1D9} Airplane Mode")
@@ -349,13 +351,12 @@ function AirPlaneMode:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text_func = function()
-                    if getStatus() == true then
+                    if airmode then
                         return _("\u{F1D8} Disable AirPlane Mode")
                     else
                         return _("\u{F1D9} Enable AirPlane Mode")
                     end
                 end,
-                checked_func = function() return getStatus() end,
                 callback = function()
                     if Device:isAndroid() then
                         UIManager:show(ConfirmBox:new{
@@ -367,7 +368,7 @@ function AirPlaneMode:addToMainMenu(menu_items)
                             end,
                         })
                     else
-                        if getStatus() == true then
+                        if airmode then
                             --airplanemode = true
                             self:Disable()
                         else
@@ -380,7 +381,7 @@ function AirPlaneMode:addToMainMenu(menu_items)
             {
                 text = _("AirPlane Mode Plugin Manager"),
                 sub_item_table_func = function()
-                    if getStatus() == true then
+                    if airmode then
                     UIManager:show(InfoMessage:new{
                         text = _("AirPlane Mode cannot be configured while running"),
                         timeout = 3,

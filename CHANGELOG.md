@@ -1,5 +1,9 @@
 # Changelog
 
+## v.0.0.4 - QoL update
+
+* Remove unnecessary visual of a checkbox
+
 ## v0.0.3  (2025.05.26) - UNRELEASED CURRENTLY
 
 ### TODO
