@@ -1,149 +1,135 @@
-local DataStorage = require("datastorage")
-local Device = require("device")
-local ReaderFooter = require("apps/reader/modules/readerfooter")
-local LuaSettings = require("luasettings")
-
-
---local UIManager = require("ui/uimanager")
-local logger = require("logger")
-
-local userpatch = require("userpatch")
-
-local T = require("ffi/util").template
-local _ = require("gettext")
-local C_ = _.pgettext
-
-if G_reader_settings == nil then
-    G_reader_settings = require("luasettings"):open(DataStorage:getDataDir().."/settings.reader.lua")
-end
-
----
----first add to settings file - test what happens when the patch is gone too :/
----
---local check_footer = G_reader_settings:readSetting("footer") or {}
-local set_footer = G_reader_settings:readSetting("footer") or {}
-
--- a pair of loops for the logger
-
-set_footer["apm_status"] = true
-
---[[for footer, __ in pairs(check_footer) do
-    logger.info("MIKE setting set_footer",footer," to ",check_footer[footer])
-    set_footer[footer] = check_footer[footer]
-
-    
-end]]
-
-
---[[G_reader_settings:saveSetting("footer",set_footer)
-G_reader_settings:flush()]]
-
-
-local MODE = userpatch.getUpValue(ReaderFooter.init, "MODE")
-local readerinit = ReaderFooter.init
-
-ReaderFooter.init = function(self)
-readerinit(self)
-
-MODE.apm_status = 21 -- unused value, but high enough updates to the real MODE shouldn't get here
-
-    if not Device:hasFastWifiStatusQuery() then
-        MODE.apm_status = nil
-    end
-end
-
-
-
---[[local function symbol_sorter(symbol)
-    local t = {}
-    t.letters = symbol.letters
-    t.icons = symbol.letters
-    t.compact_items = symbol.compact_items
-    return t
-end]]
-logger.info("MIKE starting")
-
---local footerTextGeneratorMap = userpatch.getUpValue(ReaderFooter.applyFooterMode, "footerTextGeneratorMap")
-local footerTextGeneratorMap = userpatch.getUpValue(ReaderFooter.addToMainMenu, "footerTextGeneratorMap")
-local symbol_prefix = userpatch.getUpValue(footerTextGeneratorMap.wifi_status, "symbol_prefix")
-logger.info("MIKE adding to symbol_prefix")
-
-symbol_prefix.letters.apm_status = C_("FooterLetterPrefix", "APM:")
-
-symbol_prefix.icons.apm_status = "\u{F1D8}"
-symbol_prefix.compact_items.apm_status = "꜌"
-symbol_prefix.icons.apm_status_off = "\u{F1D9}"
-symbol_prefix.compact_items.apm_status_off = "꜍"
-logger.info("symbol prefix is",symbol_prefix)
-
-for _, item in ipairs { "wifi_status", "apm_status" } do
-    local orig = footerTextGeneratorMap[item] or nil
-    logger.info("MIKE adding item to footertext",item)
-    if item == "apm_status" then
-        logger.info("MIKE adding apm status to footertext")
-        local reader_settings = LuaSettings:open(DataStorage:getDataDir().."/settings.reader.lua")
-        local ap_status = reader_settings:isTrue("airplanemode")
-        footerTextGeneratorMap["apm_status"] = function(footer, ...)
-            if footer.settings.item_prefix == "icons" or footer.settings.item_prefix == "compact_items" then
-                if ap_status then
-                    return symbol_prefix.icons.apm_status
-                else
-                    if footer.settings.all_at_once and footer.settings.hide_empty_generators then
-                        return ""
-                    else
-                        return symbol_prefix.icons.apm_status_off
-                    end
-                end
-            else
-                local prefix = symbol_prefix[footer.settings.item_prefix].apm_status
-                if ap_status then
-                    return T(_("%1 On"), prefix)
-                else
-                    if footer.settings.all_at_once and footer.settings.hide_empty_generators then
-                        return ""
-                    else
-                        return T(_("%1 Off"), prefix)
-                    end
-                end
-            end
-        end
-    end
-    if item == "wifi_status" then
-        footerTextGeneratorMap[item] = function(...) return orig end
-    end
-end
-
-local orig_textOptionTitles = ReaderFooter.textOptionTitles
-ReaderFooter.textOptionTitles = function(self,option)
-    -- sadly another whole lift to be able to override the return. i think this is how this works?
-    if option == "apm_status" then
-        local symbol = self.settings.item_prefix
-        logger.info("MIKE text option",symbol)
-
-        local option_titles = {
-            apm_status = T(_("AirPlane Mode status (%1)"), symbol_prefix[symbol].apm_status),
-        }
-        return option_titles[option]
-    end
-    orig_textOptionTitles(self,option)
-end
-
--- addtomainmenu block here
-local getMinibarOption = userpatch.getUpValue(ReaderFooter.addToMainMenu, "getMinibarOption")
-local orig_addToMainMenu = ReaderFooter.addToMainMenu
---local footer_items = userpatch.getUpvalue(ReaderFooter.addToMainMenu, "footer_items")
-ReaderFooter.addToMainMenu = function(self, menu_items)
-    local footer_items = userpatch.getUpvalue(ReaderFooter.addToMainMenu, "footer_items")
-    orig_addToMainMenu(self, menu_items, footer_items)
-    if Device:hasFastWifiStatusQuery() then
-        table.insert(footer_items, getMinibarOption("apm_status"))
-    end
-end
-
-local orig_onNetworkConnected = ReaderFooter.onNetworkConnected
-ReaderFooter.onNetworkConnected = function(self)
-    if self.settings.apm_status then
-        self:maybeUpdateFooter()
-    end
-    orig_onNetworkConnected()
-end
+diff --git a/frontend/apps/reader/modules/readerfooter.lua b/frontend/apps/reader/modules/readerfooter.lua
+index 5aa7c4ea8..e61593116 100644
+--- a/frontend/apps/reader/modules/readerfooter.lua
++++ b/frontend/apps/reader/modules/readerfooter.lua
+@@ -55,6 +55,7 @@ local MODE = {
+     book_author = 18,
+     page_turning_inverted = 19, -- includes both page-turn-button and swipe-and-tap inversion
+     dynamic_filler = 20,
++    apm_status = 21,
+ }
+ 
+ local symbol_prefix = {
+@@ -82,6 +83,8 @@ local symbol_prefix = {
+         wifi_status = C_("FooterLetterPrefix", "W:"),
+         -- @translators This is the footer letter prefix for page turning status.
+         page_turning_inverted = C_("FooterLetterPrefix", "Pg:"),
++        -- footer letter  prefix for AirPlane mode
++        apm_status = C_("FooterLetterPrefix", "AP:"),
+     },
+     icons = {
+         time = "⌚",
+@@ -99,6 +102,8 @@ local symbol_prefix = {
+         wifi_status_off = "",
+         page_turning_inverted = "⇄",
+         page_turning_regular = "⇉",
++        apm_status = "\u{F1D8}",
++        apm_status_off = "\u{F1D9}",
+     },
+     compact_items = {
+         time = nil,
+@@ -117,6 +122,8 @@ local symbol_prefix = {
+         wifi_status_off = "",
+         page_turning_inverted = "⇄",
+         page_turning_regular = "⇉",
++        apm_status = "꜌",
++        apm_status_off = "꜍",
+     }
+ }
+ if BD.mirroredUILayout() then
+@@ -464,6 +471,35 @@ footerTextGeneratorMap = {
+             return filler_space:rep(filler_nb), true
+         end
+     end,
++    apm_status = function(footer)
++        local LuaSettings = require("luasettings")
++        local DataStorage = require("datastorage")
++        local reader_settings = LuaSettings:open(DataStorage:getDataDir().."/settings.reader.lua")
++        local ap_status = reader_settings:isTrue("airplanemode")
++        local symbol_type = footer.settings.item_prefix
++        if symbol_type == "icons" or symbol_type == "compact_items" then
++            if ap_status then
++                return symbol_prefix.icons.apm_status
++            else
++                if footer.settings.all_at_once and footer.settings.hide_empty_generators then
++                    return ""
++                else
++                    return symbol_prefix.icons.apm_status_off
++                end
++            end
++        else
++            local prefix = symbol_prefix[symbol_type].apm_status
++            if ap_status then
++                return T(_("%1 On"), prefix)
++            else
++                if footer.settings.all_at_once and footer.settings.hide_empty_generators then
++                    return ""
++                else
++                    return T(_("%1 Off"), prefix)
++                end
++            end
++        end
++    end,
+ }
+ 
+ local ReaderFooter = WidgetContainer:extend{
+@@ -533,6 +569,7 @@ ReaderFooter.default_settings = {
+     progress_pct_format = "0",
+     pages_left_includes_current_page = false,
+     initial_marker = false,
++    apm_status = false,
+ }
+ 
+ function ReaderFooter:init()
+@@ -543,6 +580,7 @@ function ReaderFooter:init()
+     -- Remove items not supported by the current device
+     if not Device:hasFastWifiStatusQuery() then
+         MODE.wifi_status = nil
++        MODE.apm_status = nil
+     end
+     if not Device:hasFrontlight() then
+         MODE.frontlight = nil
+@@ -855,12 +893,14 @@ function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
+     local schedule = false
+     if self.settings.auto_refresh_time then
+         if self.settings.all_at_once then
+-            if self.settings.time or self.settings.battery or self.settings.wifi_status or self.settings.mem_usage then
++            if self.settings.time or self.settings.battery or self.settings.wifi_status
++            or self.settings.mem_usage or self.settings.apm_status then
+                 schedule = true
+             end
+         else
+             if self.mode == self.mode_list.time or self.mode == self.mode_list.battery
+-                    or self.mode == self.mode_list.wifi_status or self.mode == self.mode_list.mem_usage then
++                    or self.mode == self.mode_list.wifi_status or self.mode == self.mode_list.mem_usage
++                    or self.mode == self.mode_list.apm_status then
+                 schedule = true
+             end
+         end
+@@ -1033,6 +1073,7 @@ function ReaderFooter:textOptionTitles(option)
+             self.custom_text_repetitions > 1 and
+             string.format(" × %d", self.custom_text_repetitions) or ""),
+         dynamic_filler = _("Dynamic filler"),
++        apm_status = T(_("AirPlane Mode status (%1)"), symbol_prefix[symbol].apm_status)
+     }
+     return option_titles[option]
+ end
+@@ -1426,6 +1467,9 @@ function ReaderFooter:addToMainMenu(menu_items)
+     table.insert(footer_items, getMinibarOption("book_chapter"))
+     table.insert(footer_items, getMinibarOption("custom_text"))
+     table.insert(footer_items, getMinibarOption("dynamic_filler"))
++    if Device:hasFastWifiStatusQuery() then
++        table.insert(footer_items, getMinibarOption("apm_status"))
++    end
+ 
+     -- configure footer_items
+     table.insert(sub_items, {
+@@ -2663,7 +2707,7 @@ ReaderFooter.onCharging    = ReaderFooter.onFrontlightStateChanged
+ ReaderFooter.onNotCharging = ReaderFooter.onFrontlightStateChanged
+ 
+ function ReaderFooter:onNetworkConnected()
+-    if self.settings.wifi_status then
++    if self.settings.wifi_status or self.settings.apm_status then
+         self:maybeUpdateFooter()
+     end
+ end
