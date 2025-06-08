@@ -6,6 +6,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local NetworkMgr = require("ui/network/manager")
 local PluginLoader = require("pluginloader")
+--local SSH = require("plugins/SSH.koplugin/main")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiutil = require("ffi/util")
@@ -114,6 +115,10 @@ function AirPlaneMode:Enable()
         if Device:isEmulator() and G_reader_settings:isTrue("emulator_fake_wifi_connected") then
             G_reader_settings:flipNilOrFalse("emulator_fake_wifi_connected",false)
         end
+
+        --[[if SSH:isRUNNING() then
+            SSH:stop()
+        end]]
 
         local airplane_plugins = LuaSettings:open(self.airplane_plugins_file)
         local check_plugins = airplane_plugins:readSetting("disabled_plugins") or {}
