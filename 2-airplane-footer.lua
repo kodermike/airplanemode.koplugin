@@ -1,135 +1,153 @@
-diff --git a/frontend/apps/reader/modules/readerfooter.lua b/frontend/apps/reader/modules/readerfooter.lua
-index 5aa7c4ea8..e61593116 100644
---- a/frontend/apps/reader/modules/readerfooter.lua
-+++ b/frontend/apps/reader/modules/readerfooter.lua
-@@ -55,6 +55,7 @@ local MODE = {
-     book_author = 18,
-     page_turning_inverted = 19, -- includes both page-turn-button and swipe-and-tap inversion
-     dynamic_filler = 20,
-+    apm_status = 21,
- }
- 
- local symbol_prefix = {
-@@ -82,6 +83,8 @@ local symbol_prefix = {
-         wifi_status = C_("FooterLetterPrefix", "W:"),
-         -- @translators This is the footer letter prefix for page turning status.
-         page_turning_inverted = C_("FooterLetterPrefix", "Pg:"),
-+        -- footer letter  prefix for AirPlane mode
-+        apm_status = C_("FooterLetterPrefix", "AP:"),
-     },
-     icons = {
-         time = "⌚",
-@@ -99,6 +102,8 @@ local symbol_prefix = {
-         wifi_status_off = "",
-         page_turning_inverted = "⇄",
-         page_turning_regular = "⇉",
-+        apm_status = "\u{F1D8}",
-+        apm_status_off = "\u{F1D9}",
-     },
-     compact_items = {
-         time = nil,
-@@ -117,6 +122,8 @@ local symbol_prefix = {
-         wifi_status_off = "",
-         page_turning_inverted = "⇄",
-         page_turning_regular = "⇉",
-+        apm_status = "꜌",
-+        apm_status_off = "꜍",
-     }
- }
- if BD.mirroredUILayout() then
-@@ -464,6 +471,35 @@ footerTextGeneratorMap = {
-             return filler_space:rep(filler_nb), true
-         end
-     end,
-+    apm_status = function(footer)
-+        local LuaSettings = require("luasettings")
-+        local DataStorage = require("datastorage")
-+        local reader_settings = LuaSettings:open(DataStorage:getDataDir().."/settings.reader.lua")
-+        local ap_status = reader_settings:isTrue("airplanemode")
-+        local symbol_type = footer.settings.item_prefix
-+        if symbol_type == "icons" or symbol_type == "compact_items" then
-+            if ap_status then
-+                return symbol_prefix.icons.apm_status
-+            else
-+                if footer.settings.all_at_once and footer.settings.hide_empty_generators then
-+                    return ""
-+                else
-+                    return symbol_prefix.icons.apm_status_off
-+                end
-+            end
-+        else
-+            local prefix = symbol_prefix[symbol_type].apm_status
-+            if ap_status then
-+                return T(_("%1 On"), prefix)
-+            else
-+                if footer.settings.all_at_once and footer.settings.hide_empty_generators then
-+                    return ""
-+                else
-+                    return T(_("%1 Off"), prefix)
-+                end
-+            end
-+        end
-+    end,
- }
- 
- local ReaderFooter = WidgetContainer:extend{
-@@ -533,6 +569,7 @@ ReaderFooter.default_settings = {
-     progress_pct_format = "0",
-     pages_left_includes_current_page = false,
-     initial_marker = false,
-+    apm_status = false,
- }
- 
- function ReaderFooter:init()
-@@ -543,6 +580,7 @@ function ReaderFooter:init()
-     -- Remove items not supported by the current device
-     if not Device:hasFastWifiStatusQuery() then
-         MODE.wifi_status = nil
-+        MODE.apm_status = nil
-     end
-     if not Device:hasFrontlight() then
-         MODE.frontlight = nil
-@@ -855,12 +893,14 @@ function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
-     local schedule = false
-     if self.settings.auto_refresh_time then
-         if self.settings.all_at_once then
--            if self.settings.time or self.settings.battery or self.settings.wifi_status or self.settings.mem_usage then
-+            if self.settings.time or self.settings.battery or self.settings.wifi_status
-+            or self.settings.mem_usage or self.settings.apm_status then
-                 schedule = true
-             end
-         else
-             if self.mode == self.mode_list.time or self.mode == self.mode_list.battery
--                    or self.mode == self.mode_list.wifi_status or self.mode == self.mode_list.mem_usage then
-+                    or self.mode == self.mode_list.wifi_status or self.mode == self.mode_list.mem_usage
-+                    or self.mode == self.mode_list.apm_status then
-                 schedule = true
-             end
-         end
-@@ -1033,6 +1073,7 @@ function ReaderFooter:textOptionTitles(option)
-             self.custom_text_repetitions > 1 and
-             string.format(" × %d", self.custom_text_repetitions) or ""),
-         dynamic_filler = _("Dynamic filler"),
-+        apm_status = T(_("AirPlane Mode status (%1)"), symbol_prefix[symbol].apm_status)
-     }
-     return option_titles[option]
- end
-@@ -1426,6 +1467,9 @@ function ReaderFooter:addToMainMenu(menu_items)
-     table.insert(footer_items, getMinibarOption("book_chapter"))
-     table.insert(footer_items, getMinibarOption("custom_text"))
-     table.insert(footer_items, getMinibarOption("dynamic_filler"))
-+    if Device:hasFastWifiStatusQuery() then
-+        table.insert(footer_items, getMinibarOption("apm_status"))
-+    end
- 
-     -- configure footer_items
-     table.insert(sub_items, {
-@@ -2663,7 +2707,7 @@ ReaderFooter.onCharging    = ReaderFooter.onFrontlightStateChanged
- ReaderFooter.onNotCharging = ReaderFooter.onFrontlightStateChanged
- 
- function ReaderFooter:onNetworkConnected()
--    if self.settings.wifi_status then
-+    if self.settings.wifi_status or self.settings.apm_status then
-         self:maybeUpdateFooter()
-     end
- end
+local BD = require("ui/bidi")
+local Device = require("device")
+local ReaderFooter = require("apps/reader/modules/readerfooter")
+local UIManager = require("ui/uimanager")
+
+local logger = require("logger")
+local userpatch = require("userpatch")
+local T = require("ffi/util").template
+local _ = require("gettext")
+local C_ = _.pgettext
+
+
+local MODE, MODE_idx = userpatch.getUpValue(ReaderFooter.init, "MODE")
+MODE.apm_status = 21
+userpatch.replaceUpValue(ReaderFooter.init, MODE_idx, MODE)
+
+local symbol_prefix = userpatch.getUpValue(ReaderFooter.textOptionTitles, "symbol_prefix")
+symbol_prefix.letters.apm_status = C_("FooterLetterPrefix", "AP:")
+symbol_prefix.icons.apm_status = "\u{F1D8}"
+symbol_prefix.icons.apm_status_off = "\u{F1D9}"
+
+for _, item in ipairs { "apm_status", "apm_status_off" } do
+    symbol_prefix.compact_items[item] = symbol_prefix.icons[item]
+end
+
+local footerTextGeneratorMap = userpatch.getUpValue(ReaderFooter.applyFooterMode, "footerTextGeneratorMap")
+
+-- MPC - when this is working, see if you can just set the apm part without the loop
+for _, item in ipairs { "wifi_status" } do
+    local orig = footerTextGeneratorMap[item]
+    footerTextGeneratorMap[item] = function(footer, ...)
+        local text = orig(footer, ...)
+        return text
+    end
+    footerTextGeneratorMap["apm_status"] = function(footer)
+        local LuaSettings = require("luasettings")
+        local DataStorage = require("datastorage")
+        local reader_settings = LuaSettings:open(DataStorage:getDataDir().."/settings.reader.lua")
+        local ap_status = reader_settings:isTrue("airplanemode")
+        local symbol_type = footer.settings.item_prefix
+        if symbol_type == "icons" or symbol_type == "compact_items" then
+            if ap_status then
+                return symbol_prefix.icons.apm_status
+            else
+                if footer.settings.all_at_once and footer.settings.hide_empty_generators then
+                    return ""
+                else
+                    return symbol_prefix.icons.apm_status_off
+                end
+            end
+        else
+            local prefix = symbol_prefix[symbol_type].apm_status
+            if ap_status then
+                return T(_("%1 On"), prefix)
+            else
+                if footer.settings.all_at_once and footer.settings.hide_empty_generators then
+                    return ""
+                else
+                    return T(_("%1 Off"), prefix)
+                end
+            end
+        end
+    end
+end
+
+
+-- Couldn't think of a way to insert the needed addition without just replacing the original
+function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
+    if not self.autoRefreshFooter then
+        -- Create this function the first time we're called
+        self.autoRefreshFooter = function()
+            -- Only actually repaint the footer if nothing's being shown over ReaderUI (#6616)
+            -- (We want to avoid the footer to be painted over a widget covering it - we would
+            -- be fine refreshing it if the widget is not covering it, but this is hard to
+            -- guess from here.)
+            self:onUpdateFooter(self:shouldBeRepainted())
+
+            self:rescheduleFooterAutoRefreshIfNeeded() -- schedule (or not) next refresh
+        end
+    end
+    local unscheduled = UIManager:unschedule(self.autoRefreshFooter) -- unschedule if already scheduled
+    -- Only schedule an update if the footer has items that may change
+    -- As self.view.footer_visible may be temporarily toggled off by other modules,
+    -- we can't trust it for not scheduling auto refresh
+    local schedule = false
+    if self.settings.auto_refresh_time then
+        if self.settings.all_at_once then
+            if self.settings.time or self.settings.battery or self.settings.wifi_status
+            or self.settings.mem_usage or self.settings.apm_status then
+                schedule = true
+            end
+        else
+            if self.mode == self.mode_list.time or self.mode == self.mode_list.battery
+                    or self.mode == self.mode_list.wifi_status or self.mode == self.mode_list.mem_usage
+                    or self.mode == self.mode_list.apm_status then
+                schedule = true
+            end
+        end
+    end
+
+    if schedule then
+        UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshFooter)
+        if not unscheduled then
+            logger.dbg("ReaderFooter: scheduled autoRefreshFooter")
+        else
+            logger.dbg("ReaderFooter: rescheduled autoRefreshFooter")
+        end
+    elseif unscheduled then
+        logger.dbg("ReaderFooter: unscheduled autoRefreshFooter")
+    end
+end
+
+function ReaderFooter:textOptionTitles(option)
+    local symbol = self.settings.item_prefix
+    local option_titles = {
+        all_at_once = _("Show all selected items at once"),
+        reclaim_height = _("Overlap status bar"),
+        bookmark_count = T(_("Bookmark count (%1)"), symbol_prefix[symbol].bookmark_count),
+        page_progress = T(_("Current page (%1)"), "/"),
+        pages_left_book = T(_("Pages left in book (%1)"), symbol_prefix[symbol].pages_left_book),
+        time = symbol_prefix[symbol].time
+            and T(_("Current time (%1)"), symbol_prefix[symbol].time) or _("Current time"),
+        chapter_progress = T(_("Current page in chapter (%1)"), " ⁄⁄ "),
+        pages_left = T(_("Pages left in chapter (%1)"), symbol_prefix[symbol].pages_left),
+        battery = T(_("Battery percentage (%1)"), symbol_prefix[symbol].battery),
+        percentage = symbol_prefix[symbol].percentage
+            and T(_("Progress percentage (%1)"), symbol_prefix[symbol].percentage) or _("Progress percentage"),
+        book_time_to_read = symbol_prefix[symbol].book_time_to_read
+            and T(_("Time left to finish book (%1)"),symbol_prefix[symbol].book_time_to_read) or _("Time left to finish book"),
+        chapter_time_to_read = T(_("Time left to finish chapter (%1)"), symbol_prefix[symbol].chapter_time_to_read),
+        frontlight = T(_("Brightness level (%1)"), symbol_prefix[symbol].frontlight),
+        frontlight_warmth = T(_("Warmth level (%1)"), symbol_prefix[symbol].frontlight_warmth),
+        mem_usage = T(_("KOReader memory usage (%1)"), symbol_prefix[symbol].mem_usage),
+        wifi_status = T(_("Wi-Fi status (%1)"), symbol_prefix[symbol].wifi_status),
+        page_turning_inverted = T(_("Page turning inverted (%1)"), symbol_prefix[symbol].page_turning_inverted),
+        book_author = _("Book author"),
+        book_title = _("Book title"),
+        book_chapter = _("Chapter title"),
+        custom_text = T(_("Custom text (long-press to edit): \'%1\'%2"), self.custom_text,
+            self.custom_text_repetitions > 1 and
+            string.format(" × %d", self.custom_text_repetitions) or ""),
+        dynamic_filler = _("Dynamic filler"),
+        apm_status = T(_("AirPlane Mode status (%1)"), symbol_prefix[symbol].apm_status),
+    }
+    return option_titles[option]
+end
+
+function ReaderFooter:onNetworkConnected()
+    if self.settings.wifi_status or self.settings.apm_status then
+        self:maybeUpdateFooter()
+    end
+end
+ReaderFooter.onNetworkDisconnected = ReaderFooter.onNetworkConnected
