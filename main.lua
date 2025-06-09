@@ -6,13 +6,13 @@ local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local NetworkMgr = require("ui/network/manager")
 local PluginLoader = require("pluginloader")
---local SSH = require("plugins/SSH.koplugin/main")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiutil = require("ffi/util")
 local T = ffiutil.template
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 
 local settings_file = DataStorage:getDataDir().."/settings.reader.lua"
@@ -77,6 +77,29 @@ function AirPlaneMode:backup()
     end
 end
 
+-- SSH doesn't stop even though the we disable the plugin, so we force ssh to stop
+-- otherwise, you can't use USB because ssh blocks, and you can't stop it because
+-- it isn't in the menu any more. This gets ugly. If I could just call the SSH plugin functions,
+-- I would.
+local function force_ssh_down()
+    if util.pathExists("/tmp/dropbear_koreader.pid") then
+        local file = io.open("/tmp/dropbear_koreader.pid",r)
+        local mypids = file:read("*a")
+        file:close()
+        os.execute("cat /tmp/dropbear_koreader.pid | xargs kill")
+    end
+    -- verify since sometimes that doesn't work and creates a bad state
+    os.execute("pidof dropbear >/tmp/dropbear.pid.check")
+    local file = io.open("/tmp/dropbear.pid.check",r)
+    local pids = file:read("*a")
+    file:close()
+    os.remove("/tmp/dropbear.pid.check")
+    pids = tonumber(pids)
+    if not pids == nil then
+        os.execute("kill -9 `pidof dropbear`")
+    end
+end
+
 function AirPlaneMode:Enable()
     local current_config = self:backup()
     if current_config then
@@ -116,10 +139,6 @@ function AirPlaneMode:Enable()
             G_reader_settings:flipNilOrFalse("emulator_fake_wifi_connected",false)
         end
 
-        --[[if SSH:isRUNNING() then
-            SSH:stop()
-        end]]
-
         local airplane_plugins = LuaSettings:open(self.airplane_plugins_file)
         local check_plugins = airplane_plugins:readSetting("disabled_plugins") or {}
         local disabled_plugins = G_reader_settings:readSetting("plugins_disabled") or {}
@@ -133,6 +152,9 @@ function AirPlaneMode:Enable()
             for plugin, __ in pairs(check_plugins) do
                 if disabled_plugins[plugin] ~= true then
                     disabled_plugins[plugin] = true
+                    if plugin == "SSH" then
+                        force_ssh_down()
+                    end
                 end
             end
         end
