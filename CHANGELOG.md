@@ -6,15 +6,13 @@
 
 * Added sample user patch for displaying airplane mode status in the reader footer
 
+* If SSH is in our disable list, make sure the process is stopped. Otherwise it will be running and you can't stop it unless you kill it in terminal. And it blocks USB from launching.
+
 ### TODO
 
 * user patch currently crashes if you tap on `Status Bar Presets`
 
 * Need to work out firast time launch with patch - seemed to take a few restart before it appeared in the menu options
-
-* Can SSH (the process) be turned off when we enter apm? I've found that even though the plugin is disabled, the process is still running and causea problems with USBM. Or could look at submitting that as a bug report...
-
-
 
 ## v0.0.3  (2025.05.26) - UNRELEASED CURRENTLY
 
