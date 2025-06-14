@@ -1,8 +1,18 @@
 # Changelog
 
-## v0.0.3  (2025.05.26)
+## v.0.0.4 - QoL update (2025.06.14)
 
-### TODO
+* Remove unnecessary visual of a checkbox
+
+* Added sample user patch for displaying airplane mode status in the reader footer
+
+* If SSH is in our disable list, make sure the process  n is stopped. Otherwise it will be running and you can't stop it unless you kill it in terminal. And it blocks USB from launching.
+
+* Info message for feedback when a gesture is used
+
+* May have finally locked down networking on kindles. Tests on paperwhite are now consistantly up
+
+## v0.0.3  (2025.05.26)
 
 ### 🚀 Added
 
