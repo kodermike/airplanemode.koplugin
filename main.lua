@@ -37,7 +37,7 @@ local function isFile(filename)
 end
 
 function AirPlaneMode:onDispatcherRegisterActions()
-    Dispatcher:registerAction("airplanemode_enable", { category="none", event="Enable", title=_("AirPlane Mode Enable"), device=true,separator=true,})
+    Dispatcher:registerAction("airplanemode_enable", { category="none", event="Enable", title=_("AirPlane Mode Enable"), device=true,})
     Dispatcher:registerAction("airplanemode_disable", { category="none", event="Disable", title=_("AirPlane Mode Disable"), device=true,})
     Dispatcher:registerAction("airplanemode_toggle", { category="none", event="Toggle", title=_("AirPlane Mode Toggle"), device=true,separator=true,})
 end
@@ -279,18 +279,27 @@ end
 
 
 function AirPlaneMode:onEnable()
+    -- Display an info message so there is an indication the gesture worked
+    local info = InfoMessage:new{text = _("Enabing AirPlane Mode… ")}
+    UIManager:show(info)
+    UIManager:forceRePaint()
     self:Enable()
 end
 
 function AirPlaneMode:onDisable()
+    -- Display an info message so there is an indication the gesture worked
+    local info = InfoMessage:new{text = _("Disabling AirPlane Mode… ")}
+    UIManager:show(info)
+    UIManager:forceRePaint()
     self:Disable()
 end
 
 function AirPlaneMode:onToggle()
+    -- Call the gesture version to get the info message
     if self:getStatus() then
-        self:Disable()
+        self:onDisable()
     else
-        self:Enable()
+        self:onEnable()
     end
 end
 
