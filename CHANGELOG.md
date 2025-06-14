@@ -12,14 +12,7 @@
 
 * May have finally locked down networking on kindles. Tests on paperwhite are now consistantly up
 
-### TODO
-
-* user patch currently crashes if you tap on `Status Bar Presets`
-
-* Need to work out firast time launch with patch - seemed to take a few restart before it appeared in the menu options
-
-## v0.0.3  (2025.05.26) - UNRELEASED CURRENTLY
-
+## v0.0.3  (2025.05.26)
 
 ### 🚀 Added
 
