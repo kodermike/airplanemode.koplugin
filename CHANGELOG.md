@@ -10,6 +10,8 @@
 
 * Info message for feedback when a gesture is used
 
+* May have finally locked down networking on kindles. Tests on paperwhite are now consistantly up
+
 ### TODO
 
 * user patch currently crashes if you tap on `Status Bar Presets`
