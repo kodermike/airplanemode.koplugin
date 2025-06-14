@@ -220,7 +220,14 @@ function AirPlaneMode:Disable()
         G_reader_settings:delSetting("emulator_fake_wifi_connected")
     end
 
-    if NetworkMgr:getWifiState() == false and BK_Settings:isTrue("wifi_was_on") then
+    -- kindles are so special
+    if Device:isKindle() then
+        NetworkMgr:runWhenOnline(function() local info = InfoMessage:new{text = _("Disabling AirPlane Mode… ")}
+            UIManager:show(info)
+            UIManager:forceRePaint()
+        end
+        )
+    elseif not NetworkMgr:getWifiState() and BK_Settings:isTrue("wifi_was_on") then
         NetworkMgr:enableWifi(nil, true)
     end
 

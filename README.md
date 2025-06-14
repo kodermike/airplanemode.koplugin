@@ -4,21 +4,11 @@ This plugin is intended to give you the ability to quickly put your koreader int
 
 ---
 
-## IF YOU TESTED THE FIRST ALPHA
-
-For this iteration, I changed how we manage the plugins to disable/enable when switching modes. If your device is currently in `AirPlane Mode`, please exit `AirPlane Mode` before upgrading.
-
----
-
 ## Installation
 
 1. Connect your device to USB
 1. Copy the `airplanemode.koplugin` directory to `plugins/` or unpack a release file in your plugins directory. On Kobo, this would be in `.adds/koreader/plugins`, on kindle's it is usually in `/mnt/us/koreader/plugins` (if you use a different architecture, let me know and I'll add it :) 
 1. Disconnect USB
-
-## Known bugs
-
-None reported (yet).
 
 ## Usage
 
@@ -68,10 +58,23 @@ If you attempt to change which modules `AirPlane Mode` has diabled in the Module
 
 When you exit `AirPlane Mode`, any plugins that were not disabled before you started will be reactivated by the restart.
 
+## Gestures
+
+AirPlane Mode supports three gesture actions - enable, disable, and toggle.
+
+## Extras!
+
+In the `misc` directory, you will find a userpatch to add a notification icon in the readerfooter, for those of us that need that reminder while reading that we are in airplane mode. To use, make sure you have (or create) a patches directory in your koreader root, then copy the `2-airplane-footer.lua` to that directory.
+
+---
+
+## IF YOU TESTED THE FIRST ALPHA
+
+For this iteration, I changed how we manage the plugins to disable/enable when switching modes. If your device is currently in `AirPlane Mode`, please exit `AirPlane Mode` before upgrading.
 
 ## Find a bug?
 
 Please open an issue in GitHub so we can start looking at what isn't working right.
 
 
-###### Updated 2025.05.23
+###### Updated 2025.06.14
