@@ -168,6 +168,8 @@ function AirPlaneMode:Enable()
             NetworkMgr:disableWifi(nil, true)
         end
 
+        -- TODO - see if a flush is sufficient to do this for us
+        -- if a flush won't work, at least offer the ability to skip being prompted
         if Device:canRestart() then
             UIManager:askForRestart(_("KOReader needs to restart to finish applying changes for AirPlane Mode."))
         else
