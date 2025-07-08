@@ -50,21 +50,32 @@ end
 
 function AirPlaneMode:initSettingsFile()
     if isFile(self.airplane_plugins_file) == true then
-        return
-    else
+        --TODO - add a check for the file contents
         local airplane_plugins = LuaSettings:open(self.airplane_plugins_file)
-        local default_disable = {}
-        local default_disable_list = {"newsdownloader","wallabag","calibre","kosync","opds","SSH","timesync","httpinspector"}
-        for __, plugin in ipairs(default_disable_list) do
-            default_disable[plugin] = true
-        end
-        airplane_plugins:saveSetting("disabled_plugins",default_disable)
-        airplane_plugins:flush()
+        local check_plugins = airplane_plugins:readSetting("disabled_plugins") or {}
         airplane_plugins:close()
+        -- if our file has a table with at least one entry, we have a config
+        if not next(check_plugins) == nil then
+            return
+        end
     end
-end
-
+    local airplane_plugins = LuaSettings:open(self.airplane_plugins_file)
+    local default_disable = {}
+    local default_disable_list = {"newsdownloader","wallabag","calibre","kosync","opds","SSH","timesync","httpinspector"}
+    for __, plugin in ipairs(default_disable_list) do
+        default_disable[plugin] = true
+    end
+    airplane_plugins:saveSetting("disabled_plugins",default_disable)
+    airplane_plugins:flush()
+    airplane_plugins:close()
+    end
+--TODO - test
 function AirPlaneMode:backup()
+    if not isFile(settings_file) then
+        -- probably in an emulator, but let's see if this works
+        logger.dbg("AirPlaneMode - attempt to flush a missing settings file")
+        G_reader_settings:flush()
+    end
     if isFile(settings_file) then
         if isFile(settings_bk) then
             os.remove(settings_bk)
@@ -72,9 +83,20 @@ function AirPlaneMode:backup()
         ffiutil.copyFile(settings_file,settings_bk )
         return isFile(settings_bk) and true or false
     else
-        logger.err("AirPlane Mode [ERROR] - Failed to find settings file at: ",settings_file)
+        logger.err("AirPlane Mode [ERROR] - Still failed to find settings file at: ",settings_file)
         return false
     end
+    -- if isFile(settings_file) then
+    --     if isFile(settings_bk) then
+    --         os.remove(settings_bk)
+    --     end
+    --     ffiutil.copyFile(settings_file,settings_bk )
+    --     return isFile(settings_bk) and true or false
+    -- else
+    --     -- probably in an emulator, but let's see if this works
+    --     logger.err("AirPlane Mode [ERROR] - Failed to find settings file at: ",settings_file)
+    --     return false
+    -- end
 end
 
 -- SSH doesn't stop even though the we disable the plugin, so we force ssh to stop
@@ -143,25 +165,54 @@ function AirPlaneMode:Enable()
         local check_plugins = airplane_plugins:readSetting("disabled_plugins") or {}
         local disabled_plugins = G_reader_settings:readSetting("plugins_disabled") or {}
 
+        if next(check_plugins) == nil then
+            -- we somehow have an empty config file
+            -- remove the corrupted file
+            logger.err("AirPlaneMode - Corrupt or damaged config file found. Resetting to default.")
+            local info = InfoMessage:new{
+            text = _("AirPlane Mode found a corrupt or damaged config list. Resetting disabled plugins to the default list."),
+            timeout = 4,
+            icon = "notice-warning",
+        }
+        UIManager:show(info)
+        UIManager:forceRePaint()
+            airplane_plugins:close()
+            -- despite everything, still make sure there is a file before trying to delete it
+            if isFile(self.airplane_plugins_file) then
+                os.remove(self.airplane_plugins_file)
+                self:initSettingsFile()
+            end
+            -- reload everything again
+            airplane_plugins = LuaSettings:open(self.airplane_plugins_file)
+            check_plugins = airplane_plugins:readSetting("disabled_plugins") or {}
+        end
         -- a pair of loops for the logger
         if type(check_plugins) == "string" then
             if disabled_plugins[check_plugins] ~= true then
                 disabled_plugins[check_plugins] = true
             end
         else
-            for plugin, __ in pairs(check_plugins) do
-                if disabled_plugins[plugin] ~= true then
-                    disabled_plugins[plugin] = true
-                    if plugin == "SSH" then
-                        force_ssh_down()
+            if next(check_plugins) == nil then
+                -- This scenario shouldn't be possible still...
+                logger.dbg("AirPlaneMode - Working with no plugins to check")
+            else
+                for plugin, __ in pairs(check_plugins) do
+                    if disabled_plugins[plugin] ~= true then
+                        disabled_plugins[plugin] = true
+                        if plugin == "SSH" then
+                            force_ssh_down()
+                        end
                     end
                 end
             end
         end
         airplane_plugins:flush()
         airplane_plugins:close()
-
-        G_reader_settings:saveSetting("plugins_disabled", disabled_plugins)
+        if next(disabled_plugins) == nil then
+            logger.dbg("AirPlaneMode - no plugins were disabled by airplane mode. This seems wrong.")
+        else
+            G_reader_settings:saveSetting("plugins_disabled", disabled_plugins)
+        end
         G_reader_settings:flush()
 
         if NetworkMgr:isWifiOn() then
@@ -182,6 +233,12 @@ function AirPlaneMode:Enable()
         end
     else
         logger.err("AirPlane Mode [ERROR] - Failed to create backup file and execute")
+        local info = InfoMessage:new{
+            text = _("AirPlane Mode encountered an error attempting to backup your current setup.\nPlease consider filing a bug report about this with the AirPlane Mode maintainer."),
+            icon = "notice-warning",
+        }
+        UIManager:show(info)
+        UIManager:forceRePaint()
     end
 end
 
