@@ -19,6 +19,8 @@ local settings_file = DataStorage:getDataDir().."/settings.reader.lua"
 local settings_bk = DataStorage:getDataDir().."/settings.reader.lua.airplane"
 local settings_bk_exists = false
 
+local version = "0.1.0"
+
 -- establish the main settings file
 if G_reader_settings == nil then
     G_reader_settings = LuaSettings:open(DataStorage:getDataDir().."/settings.reader.lua")
@@ -33,7 +35,7 @@ local function isFile(filename)
     if filename and (lfs.attributes(filename, "mode") == "file") then
         return true
     end
-    --return false
+    return false
 end
 
 function AirPlaneMode:onDispatcherRegisterActions()
@@ -169,16 +171,20 @@ function AirPlaneMode:Enable()
         end
 
         if Device:canRestart() then
-            UIManager:askForRestart(_("KOReader needs to restart to finish applying changes for AirPlane Mode."))
+            if airplane_plugins:nilOrFalse("silentmode") then
+                UIManager:askForRestart(_("KOReader needs to restart to finish applying changes for AirPlane Mode."))
+            else
+                UIManager:restartKOReader()
+            end
         else
-            UIManager:show(ConfirmBox:new{
-                dismissable = false,
-                text = _("KOReader needs to be restarted to finish applying changes for AirPlane Mode."),
-                ok_text = _("OK"),
-                ok_callback = function()
-                    UIManager:quit()
-                end,
-            })
+                UIManager:show(ConfirmBox:new{
+                    dismissable = false,
+                    text = _("KOReader needs to be restarted to finish applying changes for AirPlane Mode."),
+                    ok_text = _("OK"),
+                    ok_callback = function()
+                        UIManager:quit()
+                    end,
+                })
         end
     else
         logger.err("AirPlane Mode [ERROR] - Failed to create backup file and execute")
@@ -241,14 +247,19 @@ function AirPlaneMode:Disable()
     if disable_again then
         G_reader_settings:saveSetting("plugins_disabled", disable_again)
     end
-
+    G_reader_settings:flush()
     if isFile(settings_bk) then
         os.remove(settings_bk)
     end
 
     settings_bk_exists = false
+    local apm_config = LuaSettings:open(self.airplane_plugins_file)
     if Device:canRestart() then
-        UIManager:askForRestart(_("KOReader needs to restart to finish disabling plugins for AirPlane Mode."))
+        if apm_config:nilOrFalse("silentmode") then
+            UIManager:askForRestart(_("KOReader needs to restart to finish disabling plugins for AirPlane Mode."))
+        else
+            UIManager:restartKOReader()
+        end
     else
         UIManager:show(ConfirmBox:new{
             dismissable = false,
@@ -259,6 +270,7 @@ function AirPlaneMode:Disable()
             end,
         })
     end
+
 end
 
 function AirPlaneMode:getStatus()
@@ -268,20 +280,16 @@ function AirPlaneMode:getStatus()
         return false
     end
     -- check if we currently have a backup of our settings running
-    if isFile(settings_bk) then
-        settings_bk_exists = true
-    end
+    settings_bk_exists = isFile(settings_bk)
+
     -- also verify if the airplanemode flag is set. we will use this to decide if something is funky
-    local airplanemode_active = false
-    if G_reader_settings:readSetting("airplanemode") then
-        airplanemode_active = G_reader_settings:readSetting("airplanemode")
-    end
-    --
-    if settings_bk_exists == true and airplanemode_active == true then
+    local airplanemode_active = G_reader_settings:readSetting("airplanemode") or false
+    if settings_bk_exists and airplanemode_active then
         return true
-    elseif airplanemode_active == false then
+    elseif not airplanemode_active then
         return false
     end
+    return false
 end
 
 
@@ -382,6 +390,8 @@ end
 
 function AirPlaneMode:addToMainMenu(menu_items)
     local airmode = self:getStatus()
+    local apm_config = LuaSettings:open(self.airplane_plugins_file)
+
     menu_items.airplanemode = {
         text_func = function()
                     if airmode then
@@ -434,7 +444,32 @@ function AirPlaneMode:addToMainMenu(menu_items)
                     end
                 end,
             },
-        },
+            {
+                text = _("Silence the restart message"),
+                callback = function()
+                    apm_config:toggle("silentmode")
+                    apm_config:flush()
+                end,
+                checked_func = function()
+                    if apm_config:isTrue("silentmode") then return true else return false end
+                end,
+                enabled_func = function()
+                    if Device:canRestart() then
+                        return true
+                    else
+                        return false
+                    end
+                end,
+            },
+            {
+                text = "About",
+                callback = function()
+                    local help_text = T(_("AirPlane Mode V.%1\n\nA simple plugin that helps you when you're on the go."),version)
+                    UIManager:show(InfoMessage:new{ text = help_text, })
+                end,
+                keep_menu_open = true
+            },
+        }
     }
 end
 
