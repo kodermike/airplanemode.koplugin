@@ -39,7 +39,7 @@ local function isFile(filename)
 end
 
 function AirPlaneMode:onDispatcherRegisterActions()
-    Dispatcher:registerAction("airplanemode_enable", { category="none", event="Enable", title=_("AirPlane Mode Enable"), device=true,})
+    Dispatcher:registerAction("airplanemode_enable", { category="none", event="Enable", title=_("AirPlane Mode Enable"), device=true,separator=true,})
     Dispatcher:registerAction("airplanemode_disable", { category="none", event="Disable", title=_("AirPlane Mode Disable"), device=true,})
     Dispatcher:registerAction("airplanemode_toggle", { category="none", event="Toggle", title=_("AirPlane Mode Toggle"), device=true,separator=true,})
 end
@@ -76,29 +76,6 @@ function AirPlaneMode:backup()
     else
         logger.err("AirPlane Mode [ERROR] - Failed to find settings file at: ",settings_file)
         return false
-    end
-end
-
--- SSH doesn't stop even though the we disable the plugin, so we force ssh to stop
--- otherwise, you can't use USB because ssh blocks, and you can't stop it because
--- it isn't in the menu any more. This gets ugly. If I could just call the SSH plugin functions,
--- I would.
-local function force_ssh_down()
-    if util.pathExists("/tmp/dropbear_koreader.pid") then
-        local file = io.open("/tmp/dropbear_koreader.pid",r)
-        local mypids = file:read("*a")
-        file:close()
-        os.execute("cat /tmp/dropbear_koreader.pid | xargs kill")
-    end
-    -- verify since sometimes that doesn't work and creates a bad state
-    os.execute("pidof dropbear >/tmp/dropbear.pid.check")
-    local file = io.open("/tmp/dropbear.pid.check",r)
-    local pids = file:read("*a")
-    file:close()
-    os.remove("/tmp/dropbear.pid.check")
-    pids = tonumber(pids)
-    if not pids == nil then
-        os.execute("kill -9 `pidof dropbear`")
     end
 end
 
@@ -154,8 +131,8 @@ function AirPlaneMode:Enable()
             for plugin, __ in pairs(check_plugins) do
                 if disabled_plugins[plugin] ~= true then
                     disabled_plugins[plugin] = true
-                    if plugin == "SSH" then
-                        force_ssh_down()
+                    if plugin == "SSH" and self.ui.SSH:isRunning() then
+                        self.ui.SSH:stop()
                     end
                 end
             end
@@ -226,14 +203,7 @@ function AirPlaneMode:Disable()
         G_reader_settings:delSetting("emulator_fake_wifi_connected")
     end
 
-    -- kindles are so special
-    if Device:isKindle() then
-        NetworkMgr:runWhenOnline(function() local info = InfoMessage:new{text = _("Disabling AirPlane Mode… ")}
-            UIManager:show(info)
-            UIManager:forceRePaint()
-        end
-        )
-    elseif not NetworkMgr:getWifiState() and BK_Settings:isTrue("wifi_was_on") then
+    if NetworkMgr:getWifiState() == false and BK_Settings:isTrue("wifi_was_on") then
         NetworkMgr:enableWifi(nil, true)
     end
 
@@ -294,27 +264,18 @@ end
 
 
 function AirPlaneMode:onEnable()
-    -- Display an info message so there is an indication the gesture worked
-    local info = InfoMessage:new{text = _("Enabing AirPlane Mode… ")}
-    UIManager:show(info)
-    UIManager:forceRePaint()
     self:Enable()
 end
 
 function AirPlaneMode:onDisable()
-    -- Display an info message so there is an indication the gesture worked
-    local info = InfoMessage:new{text = _("Disabling AirPlane Mode… ")}
-    UIManager:show(info)
-    UIManager:forceRePaint()
     self:Disable()
 end
 
 function AirPlaneMode:onToggle()
-    -- Call the gesture version to get the info message
     if self:getStatus() then
-        self:onDisable()
+        self:Disable()
     else
-        self:onEnable()
+        self:Enable()
     end
 end
 
