@@ -55,27 +55,42 @@ end
 
 function AirPlaneMode:init()
 	self:onDispatcherRegisterActions()
+	self.airplane_plugins_file = DataStorage:getDataDir() .. "/settings/airplanemode.lua"
+	if isFile(DataStorage:getDataDir() .. "/settings/airplane_plugins.lua") then
+		self.migrateconfig()
+	end
 	self.ui.menu:registerToMainMenu(self)
-	self.airplane_plugins_file = DataStorage:getDataDir() .. "/settings/airplane_plugins.lua"
 end
 
 function AirPlaneMode:initSettingsFile()
 	if isFile(self.airplane_plugins_file) == true then
 		return
 	else
-		local airplane_plugins = LuaSettings:open(self.airplane_plugins_file)
+		local airplane_config = LuaSettings:open(self.airplane_plugins_file)
+		airplane_config:saveSetting("version", version)
 		local default_disable = {}
 		local default_disable_list =
 			{ "newsdownloader", "wallabag", "calibre", "kosync", "opds", "SSH", "timesync", "httpinspector" }
 		for __, plugin in ipairs(default_disable_list) do
 			default_disable[plugin] = true
 		end
-		airplane_plugins:saveSetting("disabled_plugins", default_disable)
-		airplane_plugins:flush()
-		airplane_plugins:close()
+		airplane_config:saveSetting("disabled_plugins", default_disable)
+		airplane_config:flush()
+		airplane_config:close()
 	end
 end
 
+function AirPlaneMode:migrateconfig()
+	local old_config = LuaSettings:open(DataStorage:getDataDir() .. "/settings/airplanemode.lua")
+	local new_config = LuaSettings:open(self.airplane_config)
+	new_config:saveSetting("version", version)
+	local disabled = old_config:readSetting("plugins_disabled")
+	if disabled then
+		new_config:saveSetting("plugins_disabled", disabled)
+	end
+	new_config:flush()
+	old_config:close()
+end
 function AirPlaneMode:backup()
 	if isFile(settings_file) then
 		if isFile(settings_bk) then
@@ -371,6 +386,7 @@ function AirPlaneMode:addToMainMenu(menu_items)
 				return _("\u{F1D9} Airplane Mode")
 			end
 		end,
+		help_text = T(_("A simple plugin that helps you when you're on the go.\n\n\nv.%1"), version),
 		sorting_hint = "network",
 		sub_item_table = {
 			{
@@ -435,15 +451,6 @@ function AirPlaneMode:addToMainMenu(menu_items)
 						return false
 					end
 				end,
-			},
-			{
-				text = "About",
-				callback = function()
-					local help_text =
-						T(_("AirPlane Mode V.%1\n\nA simple plugin that helps you when you're on the go."), version)
-					UIManager:show(InfoMessage:new({ text = help_text }))
-				end,
-				keep_menu_open = true,
 			},
 		},
 	}
