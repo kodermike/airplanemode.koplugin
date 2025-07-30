@@ -21,6 +21,8 @@ local settings_bk_exists = false
 
 local version = "0.0.9"
 
+-- testing
+
 -- establish the main settings file
 if G_reader_settings == nil then
 	G_reader_settings = LuaSettings:open(DataStorage:getDataDir() .. "/settings.reader.lua")
@@ -55,18 +57,19 @@ end
 
 function AirPlaneMode:init()
 	self:onDispatcherRegisterActions()
-	self.airplane_plugins_file = DataStorage:getDataDir() .. "/settings/airplanemode.lua"
+	self.airplanemode_config = DataStorage:getDataDir() .. "/settings/airplanemode.lua"
 	if isFile(DataStorage:getDataDir() .. "/settings/airplane_plugins.lua") then
-		self.migrateconfig()
+		--FIX this migrate didn't work - nothing was transferred
+		self:migrateconfig()
 	end
 	self.ui.menu:registerToMainMenu(self)
 end
 
 function AirPlaneMode:initSettingsFile()
-	if isFile(self.airplane_plugins_file) == true then
+	if isFile(self.airplanemode_config) == true then
 		return
 	else
-		local airplane_config = LuaSettings:open(self.airplane_plugins_file)
+		local airplane_config = LuaSettings:open(self.airplanemode_config)
 		airplane_config:saveSetting("version", version)
 		local default_disable = {}
 		local default_disable_list =
@@ -91,6 +94,7 @@ function AirPlaneMode:migrateconfig()
 	new_config:flush()
 	old_config:close()
 end
+
 function AirPlaneMode:backup()
 	if isFile(settings_file) then
 		if isFile(settings_bk) then
@@ -143,7 +147,7 @@ function AirPlaneMode:Enable()
 			G_reader_settings:flipNilOrFalse("emulator_fake_wifi_connected", false)
 		end
 
-		local airplane_plugins = LuaSettings:open(self.airplane_plugins_file)
+		local airplane_plugins = LuaSettings:open(self.airplanemode_config)
 		local check_plugins = airplane_plugins:readSetting("disabled_plugins") or {}
 		local disabled_plugins = G_reader_settings:readSetting("plugins_disabled") or {}
 
@@ -248,7 +252,7 @@ function AirPlaneMode:Disable()
 	end
 
 	settings_bk_exists = false
-	local apm_config = LuaSettings:open(self.airplane_plugins_file)
+	local apm_config = LuaSettings:open(self.airplanemode_config)
 	if Device:canRestart() then
 		if apm_config:nilOrFalse("silentmode") then
 			UIManager:askForRestart(_("KOReader needs to restart to finish disabling plugins for AirPlane Mode."))
@@ -313,7 +317,7 @@ end
 
 function AirPlaneMode:getSubMenuItems()
 	self:initSettingsFile()
-	local airplane_plugins = LuaSettings:open(self.airplane_plugins_file)
+	local airplane_plugins = LuaSettings:open(self.airplanemode_config)
 	local check_plugins = airplane_plugins:readSetting("disabled_plugins") or {}
 	local os_enabled_plugins, os_disabled_plugins = PluginLoader:loadPlugins()
 	local os_all_plugins = {}
@@ -376,7 +380,7 @@ end
 
 function AirPlaneMode:addToMainMenu(menu_items)
 	local airmode = self:getStatus()
-	local apm_config = LuaSettings:open(self.airplane_plugins_file)
+	local apm_config = LuaSettings:open(self.airplanemode_config)
 
 	menu_items.airplanemode = {
 		text_func = function()

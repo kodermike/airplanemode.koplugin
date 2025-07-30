@@ -1,1 +1,4 @@
 .tasks
+.luacheckrc
+.luacov
+.luarc.json
