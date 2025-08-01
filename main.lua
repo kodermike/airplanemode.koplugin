@@ -129,7 +129,7 @@ function AirPlaneMode:Enable()
             for plugin, __ in pairs(check_plugins) do
                 if disabled_plugins[plugin] ~= true then
                     disabled_plugins[plugin] = true
-                    if plugin == "SSH" and self.ui.SSH:isRunning() then
+                    if plugin == "SSH" and self.ui.SSH and self.ui.SSH:isRunning() then
                         self.ui.SSH:stop()
                     end
                 end
