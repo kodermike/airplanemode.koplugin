@@ -12,10 +12,9 @@ local ffiutil = require("ffi/util")
 local T = ffiutil.template
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local util = require("util")
+--local util = require("util")
 local _ = require("gettext")
 
-logger.dbg("AIRPLANE - staarting the engine")
 local settings_file = DataStorage:getDataDir() .. "/settings.reader.lua"
 local settings_bk = DataStorage:getDataDir() .. "/settings.reader.lua.airplane"
 local settings_bk_exists = false
@@ -29,23 +28,44 @@ if G_reader_settings == nil then
 	G_reader_settings = LuaSettings:open(settings_file)
 end
 
--- we just rebooted because of airplanemode, set the user back to their regularly scheduled program
-local cur_start = G_reader_settings:readSetting("start_with")
-if cur_start == "last" then
-	local amc = LuaSettings:open(airplanemode_config)
-	local last_start = amc:readSetting("restartMode")
+local function restoreState()
+	-- grab the current startup mode
+	local cur_start = G_reader_settings:readSetting("start_with")
+	local apm_settings = LuaSettings:open(airplanemode_config)
+	-- we just rebooted to change apm states, now switch pref back
+	local last_start = apm_settings:readSetting("restartMode")
 	if last_start ~= nil then
-		if cur_start == "last" then
-			G_reader_settings:saveSetting("start_with", last_start)
-		end
-		amc:saveSetting("restartMode", nil)
-		amc:flush()
-		amc:close()
-		G_reader_settings:flush()
+		G_reader_settings:saveSetting("start_with", last_start)
+		apm_settings:saveSetting("restartMode", nil)
 	end
+	apm_settings:flush()
+	apm_settings:close()
+	G_reader_settings:flush()
 end
--- undo the var
-cur_start = nil
+
+local function saveState(name)
+	-- grab the current startup mode
+	local cur_start = G_reader_settings:readSetting("start_with")
+	local apm_settings = LuaSettings:open(airplanemode_config)
+	local ui_mode
+	-- figure out where we are
+	if string.match(name, "reader") then
+		ui_mode = "last"
+	elseif string.match(name, "filemanager") then
+		ui_mode = "filemanager"
+	end
+	if ui_mode ~= nil then
+		-- save that state in our config
+		apm_settings:saveSetting("restartMode", cur_start)
+		-- set our new restart mode
+		G_reader_settings:saveSetting("start_with", ui_mode)
+	end
+	apm_settings:flush()
+	apm_settings:close()
+	G_reader_settings:flush()
+end
+
+restoreState()
 
 local AirPlaneMode = WidgetContainer:extend({
 	name = "airplanemode",
@@ -76,7 +96,6 @@ end
 
 function AirPlaneMode:init()
 	self:onDispatcherRegisterActions()
-	logger.dbg("AIRPLANE - Checking if we have an old-name settings file")
 	if isFile(DataStorage:getDataDir() .. "/settings/airplane_plugins.lua") then
 		--FIX this migrate didn't work - nothing was transferred
 		self:migrateconfig()
@@ -87,41 +106,35 @@ function AirPlaneMode:init()
 end
 
 function AirPlaneMode:initSettingsFile()
-	logger.dbg("AIRPLANE - starting the init file check")
 	if isFile(airplanemode_config) == true then
 		return
 	else
-		local airplane_config = LuaSettings:open(airplanemode_config)
-		airplane_config:saveSetting("version", version)
+		local apm_config = LuaSettings:open(airplanemode_config)
+		apm_config:saveSetting("version", version)
 		local default_disable = {}
 		local default_disable_list =
 			{ "newsdownloader", "wallabag", "calibre", "kosync", "opds", "SSH", "timesync", "httpinspector" }
 		for __, plugin in ipairs(default_disable_list) do
 			default_disable[plugin] = true
 		end
-		airplane_config:saveSetting("disabled_plugins", default_disable)
-		airplane_config:flush()
-		airplane_config:close()
+		apm_config:saveSetting("disabled_plugins", default_disable)
+		apm_config:flush()
+		apm_config:close()
 	end
 end
 
 function AirPlaneMode:migrateconfig()
-	logger.dbg("AIRPLANE - init file migration started")
-	logger.dbg("AIRPLANE - getting old config file")
 	local old_config_file = DataStorage:getDataDir() .. "/settings/airplane_plugins.lua"
 	local old_config = LuaSettings:open(old_config_file)
-	logger.dbg("AIRPPLANE - getting new config with", airplanemode_config)
 	local new_config = LuaSettings:open(airplanemode_config)
 	new_config:saveSetting("version", version)
 	local disabled = old_config:readSetting("disabled_plugins")
-	logger.dbg("AIRPLANE - adding the disabled table", disabled)
 	if disabled then
 		new_config:saveSetting("disabled_plugins", disabled)
 	end
 	new_config:flush()
 	old_config:close()
 	-- I know, why wouldn't it be there, but caution always
-	logger.dbg("AIRPLANE - removing old config file", old_config_file)
 	if isFile(old_config_file) then
 		os.remove(old_config_file)
 	end
@@ -158,7 +171,7 @@ function AirPlaneMode:Enable()
 		-- mark airplane as active
 		G_reader_settings:saveSetting("airplanemode", true)
 
-		-- [[ disable plugins, wireless, all of it
+		-- [[ disable plugins, wireless, all of it ]]
 		--set this regardless of original setting to ensure no resumes
 		if Device:hasWifiRestore() then --t
 			G_reader_settings:flipNilOrFalse("auto_restore_wifi")
@@ -190,8 +203,8 @@ function AirPlaneMode:Enable()
 			G_reader_settings:flipNilOrFalse("emulator_fake_wifi_connected", false)
 		end
 
-		local airplane_plugins = LuaSettings:open(airplanemode_config)
-		local check_plugins = airplane_plugins:readSetting("disabled_plugins") or {}
+		local apm_settings = LuaSettings:open(airplanemode_config)
+		local check_plugins = apm_settings:readSetting("disabled_plugins") or {}
 		local disabled_plugins = G_reader_settings:readSetting("plugins_disabled") or {}
 
 		-- a pair of loops for the logger
@@ -209,8 +222,8 @@ function AirPlaneMode:Enable()
 				end
 			end
 		end
-		airplane_plugins:flush()
-		airplane_plugins:close()
+		apm_settings:flush()
+		apm_settings:close()
 
 		G_reader_settings:saveSetting("plugins_disabled", disabled_plugins)
 		G_reader_settings:flush()
@@ -220,7 +233,8 @@ function AirPlaneMode:Enable()
 		end
 
 		if Device:canRestart() then
-			if airplane_plugins:nilOrFalse("silentmode") then
+			saveState(self.name)
+			if apm_settings:nilOrFalse("silentmode") then
 				UIManager:askForRestart(_("KOReader needs to restart to finish applying changes for AirPlane Mode."))
 			else
 				UIManager:restartKOReader()
@@ -297,6 +311,7 @@ function AirPlaneMode:Disable()
 	settings_bk_exists = false
 	local apm_config = LuaSettings:open(airplanemode_config)
 	if Device:canRestart() then
+		saveState(self.name)
 		if apm_config:nilOrFalse("silentmode") then
 			UIManager:askForRestart(_("KOReader needs to restart to finish disabling plugins for AirPlane Mode."))
 		else
@@ -359,8 +374,8 @@ local function getMenuTable(plugin)
 end
 
 function AirPlaneMode:getSubMenuItems()
-	local airplane_plugins = LuaSettings:open(airplanemode_config)
-	local check_plugins = airplane_plugins:readSetting("disabled_plugins") or {}
+	local apm_settings = LuaSettings:open(airplanemode_config)
+	local check_plugins = apm_settings:readSetting("disabled_plugins") or {}
 	local os_enabled_plugins, os_disabled_plugins = PluginLoader:loadPlugins()
 	local os_all_plugins = {}
 
@@ -405,18 +420,18 @@ function AirPlaneMode:getSubMenuItems()
 					else
 						check_plugins[plugin.name] = true
 					end
-					airplane_plugins:saveSetting("disabled_plugins", check_plugins)
+					apm_settings:saveSetting("disabled_plugins", check_plugins)
 					if touchmenu_instance then
 						touchmenu_instance:updateItems()
 					end
-					airplane_plugins:flush()
+					apm_settings:flush()
 				end,
 				help_text = T(_("%1\n\nThis plugin is already disabled in KOReader"), plugin.description),
 			})
 		end
 	end
-	airplane_plugins:flush()
-	airplane_plugins:close()
+	apm_settings:flush()
+	apm_settings:close()
 	return airplane_plugin_table
 end
 
