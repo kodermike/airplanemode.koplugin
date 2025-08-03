@@ -14,6 +14,12 @@
 
 - Correctly call the ui function to disable SSH if it's running when we start
 
+### TODO still
+
+- Update readme from scratch
+
+- Move config items into a config submenu
+
 ## v.0.0.4 - QoL update (2025.06.14)
 
 - Remove unnecessary visual of a checkbox

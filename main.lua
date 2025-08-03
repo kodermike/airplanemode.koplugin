@@ -153,17 +153,6 @@ function AirPlaneMode:backup()
 	end
 end
 
---TODO: add setting the two restart variable
---
---TODO: Add a menu option for config - move the config items there
-
---TODO: Add an option to let airplanemode manage profiles (ONLY) when airplanemode restarts koreader
---
--- if has profiles.airplane, resstore original profile settings after
--- (but add a field to say whether profiles an enabled plugin and was setup before)
---
--- start_with = "last"
-
 function AirPlaneMode:Enable()
 	local current_config = self:backup()
 	if current_config then
