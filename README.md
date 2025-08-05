@@ -7,56 +7,41 @@ This plugin is intended to give you the ability to quickly put your koreader int
 ## Installation
 
 1. Connect your device to USB
-1. Copy the `airplanemode.koplugin` directory to `plugins/` or unpack a release file in your plugins directory. On Kobo, this would be in `.adds/koreader/plugins`, on kindle's it is usually in `/mnt/us/koreader/plugins` (if you use a different architecture, let me know and I'll add it :) 
+1. Either:
+    1. Copy the `airplanemode.koplugin` directory to `plugins/` or 
+    1. unpack a release file in your plugins directory. On Kobo, this would be in `.adds/koreader/plugins`, on kindle's it is usually in `/mnt/us/koreader/plugins` (if you use a different architecture, let me know and I'll add it :) 
 1. Disconnect USB
 
 ## Usage
 
 ### Enabling
 
-In the Nework tab, tap or click the menu for `AirPlane Mode`. 
+In the Nework tab, tap or click the menu for `AirPlane Mode`. If the paper airplane is dark, AirPlane Mode is currently running.
 
+<!-- TODO: update this-->
 ![Screenshot of the Network tab with AirPlane Mode installed](<https://raw.githubusercontent.com/kodermike/kodermike.github.io/refs/heads/master/images/airplane_network_menu.png>)
 
-The `AirPlane Mode` menu is very simple - you can toggle `AirPlane Mode` and control which plugins will be disabled while it's running.
-
+<!-- TODO: update this-->
 ![Screenshot of the AirPlane Mode menu when disabled](<https://raw.githubusercontent.com/kodermike/kodermike.github.io/refs/heads/master/images/airplane_disabled.png>)
 
-Tapping on `Enable` will start `AirPlane Mode` and prompt to restart your device. This is necessary for the changes we've made to running plugins to take effect.
+From the top menu, you can:
 
-![Screenshot of the AirPlane Mode menu when disabled](<https://raw.githubusercontent.com/kodermike/kodermike.github.io/refs/heads/master/images/airplane_starting.png>)
-
-### Disabliing
-
-Turning AirPlane Mode off is simple. Return to the `AirPlane Menu` in `Network` and tap the `Disable` the button. We will need to restart again since we are re-enabling plugins that were disabled while offline.
-
-![Screenshot of the AirPlane Mode menu when disabled](<https://raw.githubusercontent.com/kodermike/kodermike.github.io/refs/heads/master/images/airplane_stopping.png>)
-
-## Plugin Management while in AirPlane Mode
-
-Selecting `AirPlane Mode Plugin Manager` will let you chose which plugins will be disabled when in `AirPort Mode`.
-
+* enable or disable AirPlane Mode.
+* edit the list of modules that are disabled when running AirPlane Mode. By default, core modules that rely on networking are disabled. 
+    * `Calibre`
+    * `HTTP Inspector`
+    * `News Downloader`
+    * `OPDS`
+    * `Progress Sync`
+    * `SSH`
+    * `Time Sync`
+    * `Wallabag`
+Select any additional modules you do not want running when AirPlane Mode is enabled. __This selection does not affect modules outside of AirPlane Mode.__
+<!-- TODO: update this-->
 ![Screenshot of the AirPlane Mode menu when disabled](<https://raw.githubusercontent.com/kodermike/kodermike.github.io/refs/heads/master/images/airplane_disabled.png>)
 
-By default, AirPlane Mode will disable the plugins 
-* `Calibre`
-* `HTTP Inspector`
-* `News Downloader`
-* `OPDS`
-* `Progress Sync`
-* `SSH`
-* `Time Sync`
-* `Wallabag`
-
-These are all plugins that come pre-installed and enabled in most KOReader bundles. In the `AirPlane Mode Plugin Manager` you will have the option to choose other plugins, as well as let some of the default disables be re-enabled. When in this menu, you will not be able to disable plugins if they are already disabled in your reader.
-
-![Screenshot of the AirPlane Mode menu when disabled](<https://raw.githubusercontent.com/kodermike/kodermike.github.io/refs/heads/master/images/airplane_module_select.png>)
-
-If you attempt to change which modules `AirPlane Mode` has diabled in the Module menu while running `AirPlane Mode`, you will receive an error message.
-
-![Screenshot of the AirPlane Mode Plugin Manager if AirPlane is already running](<https://raw.githubusercontent.com/kodermike/kodermike.github.io/refs/heads/master/images/airplane_running_no_mod.png>)
-
-When you exit `AirPlane Mode`, any plugins that were not disabled before you started will be reactivated by the restart.
+* Control whether you are prompted when AirPlane Mode needs to restart your device. Restarts are required for changes to plugins to take affect.
+* Enable an experimental feature to return you to where you left off when koreader is restarted by AirPlane Mode. If you are reading, this will return you to the last page you were on after AirPlane Mode restarts (even if filemanager is your default on reboots); if you are in filebrowser, you will return to filebrowser, even if "last page read" is your default.
 
 ## Gestures
 
@@ -68,13 +53,9 @@ In the `misc` directory, you will find a userpatch to add a notification icon in
 
 ---
 
-## IF YOU TESTED THE FIRST ALPHA
-
-For this iteration, I changed how we manage the plugins to disable/enable when switching modes. If your device is currently in `AirPlane Mode`, please exit `AirPlane Mode` before upgrading.
-
 ## Find a bug?
 
 Please open an issue in GitHub so we can start looking at what isn't working right.
 
 
-###### Updated 2025.06.14
+###### Updated 2025.07.04

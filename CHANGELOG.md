@@ -8,7 +8,7 @@
 
 - The ability to silence restart messages when enabling/disabling (#issue13)
 
-- Return to where we left off when restarting (#issue13). Not perfect, but we will return to your book if you were reading when enabled, or the filemanager if you were in the filemanager. Any other state is ignored and just uses the default restart settings.
+- The option to return to where we left off when restarting (#issue13). Not perfect, but we will return to your book if you were reading when enabled, or the filemanager if you were in the filemanager. Any other state is ignored and just uses the default restart settings.
 
 ### 🩹 Fixes
 
@@ -17,8 +17,6 @@
 ### TODO still
 
 - Update readme from scratch
-
-- Move config items into a config submenu
 
 ## v.0.0.4 - QoL update (2025.06.14)
 
