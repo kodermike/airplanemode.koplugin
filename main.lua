@@ -83,7 +83,7 @@ end
 function AirPlaneMode:onDispatcherRegisterActions()
     Dispatcher:registerAction(
         "airplanemode_enable",
-        { category = "none", event = "Enable", title = _("AirPlane Mode Enable"), device = true, separator = true }
+        { category = "none", event = "Enable", title = _("AirPlane Mode Enable"), device = true }
     )
     Dispatcher:registerAction(
         "airplanemode_disable",
@@ -281,7 +281,8 @@ function AirPlaneMode:Disable()
         G_reader_settings:delSetting("emulator_fake_wifi_connected")
     end
 
-    if NetworkMgr:getWifiState() == false and BK_Settings:isTrue("wifi_was_on") then
+    --if NetworkMgr:getWifiState() == false and BK_Settings:isTrue("wifi_was_on") then
+    if BK_Settings:isTrue("wifi_was_on") then
         NetworkMgr:enableWifi(nil, true)
     end
 
