@@ -113,7 +113,7 @@ function AirPlaneMode:initSettingsFile()
 		apm_config:saveSetting("version", version)
 		local default_disable = {}
 		local default_disable_list =
-			{ "newsdownloader", "wallabag", "kosync", "opds", "SSH", "timesync", "httpinspector" }
+		{ "newsdownloader", "wallabag", "kosync", "opds", "SSH", "timesync", "httpinspector" }
 		for __, plugin in ipairs(default_disable_list) do
 			default_disable[plugin] = true
 		end
@@ -483,65 +483,61 @@ function AirPlaneMode:addToMainMenu(menu_items)
 					end
 				end,
 			},
+			{ separator = true, },
 			{
-				text = _("AirPlane Mode Configuration"),
-				sub_item_table = {
-					{
-						text = _("AirPlane Mode Plugin Manager"),
-						sub_item_table_func = function()
-							if airmode then
-								UIManager:show(InfoMessage:new({
-									text = _("AirPlane Mode cannot be configured while running"),
-									timeout = 3,
-								}))
-							else
-								return self:getSubMenuItems()
-							end
-						end,
-					},
-					{
-						text = _("Silence the restart message"),
-						callback = function()
-							apm_config:toggle("silentmode")
-							apm_config:flush()
-						end,
-						checked_func = function()
-							if apm_config:isTrue("silentmode") then
-								return true
-							else
-								return false
-							end
-						end,
-						enabled_func = function()
-							if Device:canRestart() then
-								return true
-							else
-								return false
-							end
-						end,
-					},
-					{
-						text = _("Restore session after restart [EXPERIMENTAL]"),
-						callback = function()
-							apm_config:toggle("restoreopt")
-							apm_config:flush()
-						end,
-						checked_func = function()
-							if apm_config:isTrue("restoreopt") then
-								return true
-							else
-								return false
-							end
-						end,
-						enabled_func = function()
-							if Device:canRestart() then
-								return true
-							else
-								return false
-							end
-						end,
-					},
-				},
+				text = _("AirPlane Mode Plugin Manager"),
+				sub_item_table_func = function()
+					if airmode then
+						UIManager:show(InfoMessage:new({
+							text = _("AirPlane Mode cannot be configured while running"),
+							timeout = 3,
+						}))
+					else
+						return self:getSubMenuItems()
+					end
+				end,
+			},
+			{
+				text = _("Silence the restart message"),
+				callback = function()
+					apm_config:toggle("silentmode")
+					apm_config:flush()
+				end,
+				checked_func = function()
+					if apm_config:isTrue("silentmode") then
+						return true
+					else
+						return false
+					end
+				end,
+				enabled_func = function()
+					if Device:canRestart() then
+						return true
+					else
+						return false
+					end
+				end,
+			},
+			{
+				text = _("Restore session after restart [EXPERIMENTAL]"),
+				callback = function()
+					apm_config:toggle("restoreopt")
+					apm_config:flush()
+				end,
+				checked_func = function()
+					if apm_config:isTrue("restoreopt") then
+						return true
+					else
+						return false
+					end
+				end,
+				enabled_func = function()
+					if Device:canRestart() then
+						return true
+					else
+						return false
+					end
+				end,
 			},
 		},
 	}
