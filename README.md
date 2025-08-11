@@ -14,8 +14,6 @@ This plugin is intended to give you the ability to quickly put your koreader int
 
 ## Usage
 
-### Enabling
-
 In the Nework tab, tap or click the menu for `AirPlane Mode`. If the paper airplane is dark, AirPlane Mode is currently running.
 
 <!-- TODO: update this-->
@@ -27,8 +25,7 @@ In the Nework tab, tap or click the menu for `AirPlane Mode`. If the paper airpl
 From the top menu, you can:
 
 * enable or disable AirPlane Mode.
-* edit the list of modules that are disabled when running AirPlane Mode. By default, core modules that rely on networking are disabled. 
-    * `Calibre`
+* edit the list of plugins that are disabled when running AirPlane Mode. By default, core plugins that rely on networking are disabled. 
     * `HTTP Inspector`
     * `News Downloader`
     * `OPDS`
@@ -36,12 +33,15 @@ From the top menu, you can:
     * `SSH`
     * `Time Sync`
     * `Wallabag`
+The calibre plugin is no longer disabled by default. Instead, the wireless setting in the plugin is disabled by AirPlane Mode. This allows you to continue to perform local metadata searches, etc.
+
 Select any additional modules you do not want running when AirPlane Mode is enabled. __This selection does not affect modules outside of AirPlane Mode.__
+
 <!-- TODO: update this-->
 ![Screenshot of the AirPlane Mode menu when disabled](<https://raw.githubusercontent.com/kodermike/kodermike.github.io/refs/heads/master/images/airplane_disabled.png>)
 
 * Control whether you are prompted when AirPlane Mode needs to restart your device. Restarts are required for changes to plugins to take affect.
-* Enable an experimental feature to return you to where you left off when koreader is restarted by AirPlane Mode. If you are reading, this will return you to the last page you were on after AirPlane Mode restarts (even if filemanager is your default on reboots); if you are in filebrowser, you will return to filebrowser, even if "last page read" is your default.
+* Enable an experimental feature to return you to where you left off when koreader is restarted by AirPlane Mode. If you are reading, this will return you to the last page you were on after AirPlane Mode restarts (even if filemanager is your default on reboots); if you are in filebrowser, you will return to filebrowser, even if "last page read" is your default. This is a onetime setting - manual restarts of koreader will revert back to normal references for start up.
 
 ## Gestures
 
@@ -58,4 +58,4 @@ In the `misc` directory, you will find a userpatch to add a notification icon in
 Please open an issue in GitHub so we can start looking at what isn't working right.
 
 
-###### Updated 2025.07.04
+###### Updated 2025.08.11
