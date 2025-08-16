@@ -30,10 +30,12 @@ end
 
 local function restoreState()
 	-- grab the current startup mode
+	logger.dbg("AIRPLANE - checking startup mode")
 	local apm_settings = LuaSettings:open(airplanemode_config)
 	-- we just rebooted to change apm states, now switch pref back
 	local last_start = apm_settings:readSetting("restartMode")
 	if apm_settings:isTrue("restoreopt") then
+		logger.dbg("AIRPLANE - restoring")
 		if last_start ~= nil then
 			G_reader_settings:saveSetting("start_with", last_start)
 			apm_settings:saveSetting("restartMode", nil)
@@ -110,6 +112,7 @@ function AirPlaneMode:initSettingsFile()
 		return
 	else
 		local apm_config = LuaSettings:open(airplanemode_config)
+		logger.dbg("AIRPLANE - creating settings file")
 		apm_config:saveSetting("version", version)
 		local default_disable = {}
 		local default_disable_list =
@@ -130,6 +133,9 @@ function AirPlaneMode:migrateconfig()
 	new_config:saveSetting("version", version)
 	local disabled = old_config:readSetting("disabled_plugins")
 	if disabled then
+		if disabled["calibre"] then
+			disabled["calibre"] = false
+		end
 		new_config:saveSetting("disabled_plugins", disabled)
 	end
 	new_config:flush()
@@ -442,7 +448,7 @@ end
 function AirPlaneMode:addToMainMenu(menu_items)
 	local airmode = self:getStatus()
 	local apm_config = LuaSettings:open(airplanemode_config)
-
+	logger.dbg("AIRPLANE - building our menu")
 	menu_items.airplanemode = {
 		text_func = function()
 			if airmode then
@@ -487,6 +493,7 @@ function AirPlaneMode:addToMainMenu(menu_items)
 			{
 				text = _("AirPlane Mode Plugin Manager"),
 				sub_item_table_func = function()
+					logger.dbg("AIRPLANE - building plugin manager")
 					if airmode then
 						UIManager:show(InfoMessage:new({
 							text = _("AirPlane Mode cannot be configured while running"),
@@ -500,6 +507,7 @@ function AirPlaneMode:addToMainMenu(menu_items)
 			{
 				text = _("Silence the restart message"),
 				callback = function()
+					logger.dbg("AIRPLANE - checking silentmode")
 					apm_config:toggle("silentmode")
 					apm_config:flush()
 				end,
@@ -521,6 +529,7 @@ function AirPlaneMode:addToMainMenu(menu_items)
 			{
 				text = _("Restore session after restart [EXPERIMENTAL]"),
 				callback = function()
+					logger.dbg("AIRPLANE - restoreopt")
 					apm_config:toggle("restoreopt")
 					apm_config:flush()
 				end,
