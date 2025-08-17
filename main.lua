@@ -21,7 +21,7 @@ local settings_bk_exists = false
 
 local airplanemode_config = DataStorage:getDataDir() .. "/settings/airplanemode.lua"
 
-local version = "0.0.9"
+local version = "1.0.0"
 
 -- establish the main settings file
 if G_reader_settings == nil then
@@ -113,7 +113,7 @@ function AirPlaneMode:initSettingsFile()
 		apm_config:saveSetting("version", version)
 		local default_disable = {}
 		local default_disable_list =
-		{ "newsdownloader", "wallabag", "kosync", "opds", "SSH", "timesync", "httpinspector" }
+			{ "newsdownloader", "wallabag", "kosync", "opds", "SSH", "timesync", "httpinspector" }
 		for __, plugin in ipairs(default_disable_list) do
 			default_disable[plugin] = true
 		end

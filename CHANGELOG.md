@@ -1,22 +1,24 @@
 # Changelog
 
-## v.0.0.9 - beta for v.0.1.0
+## v.1.0.0 (2025.08.16)
 
 ### 🚀 Added
 
-- Configuration management (and a configuration to manage)
+- <u>Configuration management</u> (and a configuration to manage!). This includes
+  - Minor updates to plugin support, in particular not turning off Calibre and instead just disabling the wireless function. This lets users continue to search using the calibre metadata search even when offline.
 
-- The ability to silence restart messages when enabling/disabling (#issue13)
+  - The ability to silence restart messages when enabling/disabling (#issue13). The intent is to make using gestures more seemless.
 
-- The option to return to where we left off when restarting (#issue13). Not perfect, but we will return to your book if you were reading when enabled, or the filemanager if you were in the filemanager. Any other state is ignored and falls back to the default restart settings.
+  - The option to return to where we left off when restarting (#issue13). **This is experimental.** Not perfect, but the plugin will attempt to return you to your book if you were reading when enabled, or the filemanager if you were in the filemanager. Any other state is ignored and falls back to the default restart settings. This feature depends on the general functionality of koreader to return you to where you left off if you restart and does not always return to the right spot in your book. 
+
+  - Introduced internal version tracking so future releases can more easily track upgrade and migration requirements. As a bonus, this should make asking users for which version they installed easier.
+
+  - Changed what (and how to some extent) we store in the airplanemode configuration file. Existing users should be migrated seemlessly the first time they launch koreader with the new version.
+
 
 ### 🩹 Fixes
 
 - Correctly call the ui function to disable SSH if it's running when we start
-
-### TODO still
-
-- Update readme from scratch
 
 ## v.0.0.4 - QoL update (2025.06.14)
 
