@@ -10,7 +10,8 @@ This plugin is intended to give you the ability to quickly put your koreader int
 1. Connect your device to USB
 1. Either:
     1. Copy the `airplanemode.koplugin` directory to `plugins/` or
-    1. unpack a release file in your plugins directory. On Kobo, this would be in `.adds/koreader/plugins`, on kindle's it is usually in `/mnt/us/koreader/plugins` (if you use a different architecture, let me know and I'll add it :)
+    1. unpack a release file in your plugins directory. On Kobo, this would be in `.adds/koreader/plugins`, on kindle's it is usually in `/mnt/us/koreader/plugins` (if you use a different architecture, let me know and I'll add it :) or
+    1. If you have a kobo running koreader, you can place the KoboRoot.tgz file in your `.kobo` directory and reboot.
 1. Disconnect USB
 
 ## Usage
@@ -63,4 +64,4 @@ Please open an issue in GitHub so we can start looking at what isn't working rig
 
 [^1]: Calibre change: Previous versions of this plugin completely disabled the Calibre plugin, which had the unfortunate side effect of disabling calibre metadata searching. The default behavior now is to only disable the wireless function for Calibre
 
-###### Updated 2025.08.11
+###### Updated 2025.08.16
