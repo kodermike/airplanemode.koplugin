@@ -215,6 +215,8 @@ function AirPlaneMode:Enable()
           disabled_plugins[plugin] = true
           if plugin == "SSH" and self.ui.SSH and self.ui.SSH:isRunning() then
             self.ui.SSH:stop()
+          elseif plugin == "Syncthing" and self.ui.Syncthing and self.ui.Syncthing:isRunning() then
+            self.ui.Syncthing.stop()
           end
         end
       end
