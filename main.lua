@@ -212,12 +212,52 @@ function AirPlaneMode:Enable()
     else
       for plugin, __ in pairs(check_plugins) do
         if disabled_plugins[plugin] ~= true then
-          disabled_plugins[plugin] = true
-          if plugin == "SSH" and self.ui.SSH and self.ui.SSH:isRunning() then
-            self.ui.SSH:stop()
-          elseif plugin == "Syncthing" and self.ui.Syncthing and self.ui.Syncthing:isRunning() then
-            self.ui.Syncthing.stop()
+          -- Check the current plugin  for status and stop if necessary
+          local modcheck = self.ui[plugin]
+          -- if the passed name was a plugin continue
+          if modcheck and (type(modcheck) == "table") then
+            -- if the passed plugin has either a stop or stopPlugin method
+            local stopmethod = type(modcheck["stop"]) == "function"
+            local stopPluginmethod = type(modcheck["stopPlugin"]) == "function"
+            if stopmethod or stopPluginmethod then
+              -- The plugin has an isRunning method - use that to determine if we should try and stop it
+              if (type(modcheck["isRunning"]) == "function") then
+                local status, err = pcall(function()
+                  pcall(modcheck["isRunning"]())
+                end)
+                -- if the status came back that the plugin was running
+                if status then
+                  -- try to run stopPlugin if available since it's cleaner
+                  if stopPluginmethod then
+                    local mstatus, merr = pcall(function()
+                      pcall(modcheck["stopPlugin"]())
+                    end)
+                    if merr then
+                      -- stopPlugin failed, just do a normal stop
+                      local sstatus, serr = pcall(function()
+                        pcall(modcheck["stop"]())
+                      end)
+                      if serr then
+                        logger.err("Failed to stop", plugin)
+                      end
+                    end
+                  else
+                    -- no stopPlugin, fallback to regular stop
+                    local sstatus, serr = pcall(function()
+                      pcall(modcheck["stop"]())
+                    end)
+                    if serr then
+                      logger.err("Failed to stop", plugin)
+                    end
+                  end
+                end
+              end
+            end
           end
+          -- After our attempts to stop, go ahead and mark the plugin disabled.
+          -- Moved to the end to avoid confusion if for some reason we crash
+          -- attempting to stop a plugin.
+          disabled_plugins[plugin] = true
         end
       end
     end
