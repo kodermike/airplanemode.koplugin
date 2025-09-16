@@ -151,8 +151,46 @@ function AirPlaneMode:backup()
     ffiutil.copyFile(settings_file, settings_bk)
     return isFile(settings_bk) and true or false
   else
-    logger.err("AirPlane Mode [ERROR] - Failed to find settings file at: ", settings_file)
+    logger.err("AirPlaneMode: Failed to find settings file at: ", settings_file)
     return false
+  end
+end
+
+local function stringto(v)
+  if type(v) == string and v == "true" then return true end
+  if type(v) == string and v == "false" then return false end
+end
+
+local function stopOtherPlugins(stopp, fplugin, plugin)
+  -- try to run stopPlugin if available since it's cleaner
+  logger.dbg("AIRPLAINE: trying to stop", plugin, "because stopp was", stopp)
+  if stopp then
+    local mstatus, merr = pcall(function()
+      pcall(fplugin["stopPlugin"]())
+    end)
+    if stringto(mstatus) == false then
+      -- stopPlugin failed, just do a normal stop
+      local sstatus, serr = pcall(function()
+        pcall(fplugin["stop"]())
+      end)
+      if stringto(sstatus) == false then
+        logger.err("AirPlaneMode: Failed to stop", plugin)
+      else
+        logger.dbg("AirPlaneMode: Used stop on running plugin", plugin)
+      end
+    else
+      logger.dbg("AirPlaneMode: Used stopPlugin on running plugin", plugin)
+    end
+  else
+    -- no stopPlugin, fallback to regular stop
+    local sstatus, serr = pcall(function()
+      pcall(fplugin["stop"]())
+    end)
+    if stringto(sstatus) == false then
+      logger.err("AirPlaneMode: Failed to stop", plugin)
+    else
+      logger.dbg("AirPlaneMode: Stopped plugin", plugin)
+    end
   end
 end
 
@@ -212,12 +250,38 @@ function AirPlaneMode:Enable()
     else
       for plugin, __ in pairs(check_plugins) do
         if disabled_plugins[plugin] ~= true then
-          disabled_plugins[plugin] = true
-          if plugin == "SSH" and self.ui.SSH and self.ui.SSH:isRunning() then
-            self.ui.SSH:stop()
-          elseif plugin == "Syncthing" and self.ui.Syncthing and self.ui.Syncthing:isRunning() then
-            self.ui.Syncthing.stop()
+          -- Check the current plugin  for status and stop if necessary
+          local modcheck = self.ui[plugin]
+          -- if the passed name was a plugin continue
+          if modcheck and (type(modcheck) == "table") then
+            -- if the passed plugin has either a stop or stopPlugin method
+            local stopmethod = type(modcheck["stop"]) == "function"
+            local stopPluginmethod = type(modcheck["stopPlugin"]) == "function"
+            if stopmethod or stopPluginmethod then
+              -- The plugin has a stop method
+              if (type(modcheck["isRunning"]) == "function") then
+                -- The plugin has an isRunning method - use that to determine if we should try and stop it
+                local status, err = pcall(function()
+                  pcall(modcheck["isRunning"]())
+                end)
+                -- if the status came back that the plugin was running
+                logger.dbg("AIRPLANE: status ", status, "vs error", err, "plugin", plugin)
+                if stringto(status) == true then
+                  logger.dbg("AIRPLANE: status evaluated as true?")
+                  -- try to run stopPlugin if available since it's cleaner
+                  stopOtherPlugins(stopPluginmethod, modcheck, plugin)
+                end
+              else
+                -- stop methods were found but no isRunning, so we'll just try to run stop and hope
+                stopOtherPlugins(stopPluginmethod, modcheck, plugin)
+              end
+            end
           end
+          -- After our attempts to stop, go ahead and mark the plugin disabled.
+          -- Moved to the end to avoid confusion if for some reason we crash
+          -- attempting to stop a plugin.
+          disabled_plugins[plugin] = true
+          logger.dbg("AirPlaneMode: disabled ", plugin)
         end
       end
     end
@@ -251,7 +315,7 @@ function AirPlaneMode:Enable()
       }))
     end
   else
-    logger.err("AirPlane Mode [ERROR] - Failed to create backup file and execute")
+    logger.err("AirPlaneMode: Failed to create backup file and execute")
   end
 end
 
@@ -341,7 +405,7 @@ end
 function AirPlaneMode:getStatus()
   -- test we can see the real settings file.
   if not isFile(settings_file) then
-    logger.err("AirPlane Mode [ERROR] - Settings file not found! Abort!", settings_file)
+    logger.err("AirPlaneMode: Settings file not found! Abort!", settings_file)
     return false
   end
   -- check if we currently have a backup of our settings running
