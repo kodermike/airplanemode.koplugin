@@ -81,18 +81,9 @@ local function isFile(filename)
 end
 
 function AirPlaneMode:onDispatcherRegisterActions()
-  Dispatcher:registerAction(
-    "airplanemode_enable",
-    { category = "none", event = "Enable", title = _("AirPlane Mode Enable"), device = true }
-  )
-  Dispatcher:registerAction(
-    "airplanemode_disable",
-    { category = "none", event = "Disable", title = _("AirPlane Mode Disable"), device = true }
-  )
-  Dispatcher:registerAction(
-    "airplanemode_toggle",
-    { category = "none", event = "Toggle", title = _("AirPlane Mode Toggle"), device = true, separator = true }
-  )
+  Dispatcher:registerAction("airplanemode_enable", { category = "none", event = "Enable", title = _("AirPlane Mode Enable"), device = true })
+  Dispatcher:registerAction("airplanemode_disable", { category = "none", event = "Disable", title = _("AirPlane Mode Disable"), device = true })
+  Dispatcher:registerAction("airplanemode_toggle", { category = "none", event = "Toggle", title = _("AirPlane Mode Toggle"), device = true, separator = true })
 end
 
 function AirPlaneMode:init()
@@ -112,8 +103,7 @@ function AirPlaneMode:initSettingsFile()
     local apm_config = LuaSettings:open(airplanemode_config)
     apm_config:saveSetting("version", version)
     local default_disable = {}
-    local default_disable_list =
-    { "newsdownloader", "wallabag", "kosync", "opds", "SSH", "timesync", "httpinspector" }
+    local default_disable_list = { "newsdownloader", "wallabag", "kosync", "opds", "SSH", "timesync", "httpinspector" }
     for __, plugin in ipairs(default_disable_list) do
       default_disable[plugin] = true
     end
@@ -157,13 +147,16 @@ function AirPlaneMode:backup()
 end
 
 local function stringto(v)
-  if type(v) == string and v == "true" then return true end
-  if type(v) == string and v == "false" then return false end
+  if type(v) == string and v == "true" then
+    return true
+  end
+  if type(v) == string and v == "false" then
+    return false
+  end
 end
 
 local function stopOtherPlugins(stopp, fplugin, plugin)
   -- try to run stopPlugin if available since it's cleaner
-  logger.dbg("AIRPLAINE: trying to stop", plugin, "because stopp was", stopp)
   if stopp then
     local mstatus, merr = pcall(function()
       pcall(fplugin["stopPlugin"]())
@@ -175,11 +168,7 @@ local function stopOtherPlugins(stopp, fplugin, plugin)
       end)
       if stringto(sstatus) == false then
         logger.err("AirPlaneMode: Failed to stop", plugin)
-      else
-        logger.dbg("AirPlaneMode: Used stop on running plugin", plugin)
       end
-    else
-      logger.dbg("AirPlaneMode: Used stopPlugin on running plugin", plugin)
     end
   else
     -- no stopPlugin, fallback to regular stop
@@ -188,8 +177,6 @@ local function stopOtherPlugins(stopp, fplugin, plugin)
     end)
     if stringto(sstatus) == false then
       logger.err("AirPlaneMode: Failed to stop", plugin)
-    else
-      logger.dbg("AirPlaneMode: Stopped plugin", plugin)
     end
   end
 end
@@ -259,15 +246,13 @@ function AirPlaneMode:Enable()
             local stopPluginmethod = type(modcheck["stopPlugin"]) == "function"
             if stopmethod or stopPluginmethod then
               -- The plugin has a stop method
-              if (type(modcheck["isRunning"]) == "function") then
+              if type(modcheck["isRunning"]) == "function" then
                 -- The plugin has an isRunning method - use that to determine if we should try and stop it
                 local status, err = pcall(function()
                   pcall(modcheck["isRunning"]())
                 end)
                 -- if the status came back that the plugin was running
-                logger.dbg("AIRPLANE: status ", status, "vs error", err, "plugin", plugin)
                 if stringto(status) == true then
-                  logger.dbg("AIRPLANE: status evaluated as true?")
                   -- try to run stopPlugin if available since it's cleaner
                   stopOtherPlugins(stopPluginmethod, modcheck, plugin)
                 end
@@ -281,7 +266,6 @@ function AirPlaneMode:Enable()
           -- Moved to the end to avoid confusion if for some reason we crash
           -- attempting to stop a plugin.
           disabled_plugins[plugin] = true
-          logger.dbg("AirPlaneMode: disabled ", plugin)
         end
       end
     end
