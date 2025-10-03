@@ -279,6 +279,7 @@ function AirPlaneMode:Enable()
       NetworkMgr:disableWifi(nil, true)
     end
 
+    self.ui:saveSettings()
     if Device:canRestart() then
       if apm_settings:isTrue("restoreopt") then
         saveState(self.name)
@@ -365,6 +366,7 @@ function AirPlaneMode:Disable()
 
   settings_bk_exists = false
   local apm_settings = LuaSettings:open(airplanemode_config)
+  self.ui:saveSettings()
   if Device:canRestart() then
     if apm_settings:isTrue("restoreopt") then
       saveState(self.name)
