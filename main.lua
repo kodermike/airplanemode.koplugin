@@ -81,18 +81,9 @@ local function isFile(filename)
 end
 
 function AirPlaneMode:onDispatcherRegisterActions()
-  Dispatcher:registerAction(
-    "airplanemode_enable",
-    { category = "none", event = "Enable", title = _("AirPlane Mode Enable"), device = true }
-  )
-  Dispatcher:registerAction(
-    "airplanemode_disable",
-    { category = "none", event = "Disable", title = _("AirPlane Mode Disable"), device = true }
-  )
-  Dispatcher:registerAction(
-    "airplanemode_toggle",
-    { category = "none", event = "Toggle", title = _("AirPlane Mode Toggle"), device = true, separator = true }
-  )
+  Dispatcher:registerAction("airplanemode_enable", { category = "none", event = "Enable", title = _("AirPlane Mode Enable"), device = true })
+  Dispatcher:registerAction("airplanemode_disable", { category = "none", event = "Disable", title = _("AirPlane Mode Disable"), device = true })
+  Dispatcher:registerAction("airplanemode_toggle", { category = "none", event = "Toggle", title = _("AirPlane Mode Toggle"), device = true, separator = true })
 end
 
 function AirPlaneMode:init()
@@ -112,8 +103,7 @@ function AirPlaneMode:initSettingsFile()
     local apm_config = LuaSettings:open(airplanemode_config)
     apm_config:saveSetting("version", version)
     local default_disable = {}
-    local default_disable_list =
-    { "newsdownloader", "wallabag", "kosync", "opds", "SSH", "timesync", "httpinspector" }
+    local default_disable_list = { "newsdownloader", "wallabag", "kosync", "opds", "SSH", "timesync", "httpinspector" }
     for __, plugin in ipairs(default_disable_list) do
       default_disable[plugin] = true
     end
@@ -151,8 +141,43 @@ function AirPlaneMode:backup()
     ffiutil.copyFile(settings_file, settings_bk)
     return isFile(settings_bk) and true or false
   else
-    logger.err("AirPlane Mode [ERROR] - Failed to find settings file at: ", settings_file)
+    logger.err("AirPlaneMode: Failed to find settings file at: ", settings_file)
     return false
+  end
+end
+
+local function stringto(v)
+  if type(v) == string and v == "true" then
+    return true
+  end
+  if type(v) == string and v == "false" then
+    return false
+  end
+end
+
+local function stopOtherPlugins(stopp, fplugin, plugin)
+  -- try to run stopPlugin if available since it's cleaner
+  if stopp then
+    local mstatus, merr = pcall(function()
+      pcall(fplugin["stopPlugin"]())
+    end)
+    if stringto(mstatus) == false then
+      -- stopPlugin failed, just do a normal stop
+      local sstatus, serr = pcall(function()
+        pcall(fplugin["stop"]())
+      end)
+      if stringto(sstatus) == false then
+        logger.err("AirPlaneMode: Failed to stop", plugin)
+      end
+    end
+  else
+    -- no stopPlugin, fallback to regular stop
+    local sstatus, serr = pcall(function()
+      pcall(fplugin["stop"]())
+    end)
+    if stringto(sstatus) == false then
+      logger.err("AirPlaneMode: Failed to stop", plugin)
+    end
   end
 end
 
@@ -212,12 +237,35 @@ function AirPlaneMode:Enable()
     else
       for plugin, __ in pairs(check_plugins) do
         if disabled_plugins[plugin] ~= true then
-          disabled_plugins[plugin] = true
-          if plugin == "SSH" and self.ui.SSH and self.ui.SSH:isRunning() then
-            self.ui.SSH:stop()
-          elseif plugin == "Syncthing" and self.ui.Syncthing and self.ui.Syncthing:isRunning() then
-            self.ui.Syncthing.stop()
+          -- Check the current plugin  for status and stop if necessary
+          local modcheck = self.ui[plugin]
+          -- if the passed name was a plugin continue
+          if modcheck and (type(modcheck) == "table") then
+            -- if the passed plugin has either a stop or stopPlugin method
+            local stopmethod = type(modcheck["stop"]) == "function"
+            local stopPluginmethod = type(modcheck["stopPlugin"]) == "function"
+            if stopmethod or stopPluginmethod then
+              -- The plugin has a stop method
+              if type(modcheck["isRunning"]) == "function" then
+                -- The plugin has an isRunning method - use that to determine if we should try and stop it
+                local status, err = pcall(function()
+                  pcall(modcheck["isRunning"]())
+                end)
+                -- if the status came back that the plugin was running
+                if stringto(status) == true then
+                  -- try to run stopPlugin if available since it's cleaner
+                  stopOtherPlugins(stopPluginmethod, modcheck, plugin)
+                end
+              else
+                -- stop methods were found but no isRunning, so we'll just try to run stop and hope
+                stopOtherPlugins(stopPluginmethod, modcheck, plugin)
+              end
+            end
           end
+          -- After our attempts to stop, go ahead and mark the plugin disabled.
+          -- Moved to the end to avoid confusion if for some reason we crash
+          -- attempting to stop a plugin.
+          disabled_plugins[plugin] = true
         end
       end
     end
@@ -251,7 +299,7 @@ function AirPlaneMode:Enable()
       }))
     end
   else
-    logger.err("AirPlane Mode [ERROR] - Failed to create backup file and execute")
+    logger.err("AirPlaneMode: Failed to create backup file and execute")
   end
 end
 
@@ -341,7 +389,7 @@ end
 function AirPlaneMode:getStatus()
   -- test we can see the real settings file.
   if not isFile(settings_file) then
-    logger.err("AirPlane Mode [ERROR] - Settings file not found! Abort!", settings_file)
+    logger.err("AirPlaneMode: Settings file not found! Abort!", settings_file)
     return false
   end
   -- check if we currently have a backup of our settings running
