@@ -291,8 +291,6 @@ function AirPlaneMode:Enable()
 
     G_reader_settings:flush()
 
-
-
     self.ui:saveSettings()
 
     if Device:canRestart() then
@@ -320,43 +318,46 @@ function AirPlaneMode:Enable()
 end
 
 function AirPlaneMode:Disable()
+  local apm_settings = LuaSettings:open(airplanemode_config)
   G_reader_settings:saveSetting("airplanemode", false)
   local BK_Settings = LuaSettings:open(settings_bk)
 
-  if Device:hasWifiRestore() and BK_Settings:isTrue("auto_restore_wifi") then
-    G_reader_settings:makeTrue("auto_restore_wifi")
-  end
+  if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator()) and apm_settings:nilOrFalse("managewifi") then
+    if Device:hasWifiRestore() and BK_Settings:isTrue("auto_restore_wifi") then
+      G_reader_settings:makeTrue("auto_restore_wifi")
+    end
 
-  if BK_Settings:nilOrFalse("auto_disable_wifi") then
-    -- flip the real config
-    G_reader_settings:flipNilOrFalse("auto_disable_wifi")
-  end
+    if BK_Settings:nilOrFalse("auto_disable_wifi") then
+      -- flip the real config
+      G_reader_settings:flipNilOrFalse("auto_disable_wifi")
+    end
 
-  if BK_Settings:isTrue("http_proxy_enabled") then
-    -- flip the real config
-    G_reader_settings:makeTrue("http_proxy_enabled")
-  end
+    -- According to network manager, this setting always has a value and defaults to prompt
+    local bk_wifi_enable_action_setting = BK_Settings:readSetting("wifi_enable_action") or "prompt"
+    G_reader_settings:saveSetting("wifi_enable_action", bk_wifi_enable_action_setting)
 
-  -- According to network manager, this setting always has a value and defaults to prompt
-  local bk_wifi_enable_action_setting = BK_Settings:readSetting("wifi_enable_action") or "prompt"
-  G_reader_settings:saveSetting("wifi_enable_action", bk_wifi_enable_action_setting)
+    -- According to network manager, this setting always has a value and defaults to prompt
+    local bk_wifi_disable_action_setting = BK_Settings:readSetting("wifi_disable_action") or "prompt"
+    G_reader_settings:saveSetting("wifi_disable_action", bk_wifi_disable_action_setting)
 
-  -- According to network manager, this setting always has a value and defaults to prompt
-  local bk_wifi_disable_action_setting = BK_Settings:readSetting("wifi_disable_action") or "prompt"
-  G_reader_settings:saveSetting("wifi_disable_action", bk_wifi_disable_action_setting)
+    -- got to watch out for our emulator friends :) (ie, me, testing)
+    if Device:isEmulator() and BK_Settings:has("emulator_fake_wifi_connected") then
+      local old_emulator_fake_wifi_connected = BK_Settings:readSetting("emulator_fake_wifi_connected")
+      -- flip the real config
+      G_reader_settings:saveSetting("emulator_fake_wifi_connected", old_emulator_fake_wifi_connected)
+    else
+      G_reader_settings:delSetting("emulator_fake_wifi_connected")
+    end
 
-  -- got to watch out for our emulator friends :) (ie, me, testing)
-  if Device:isEmulator() and BK_Settings:has("emulator_fake_wifi_connected") then
-    local old_emulator_fake_wifi_connected = BK_Settings:readSetting("emulator_fake_wifi_connected")
-    -- flip the real config
-    G_reader_settings:saveSetting("emulator_fake_wifi_connected", old_emulator_fake_wifi_connected)
-  else
-    G_reader_settings:delSetting("emulator_fake_wifi_connected")
-  end
+    if BK_Settings:isTrue("http_proxy_enabled") then
+      -- flip the real config
+      G_reader_settings:makeTrue("http_proxy_enabled")
+    end
 
-  --if NetworkMgr:getWifiState() == false and BK_Settings:isTrue("wifi_was_on") then
-  if BK_Settings:isTrue("wifi_was_on") then
-    NetworkMgr:enableWifi(nil, true)
+    --if NetworkMgr:getWifiState() == false and BK_Settings:isTrue("wifi_was_on") then
+    if BK_Settings:isTrue("wifi_was_on") then
+      NetworkMgr:enableWifi(nil, true)
+    end
   end
 
   -- re-enable calibre wirless if it was before
@@ -380,7 +381,6 @@ function AirPlaneMode:Disable()
   end
 
   settings_bk_exists = false
-  local apm_settings = LuaSettings:open(airplanemode_config)
   self.ui:saveSettings()
   if Device:canRestart() then
     if apm_settings:isTrue("restoreopt") then
