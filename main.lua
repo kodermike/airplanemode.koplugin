@@ -15,13 +15,13 @@ local logger = require("logger")
 --local util = require("util")
 local _ = require("gettext")
 
+local meta = require("_meta")
+
 local settings_file = DataStorage:getDataDir() .. "/settings.reader.lua"
 local settings_bk = DataStorage:getDataDir() .. "/settings.reader.lua.airplane"
 local settings_bk_exists = false
 
 local airplanemode_config = DataStorage:getDataDir() .. "/settings/airplanemode.lua"
-
-local version = "1.0.0"
 
 -- establish the main settings file
 if G_reader_settings == nil then
@@ -100,16 +100,16 @@ function AirPlaneMode:initSettingsFile()
   if isFile(airplanemode_config) == true then
     return
   else
-    local apm_config = LuaSettings:open(airplanemode_config)
-    apm_config:saveSetting("version", version)
+    local apm_settings = LuaSettings:open(airplanemode_config)
+    apm_settings:saveSetting("version", meta.version)
     local default_disable = {}
     local default_disable_list = { "newsdownloader", "wallabag", "kosync", "opds", "SSH", "timesync", "httpinspector" }
     for __, plugin in ipairs(default_disable_list) do
       default_disable[plugin] = true
     end
-    apm_config:saveSetting("disabled_plugins", default_disable)
-    apm_config:flush()
-    apm_config:close()
+    apm_settings:saveSetting("disabled_plugins", default_disable)
+    apm_settings:flush()
+    apm_settings:close()
   end
 end
 
@@ -117,7 +117,7 @@ function AirPlaneMode:migrateconfig()
   local old_config_file = DataStorage:getDataDir() .. "/settings/airplane_plugins.lua"
   local old_config = LuaSettings:open(old_config_file)
   local new_config = LuaSettings:open(airplanemode_config)
-  new_config:saveSetting("version", version)
+  new_config:saveSetting("version", meta.version)
   local disabled = old_config:readSetting("disabled_plugins")
   if disabled then
     if disabled["calibre"] then
@@ -180,6 +180,35 @@ local function stopOtherPlugins(stopp, fplugin, plugin)
     end
   end
 end
+
+local function split(str)
+  local t = {}
+  local i = 0
+  for v in string.gmatch(str, '.') do
+    if v ~= "." then
+      t[i] = v
+      i = i + 1
+    end
+  end
+  return (t)
+end
+--[[
+compare versions - return true means current is greater, false older
+]]
+local function compareversions(old, new)
+  local oldv = split(old)
+  local newv = split(new)
+  if oldv[0] > newv[0] then
+    return false
+  elseif oldv[1] > newv[1] then
+    return false
+  elseif oldv[2] > newv[2] then
+    return false
+  else
+    return true
+  end
+end
+
 
 function AirPlaneMode:Enable()
   local current_config = self:backup()
@@ -495,8 +524,8 @@ function AirPlaneMode:getSubMenuItems()
 end
 
 function AirPlaneMode:addToMainMenu(menu_items)
+  local apm_settings = LuaSettings:open(airplanemode_config)
   local airmode = self:getStatus()
-  local apm_config = LuaSettings:open(airplanemode_config)
   menu_items.airplanemode = {
     text_func = function()
       if airmode then
@@ -505,11 +534,26 @@ function AirPlaneMode:addToMainMenu(menu_items)
         return _("\u{F1D9} Airplane Mode")
       end
     end,
-    help_text = T(_("A simple plugin that helps you when you're on the go.\n\n\nv.%1"), version),
+    help_text = T(_("A simple plugin that helps you when you're on the go.\n\n\nv.%1"), meta.version),
     sorting_hint = "network",
     sub_item_table = {
       {
         text_func = function()
+          local curversion = apm_settings:readSetting("version")
+          if (curversion ~= nil) and (curversion ~= meta.version) then
+            if compareversions(curversion, meta.version) then
+              apm_settings:saveSetting("version", meta.version)
+              apm_settings:flush()
+            else
+              UIManager:show(InfoMessage:new({
+                text = T(_("You are running a version of AirPlane Mode older than your configuration file. You may experience issues.")),
+                timeout = 3,
+              }))
+            end
+          else
+            apm_settings:saveSetting("version", meta.version)
+            apm_settings:flush()
+          end
           if airmode then
             return _("\u{F1D8} Disable AirPlane Mode")
           else
@@ -554,11 +598,11 @@ function AirPlaneMode:addToMainMenu(menu_items)
       {
         text = _("Silence the restart message"),
         callback = function()
-          apm_config:toggle("silentmode")
-          apm_config:flush()
+          apm_settings:toggle("silentmode")
+          apm_settings:flush()
         end,
         checked_func = function()
-          if apm_config:isTrue("silentmode") then
+          if apm_settings:isTrue("silentmode") then
             return true
           else
             return false
@@ -575,11 +619,11 @@ function AirPlaneMode:addToMainMenu(menu_items)
       {
         text = _("Restore session after restart [EXPERIMENTAL]"),
         callback = function()
-          apm_config:toggle("restoreopt")
-          apm_config:flush()
+          apm_settings:toggle("restoreopt")
+          apm_settings:flush()
         end,
         checked_func = function()
-          if apm_config:isTrue("restoreopt") then
+          if apm_settings:isTrue("restoreopt") then
             return true
           else
             return false
