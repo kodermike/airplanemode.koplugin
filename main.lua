@@ -14,22 +14,14 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
 
+local meta = require("_meta")
+
 local settings_file = DataStorage:getDataDir() .. "/settings.reader.lua"
 local settings_bk = DataStorage:getDataDir() .. "/settings.reader.lua.airplane"
 local settings_bk_exists = false
 
 local airplanemode_config = DataStorage:getDataDir() .. "/settings/airplanemode.lua"
 
-local version = "1.0.1"
---[[
-TODO:
-For this ticket, some thoughts...
-- Add an option if device type is android to disable the android warning
-  - add a longpress text option to see that explanation
-- Add checks for new option
-- skip wifi specific tasks if android
-
-]]
 -- establish the main settings file
 if G_reader_settings == nil then
   G_reader_settings = LuaSettings:open(settings_file)
@@ -107,16 +99,16 @@ function AirPlaneMode:initSettingsFile()
   if isFile(airplanemode_config) == true then
     return
   else
-    local apm_config = LuaSettings:open(airplanemode_config)
-    apm_config:saveSetting("version", version)
+    local apm_settings = LuaSettings:open(airplanemode_config)
+    apm_settings:saveSetting("version", meta.version)
     local default_disable = {}
     local default_disable_list = { "newsdownloader", "wallabag", "kosync", "opds", "SSH", "timesync", "httpinspector" }
     for __, plugin in ipairs(default_disable_list) do
       default_disable[plugin] = true
     end
-    apm_config:saveSetting("disabled_plugins", default_disable)
-    apm_config:flush()
-    apm_config:close()
+    apm_settings:saveSetting("disabled_plugins", default_disable)
+    apm_settings:flush()
+    apm_settings:close()
   end
 end
 
@@ -124,7 +116,7 @@ function AirPlaneMode:migrateconfig()
   local old_config_file = DataStorage:getDataDir() .. "/settings/airplane_plugins.lua"
   local old_config = LuaSettings:open(old_config_file)
   local new_config = LuaSettings:open(airplanemode_config)
-  new_config:saveSetting("version", version)
+  new_config:saveSetting("version", meta.version)
   local disabled = old_config:readSetting("disabled_plugins")
   if disabled then
     if disabled["calibre"] then
@@ -187,6 +179,35 @@ local function stopOtherPlugins(stopp, fplugin, plugin)
     end
   end
 end
+
+local function split(str)
+  local t = {}
+  local i = 0
+  for v in string.gmatch(str, '.') do
+    if v ~= "." then
+      t[i] = v
+      i = i + 1
+    end
+  end
+  return (t)
+end
+--[[
+compare versions - return true means current is greater, false older
+]]
+local function compareversions(old, new)
+  local oldv = split(old)
+  local newv = split(new)
+  if oldv[0] > newv[0] then
+    return false
+  elseif oldv[1] > newv[1] then
+    return false
+  elseif oldv[2] > newv[2] then
+    return false
+  else
+    return true
+  end
+end
+
 
 function AirPlaneMode:Enable()
   local current_config = self:backup()
@@ -305,7 +326,7 @@ function AirPlaneMode:Enable()
     else
       UIManager:show(ConfirmBox:new({
         dismissable = false,
-        text = _("Please restart KOReader to finish applying changes for AirPlane Mode."),
+        text = _("KOReader needs to be restarted to finish applying changes for AirPlane Mode."),
         ok_text = _("OK"),
         ok_callback = function()
           UIManager:quit()
@@ -520,11 +541,26 @@ function AirPlaneMode:addToMainMenu(menu_items)
         return _("\u{F1D9} Airplane Mode")
       end
     end,
-    help_text = T(_("A simple plugin that helps you when you're on the go.\n\n\nv.%1"), version),
+    help_text = T(_("A simple plugin that helps you when you're on the go.\n\n\nv.%1"), meta.version),
     sorting_hint = "network",
     sub_item_table = {
       {
         text_func = function()
+          local curversion = apm_settings:readSetting("version")
+          if (curversion ~= nil) and (curversion ~= meta.version) then
+            if compareversions(curversion, meta.version) then
+              apm_settings:saveSetting("version", meta.version)
+              apm_settings:flush()
+            else
+              UIManager:show(InfoMessage:new({
+                text = T(_("You are running a version of AirPlane Mode older than your configuration file. You may experience issues.")),
+                timeout = 3,
+              }))
+            end
+          else
+            apm_settings:saveSetting("version", meta.version)
+            apm_settings:flush()
+          end
           if airmode then
             return _("\u{F1D8} Disable AirPlane Mode")
           else
@@ -533,6 +569,29 @@ function AirPlaneMode:addToMainMenu(menu_items)
         end,
         separator = true,
         callback = function()
+          if Device:isAndroid() then
+            UIManager:show(ConfirmBox:new({
+              dismissable = false,
+              text = _("AirPlane Mode should be managed in your device's network settings."),
+              ok_text = _("OK"),
+              ok_callback = function()
+                UIManager:close()
+              end,
+            }))
+          else
+            if airmode then
+              --airplanemode = true
+              self:Disable()
+            else
+              --airplanemode = false
+              self:Enable()
+            end
+          end
+        end,
+      },
+      {
+        text = _("AirPlane Mode Plugin Manager"),
+        sub_item_table_func = function()
           if airmode then
             --airplanemode = true
             self:Disable()
