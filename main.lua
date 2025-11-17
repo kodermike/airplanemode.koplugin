@@ -12,7 +12,6 @@ local ffiutil = require("ffi/util")
 local T = ffiutil.template
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
---local util = require("util")
 local _ = require("gettext")
 
 local meta = require("_meta")
@@ -167,7 +166,7 @@ local function stopOtherPlugins(stopp, fplugin, plugin)
         pcall(fplugin["stop"]())
       end)
       if stringto(sstatus) == false then
-        logger.err("AirPlaneMode: Failed to stop", plugin)
+        logger.err("AirPlaneMode: Failed to stop", plugin, ":", serr)
       end
     end
   else
@@ -176,7 +175,7 @@ local function stopOtherPlugins(stopp, fplugin, plugin)
       pcall(fplugin["stop"]())
     end)
     if stringto(sstatus) == false then
-      logger.err("AirPlaneMode: Failed to stop", plugin)
+      logger.err("AirPlaneMode: Failed to stop", plugin, ":", serr)
     end
   end
 end
@@ -218,38 +217,8 @@ function AirPlaneMode:Enable()
     G_reader_settings:saveSetting("airplanemode", true)
 
     -- [[ disable plugins, wireless, all of it ]]
-    --set this regardless of original setting to ensure no resumes
-    if Device:hasWifiRestore() then --t
-      G_reader_settings:flipNilOrFalse("auto_restore_wifi")
-    end
 
-    --G_reader_settings:saveSetting("auto_disable_wifi",true)
-    if G_reader_settings:nilOrFalse("auto_disable_wifi") then --f
-      G_reader_settings:flipNilOrFalse("auto_disable_wifi")
-    end
-
-    --G_reader_settings:saveSetting("http_proxy_enabled",false)
-    if G_reader_settings:isTrue("http_proxy_enabled") then --t
-      G_reader_settings:flipNilOrFalse("http_proxy_enabled")
-    end
-
-    -- According to network manager, this setting always has a value and defaults to prompt
-    local wifi_enable_action_setting = G_reader_settings:readSetting("wifi_enable_action") or "prompt"
-    if wifi_enable_action_setting == "turn_on" then
-      G_reader_settings:saveSetting("wifi_enable_action", "prompt")
-    end
-
-    -- According to network manager, this setting always has a value and defaults to prompt
-    local wifi_disable_action_setting = G_reader_settings:readSetting("wifi_disable_action") or "prompt"
-    if wifi_disable_action_setting ~= "turn_off" then
-      G_reader_settings:saveSetting("wifi_disable_action", "turn_off")
-    end
-
-    if Device:isEmulator() and G_reader_settings:isTrue("emulator_fake_wifi_connected") then
-      G_reader_settings:flipNilOrFalse("emulator_fake_wifi_connected", false)
-    end
-
-    -- instead of disabling the plugin, just disable the wireless part
+    -- instead of disabling the calibre plugin, just disable the wireless part -  this lets you still search
     if G_reader_settings:nilOrTrue("calibre_wireless") then
       G_reader_settings:makeFalse("calibre_wireless")
     end
@@ -302,13 +271,49 @@ function AirPlaneMode:Enable()
     apm_settings:close()
 
     G_reader_settings:saveSetting("plugins_disabled", disabled_plugins)
-    G_reader_settings:flush()
 
-    if NetworkMgr:isWifiOn() then
-      NetworkMgr:disableWifi(nil, true)
+    -- exclude anything without getNetworkInterfaceName - like android - since we can't control their wifi
+    if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator()) and apm_settings:nilOrFalse("managewifi") then
+      --set this regardless of original setting to ensure no resumes
+      if Device:hasWifiRestore() then --t
+        G_reader_settings:flipNilOrFalse("auto_restore_wifi")
+      end
+
+      --G_reader_settings:saveSetting("auto_disable_wifi",true)
+      if G_reader_settings:nilOrFalse("auto_disable_wifi") then --f
+        G_reader_settings:flipNilOrFalse("auto_disable_wifi")
+      end
+
+      -- According to network manager, this setting always has a value and defaults to prompt
+      local wifi_enable_action_setting = G_reader_settings:readSetting("wifi_enable_action") or "prompt"
+      if wifi_enable_action_setting == "turn_on" then
+        G_reader_settings:saveSetting("wifi_enable_action", "prompt")
+      end
+
+      -- According to network manager, this setting always has a value and defaults to prompt
+      local wifi_disable_action_setting = G_reader_settings:readSetting("wifi_disable_action") or "prompt"
+      if wifi_disable_action_setting ~= "turn_off" then
+        G_reader_settings:saveSetting("wifi_disable_action", "turn_off")
+      end
+
+      if Device:isEmulator() and G_reader_settings:isTrue("emulator_fake_wifi_connected") then
+        G_reader_settings:flipNilOrFalse("emulator_fake_wifi_connected", false)
+      end
+
+      --G_reader_settings:saveSetting("http_proxy_enabled",false)
+      if G_reader_settings:isTrue("http_proxy_enabled") then --t
+        G_reader_settings:flipNilOrFalse("http_proxy_enabled")
+      end
+
+      if NetworkMgr:isWifiOn() then
+        NetworkMgr:disableWifi(nil, true)
+      end
     end
 
+    G_reader_settings:flush()
+
     self.ui:saveSettings()
+
     if Device:canRestart() then
       if apm_settings:isTrue("restoreopt") then
         saveState(self.name)
@@ -334,43 +339,46 @@ function AirPlaneMode:Enable()
 end
 
 function AirPlaneMode:Disable()
+  local apm_settings = LuaSettings:open(airplanemode_config)
   G_reader_settings:saveSetting("airplanemode", false)
   local BK_Settings = LuaSettings:open(settings_bk)
 
-  if Device:hasWifiRestore() and BK_Settings:isTrue("auto_restore_wifi") then
-    G_reader_settings:makeTrue("auto_restore_wifi")
-  end
+  if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator()) and apm_settings:nilOrFalse("managewifi") then
+    if Device:hasWifiRestore() and BK_Settings:isTrue("auto_restore_wifi") then
+      G_reader_settings:makeTrue("auto_restore_wifi")
+    end
 
-  if BK_Settings:nilOrFalse("auto_disable_wifi") then
-    -- flip the real config
-    G_reader_settings:flipNilOrFalse("auto_disable_wifi")
-  end
+    if BK_Settings:nilOrFalse("auto_disable_wifi") then
+      -- flip the real config
+      G_reader_settings:flipNilOrFalse("auto_disable_wifi")
+    end
 
-  if BK_Settings:isTrue("http_proxy_enabled") then
-    -- flip the real config
-    G_reader_settings:makeTrue("http_proxy_enabled")
-  end
+    -- According to network manager, this setting always has a value and defaults to prompt
+    local bk_wifi_enable_action_setting = BK_Settings:readSetting("wifi_enable_action") or "prompt"
+    G_reader_settings:saveSetting("wifi_enable_action", bk_wifi_enable_action_setting)
 
-  -- According to network manager, this setting always has a value and defaults to prompt
-  local bk_wifi_enable_action_setting = BK_Settings:readSetting("wifi_enable_action") or "prompt"
-  G_reader_settings:saveSetting("wifi_enable_action", bk_wifi_enable_action_setting)
+    -- According to network manager, this setting always has a value and defaults to prompt
+    local bk_wifi_disable_action_setting = BK_Settings:readSetting("wifi_disable_action") or "prompt"
+    G_reader_settings:saveSetting("wifi_disable_action", bk_wifi_disable_action_setting)
 
-  -- According to network manager, this setting always has a value and defaults to prompt
-  local bk_wifi_disable_action_setting = BK_Settings:readSetting("wifi_disable_action") or "prompt"
-  G_reader_settings:saveSetting("wifi_disable_action", bk_wifi_disable_action_setting)
+    -- got to watch out for our emulator friends :) (ie, me, testing)
+    if Device:isEmulator() and BK_Settings:has("emulator_fake_wifi_connected") then
+      local old_emulator_fake_wifi_connected = BK_Settings:readSetting("emulator_fake_wifi_connected")
+      -- flip the real config
+      G_reader_settings:saveSetting("emulator_fake_wifi_connected", old_emulator_fake_wifi_connected)
+    else
+      G_reader_settings:delSetting("emulator_fake_wifi_connected")
+    end
 
-  -- got to watch out for our emulator friends :) (ie, me, testing)
-  if Device:isEmulator() and BK_Settings:has("emulator_fake_wifi_connected") then
-    local old_emulator_fake_wifi_connected = BK_Settings:readSetting("emulator_fake_wifi_connected")
-    -- flip the real config
-    G_reader_settings:saveSetting("emulator_fake_wifi_connected", old_emulator_fake_wifi_connected)
-  else
-    G_reader_settings:delSetting("emulator_fake_wifi_connected")
-  end
+    if BK_Settings:isTrue("http_proxy_enabled") then
+      -- flip the real config
+      G_reader_settings:makeTrue("http_proxy_enabled")
+    end
 
-  --if NetworkMgr:getWifiState() == false and BK_Settings:isTrue("wifi_was_on") then
-  if BK_Settings:isTrue("wifi_was_on") then
-    NetworkMgr:enableWifi(nil, true)
+    --if NetworkMgr:getWifiState() == false and BK_Settings:isTrue("wifi_was_on") then
+    if BK_Settings:isTrue("wifi_was_on") then
+      NetworkMgr:enableWifi(nil, true)
+    end
   end
 
   -- re-enable calibre wirless if it was before
@@ -394,7 +402,6 @@ function AirPlaneMode:Disable()
   end
 
   settings_bk_exists = false
-  local apm_settings = LuaSettings:open(airplanemode_config)
   self.ui:saveSettings()
   if Device:canRestart() then
     if apm_settings:isTrue("restoreopt") then
@@ -586,57 +593,101 @@ function AirPlaneMode:addToMainMenu(menu_items)
         text = _("AirPlane Mode Plugin Manager"),
         sub_item_table_func = function()
           if airmode then
-            UIManager:show(InfoMessage:new({
-              text = _("AirPlane Mode cannot be configured while running"),
-              timeout = 3,
-            }))
+            --airplanemode = true
+            self:Disable()
           else
-            return self:getSubMenuItems()
+            --airplanemode = false
+            self:Enable()
           end
         end,
       },
       {
-        text = _("Silence the restart message"),
-        callback = function()
-          apm_settings:toggle("silentmode")
-          apm_settings:flush()
-        end,
-        checked_func = function()
-          if apm_settings:isTrue("silentmode") then
-            return true
-          else
-            return false
-          end
-        end,
-        enabled_func = function()
-          if Device:canRestart() then
-            return true
-          else
-            return false
-          end
-        end,
+        text = _("Configuration Menu"),
+        sub_item_table = {
+          {
+            text = _("AirPlane Mode Plugin Manager"),
+            sub_item_table_func = function()
+              if airmode then
+                UIManager:show(InfoMessage:new({
+                  text = _("AirPlane Mode cannot be configured while running"),
+                  timeout = 3,
+                }))
+              else
+                return self:getSubMenuItems()
+              end
+            end,
+          },
+          {
+            text = _("Silence the restart message"),
+            callback = function()
+              apm_settings:toggle("silentmode")
+              apm_settings:flush()
+            end,
+            checked_func = function()
+              if apm_settings:isTrue("silentmode") then
+                return true
+              else
+                return false
+              end
+            end,
+            enabled_func = function()
+              if Device:canRestart() then
+                return true
+              else
+                return false
+              end
+            end,
+          },
+          {
+            text = _("Restore session after restart [EXPERIMENTAL]"),
+            callback = function()
+              apm_settings:toggle("restoreopt")
+              apm_settings:flush()
+            end,
+            checked_func = function()
+              if apm_settings:isTrue("restoreopt") then
+                return true
+              else
+                return false
+              end
+            end,
+            enabled_func = function()
+              if Device:canRestart() then
+                return true
+              else
+                return false
+              end
+            end,
+          },
+          {
+            text = _("Disable managing WiFi"),
+            callback = function()
+              apm_settings:toggle("managewifi")
+              apm_settings:flush()
+            end,
+            help_text = _("If available, disable managing the WiFi device. This is automatically selected on some devices"),
+            checked_func = function()
+              if apm_settings:isTrue("managewifi") then
+                return true
+              else
+                return false
+              end
+            end,
+            enabled_func = function()
+              if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator()) then
+                return true
+              else
+                if not apm_settings:isTrue("managewifi") then
+                  apm_settings:makeTrue("managewifi")
+                  apm_settings:flush()
+                end
+                return false
+              end
+            end,
+          },
+        }
       },
-      {
-        text = _("Restore session after restart [EXPERIMENTAL]"),
-        callback = function()
-          apm_settings:toggle("restoreopt")
-          apm_settings:flush()
-        end,
-        checked_func = function()
-          if apm_settings:isTrue("restoreopt") then
-            return true
-          else
-            return false
-          end
-        end,
-        enabled_func = function()
-          if Device:canRestart() then
-            return true
-          else
-            return false
-          end
-        end,
-      },
+
     },
   }
 end

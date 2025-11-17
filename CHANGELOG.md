@@ -1,5 +1,21 @@
 # Changelog
 
+## v.1.0.1 (2025.11.13-in-progress)
+
+### 🚀 Added
+
+- Added optional toggling for managing whether the plugin mananages the WiFi device. There are scenarios (like Android devices) where we can't, but the lack of management breaks using the plugin for just bulk disabling/enabling wifi related plugins and options.
+
+- Broke out configuration options into their own sub menu
+
+- Added dynamic plugin stop calling, supporting the new function call to disable a plugin's external software (like with SSH, which spawns dropbear)
+
+### 🩹 Fixes
+
+- Fixed how reading location is preserved when restarting. Now accurately returns koreader to the page it restarted on
+
+- Fix for the reader footer patch to not crash when trying to order or save footer preferences ([#17](https://github.com/kodermike/airplanemode.koplugin/issues/17))
+
 ## v.1.0.0 (2025.08.16)
 
 ### 🚀 Added
@@ -9,7 +25,7 @@
 
   - The ability to silence restart messages when enabling/disabling (#issue13). The intent is to make using gestures more seemless.
 
-  - The option to return to where we left off when restarting (#issue13). **This is experimental.** Not perfect, but the plugin will attempt to return you to your book if you were reading when enabled, or the filemanager if you were in the filemanager. Any other state is ignored and falls back to the default restart settings. This feature depends on the general functionality of koreader to return you to where you left off if you restart and does not always return to the right spot in your book. 
+  - The option to return to where we left off when restarting (#issue13). **This is experimental.** Not perfect, but the plugin will attempt to return you to your book if you were reading when enabled, or the filemanager if you were in the filemanager. Any other state is ignored and falls back to the default restart settings. This feature depends on the general functionality of koreader to return you to where you left off if you restart and does not always return to the right spot in your book.
 
   - Introduced internal version tracking so future releases can more easily track upgrade and migration requirements. As a bonus, this should make asking users for which version they installed easier.
 
