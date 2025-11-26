@@ -65,7 +65,7 @@ Select any additional plugins you do not want running when AirPlane Mode is enab
 
 * Configuration Menu
 
-[AirPlane Mode Configuration Menu](<.github/assets/advanced_config.png>)
+![AirPlane Mode Configuration Menu](<.github/assets/advanced_config.png>)
 
 New with 1.0.1, the Configuration Menu lets you manage the following additional settings:
 * **Silence the restart message** - enabling this feature will mute restart notifications when enabling and disabling AirPlane mode. Other KOReader dialogs will still appear, such as `Scanning for networks`, but you will not be prompted to confirm a restart
