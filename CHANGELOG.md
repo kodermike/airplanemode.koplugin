@@ -1,5 +1,11 @@
 # Changelog
 
+## v.1.0.1b (2025.11.25)
+
+### 🔥 Hotfix
+
+- Issue 32 - crash reported on kindle when enabling/disabling outside of reader mode. Confirmed on KLC.
+
 ## v.1.0.1 (2025.11.25)
 
 ### 🚀 Added
