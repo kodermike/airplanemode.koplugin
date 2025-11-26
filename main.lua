@@ -312,7 +312,10 @@ function AirPlaneMode:Enable()
 
     G_reader_settings:flush()
 
-    self.ui:saveSettings()
+    -- Only attempt to save reading state if we are in the reader
+    if string.match(self.name, "reader") then
+      self.ui:saveSettings()
+    end
 
     if Device:canRestart() then
       if apm_settings:isTrue("restoreopt") then
@@ -402,7 +405,9 @@ function AirPlaneMode:Disable()
   end
 
   settings_bk_exists = false
-  self.ui:saveSettings()
+  if string.match(self.name, "reader") then
+    self.ui:saveSettings()
+  end
   if Device:canRestart() then
     if apm_settings:isTrue("restoreopt") then
       saveState(self.name)
