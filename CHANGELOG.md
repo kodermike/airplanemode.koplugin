@@ -1,18 +1,20 @@
 # Changelog
 
-## v.1.0.1 (2025.11.13-in-progress)
+## v.1.0.1 (2025.11.25)
 
 ### 🚀 Added
 
-- Added optional toggling for managing whether the plugin mananages the WiFi device. There are scenarios (like Android devices) where we can't, but the lack of management breaks using the plugin for just bulk disabling/enabling wifi related plugins and options.
+- Added better version management. The plugin will now warn if being run with a config from a newer version; the _meta file has been updated to list the version so that external plugin managers like [UpdatesManager](https://github.com/advokatb/updatesmanager.koplugin) can easily identify whether a local install needs updating; general clean up around how the version is stored and updated within the configs
+
+- Added optional toggling for managing whether the plugin manages the WiFi device. There are scenarios (like Android devices) where we can't, but the lack of management breaks using the plugin for just bulk disabling/enabling WiFi related plugins and options.
 
 - Broke out configuration options into their own sub menu
 
-- Added dynamic plugin stop calling, supporting the new function call to disable a plugin's external software (like with SSH, which spawns dropbear)
+- Added dynamic "plugin stop" call, supporting the new function call to disable a plugin's external software (like with SSH, which spawns dropbear)
 
 ### 🩹 Fixes
 
-- Fixed how reading location is preserved when restarting. Now accurately returns koreader to the page it restarted on
+- Fixed how reading location is preserved when restarting. Now accurately returns KOReader to the page it restarted on
 
 - Fix for the reader footer patch to not crash when trying to order or save footer preferences ([#17](https://github.com/kodermike/airplanemode.koplugin/issues/17))
 
