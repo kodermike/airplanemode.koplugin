@@ -31,6 +31,22 @@ local function restoreState()
   -- grab the current startup mode
   local apm_settings = LuaSettings:open(airplanemode_config)
   -- we just rebooted to change apm states, now switch pref back
+
+  -- TODO: This would be a good place to add the roaming check since this runs every startup
+  --
+  -- 1. check if we have roaming enabled as a feature and if are in roaming mode
+  -- 2. let the user set ip's, wait time, and success count?
+  -- if we are in roaming mode already, do test ping and disable
+  -- if we aren't in roaming mode, test ping and enable
+  -- roaming mode - same as enable without hardware managing
+  -- maybe remove checkbox for roaming
+  -- also, break out submenu for config so you can display the roaming mode only if not a managed device
+
+  if os.execute("ping -c1 -w1 -q 10.0.0.199 >/dev/null") == 0 then
+    print("TOTALLY DO SOMETHING HERE")
+  else
+    print("HEY IT WORKED I GUESS")
+  end
   local last_start = apm_settings:readSetting("restartMode")
   if apm_settings:isTrue("restoreopt") then
     if last_start ~= nil then
@@ -665,7 +681,7 @@ function AirPlaneMode:addToMainMenu(menu_items)
             end,
           },
           {
-            text = _("Disable managing WiFi"),
+            text = _("Roaming Mode [EXPERIMENTAL]"),
             callback = function()
               apm_settings:toggle("managewifi")
               apm_settings:flush()

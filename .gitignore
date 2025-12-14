@@ -11,9 +11,10 @@
 # Ignore local work files
 *.swp
 *.log
-*.tar 
+*.tar
 *.zip
 *.tgz
+**/.zed
 
 # Ignore anything in the local bundles
 bundles/
