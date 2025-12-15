@@ -33,14 +33,17 @@ local function restoreState()
   -- we just rebooted to change apm states, now switch pref back
 
   -- TODO: This would be a good place to add the roaming check since this runs every startup
-  --
+  -- INFO:
   -- 1. check if we have roaming enabled as a feature and if are in roaming mode
   -- 2. let the user set ip's, wait time, and success count?
   -- if we are in roaming mode already, do test ping and disable
   -- if we aren't in roaming mode, test ping and enable
   -- roaming mode - same as enable without hardware managing
-  -- maybe remove checkbox for roaming
-  -- also, break out submenu for config so you can display the roaming mode only if not a managed device
+  -- maybe remove checkbox for roaming if itsn't optional - done
+  -- also, break out submenu for config so you can display the roaming mode only if not a managed device - done
+  --
+  -- change the enable/disable so that if this device can't managewifi, we actually enable/disable roaming also - done
+  -- change the bad name from managewifi (coincides with system name) to roaming
 
   if os.execute("ping -c1 -w1 -q 10.0.0.199 >/dev/null") == 0 then
     print("TOTALLY DO SOMETHING HERE")
@@ -234,6 +237,7 @@ function AirPlaneMode:Enable()
 
     -- [[ disable plugins, wireless, all of it ]]
 
+
     -- instead of disabling the calibre plugin, just disable the wireless part -  this lets you still search
     if G_reader_settings:nilOrTrue("calibre_wireless") then
       G_reader_settings:makeFalse("calibre_wireless")
@@ -243,6 +247,10 @@ function AirPlaneMode:Enable()
     local check_plugins = apm_settings:readSetting("disabled_plugins") or {}
     local disabled_plugins = G_reader_settings:readSetting("plugins_disabled") or {}
 
+    -- Not interface name means no managed wifi, but we can still enable other features
+    if not NetworkMgr:getNetworkInterfaceName() then
+      apm_settings:makeTrue("managewifi")
+    end
     -- a pair of loops for the logger
     if type(check_plugins) == "string" then
       if disabled_plugins[check_plugins] ~= true then
@@ -362,6 +370,9 @@ function AirPlaneMode:Disable()
   G_reader_settings:saveSetting("airplanemode", false)
   local BK_Settings = LuaSettings:open(settings_bk)
 
+  if not NetworkMgr:getNetworkInterfaceName() then
+    apm_settings:makeFalse("managewifi")
+  end
   if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator()) and apm_settings:nilOrFalse("managewifi") then
     if Device:hasWifiRestore() and BK_Settings:isTrue("auto_restore_wifi") then
       G_reader_settings:makeTrue("auto_restore_wifi")
@@ -487,6 +498,101 @@ local function getMenuTable(plugin)
   t.fullname = string.format("%s", plugin.fullname or plugin.name)
   t.description = string.format("%s", plugin.description)
   return t
+end
+
+function AirPlaneMode:getConfigMenuItems()
+  local apm_settings = LuaSettings:open(airplanemode_config)
+  local airplane_config_table = {}
+  local airmode = self:getStatus()
+
+  table.insert(airplane_config_table, {
+    {
+      text = _("AirPlane Mode Plugin Manager"),
+      sub_item_table_func = function()
+        if airmode then
+          UIManager:show(InfoMessage:new({
+            text = _("AirPlane Mode cannot be configured while running"),
+            timeout = 3,
+          }))
+        else
+          return self:getSubMenuItems()
+        end
+      end,
+    },
+    {
+      text = _("Silence the restart message"),
+      callback = function()
+        apm_settings:toggle("silentmode")
+        apm_settings:flush()
+      end,
+      checked_func = function()
+        if apm_settings:isTrue("silentmode") then
+          return true
+        else
+          return false
+        end
+      end,
+      enabled_func = function()
+        if Device:canRestart() then
+          return true
+        else
+          return false
+        end
+      end,
+    },
+    {
+      text = _("Restore session after restart [EXPERIMENTAL]"),
+      callback = function()
+        apm_settings:toggle("restoreopt")
+        apm_settings:flush()
+      end,
+      checked_func = function()
+        if apm_settings:isTrue("restoreopt") then
+          return true
+        else
+          return false
+        end
+      end,
+      enabled_func = function()
+        if Device:canRestart() then
+          return true
+        else
+          return false
+        end
+      end,
+    },
+  })
+  if not NetworkMgr:getNetworkInterfaceName() then
+    table.insert(airplane_config_table, {
+      {
+        text = _("Roaming Mode [EXPERIMENTAL]"),
+        callback = function()
+          apm_settings:toggle("managewifi")
+          apm_settings:flush()
+        end,
+        help_text = _("Disable managing the WiFi device when AirPlane Mode is engaged."),
+        checked_func = function()
+          if apm_settings:isTrue("managewifi") then
+            return true
+          else
+            return false
+          end
+        end,
+        enabled_func = function()
+          if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator()) then
+            return true
+          else
+            if not apm_settings:isTrue("managewifi") then
+              apm_settings:makeTrue("managewifi")
+              apm_settings:flush()
+            end
+            return false
+          end
+        end,
+      },
+    })
+  end
+  return airplane_config_table
 end
 
 function AirPlaneMode:getSubMenuItems()
@@ -624,89 +730,9 @@ function AirPlaneMode:addToMainMenu(menu_items)
       },
       {
         text = _("Configuration Menu"),
-        sub_item_table = {
-          {
-            text = _("AirPlane Mode Plugin Manager"),
-            sub_item_table_func = function()
-              if airmode then
-                UIManager:show(InfoMessage:new({
-                  text = _("AirPlane Mode cannot be configured while running"),
-                  timeout = 3,
-                }))
-              else
-                return self:getSubMenuItems()
-              end
-            end,
-          },
-          {
-            text = _("Silence the restart message"),
-            callback = function()
-              apm_settings:toggle("silentmode")
-              apm_settings:flush()
-            end,
-            checked_func = function()
-              if apm_settings:isTrue("silentmode") then
-                return true
-              else
-                return false
-              end
-            end,
-            enabled_func = function()
-              if Device:canRestart() then
-                return true
-              else
-                return false
-              end
-            end,
-          },
-          {
-            text = _("Restore session after restart [EXPERIMENTAL]"),
-            callback = function()
-              apm_settings:toggle("restoreopt")
-              apm_settings:flush()
-            end,
-            checked_func = function()
-              if apm_settings:isTrue("restoreopt") then
-                return true
-              else
-                return false
-              end
-            end,
-            enabled_func = function()
-              if Device:canRestart() then
-                return true
-              else
-                return false
-              end
-            end,
-          },
-          {
-            text = _("Roaming Mode [EXPERIMENTAL]"),
-            callback = function()
-              apm_settings:toggle("managewifi")
-              apm_settings:flush()
-            end,
-            help_text = _("If available, disable managing the WiFi device. This is automatically selected on some devices"),
-            checked_func = function()
-              if apm_settings:isTrue("managewifi") then
-                return true
-              else
-                return false
-              end
-            end,
-            enabled_func = function()
-              if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator()) then
-                return true
-              else
-                if not apm_settings:isTrue("managewifi") then
-                  apm_settings:makeTrue("managewifi")
-                  apm_settings:flush()
-                end
-                return false
-              end
-            end,
-          },
-        }
+        sub_item_table_func = function()
+          return self:getConfigMenuItems()
+        end,
       },
 
     },
