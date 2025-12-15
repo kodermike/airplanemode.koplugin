@@ -1,5 +1,8 @@
 # Changelog
 
+- Removed text about android not being able to use the plugin
+- Made the menu for enabling unmanaged airplane mode only visible if we can manage wifi - otherwise the default is yes when engaged
+
 ## v.1.0.1b (2025.11.25)
 
 ### 🔥 Hotfix
