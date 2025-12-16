@@ -231,6 +231,7 @@ function AirPlaneMode:Enable()
     if type(check_plugins) == "string" then
       if disabled_plugins[check_plugins] ~= true then
         disabled_plugins[check_plugins] = true
+        -- logger.dbg("Disabling", check_plugins)
       end
     else
       for plugin, __ in pairs(check_plugins) do
@@ -267,10 +268,9 @@ function AirPlaneMode:Enable()
         end
       end
     end
-    apm_settings:flush()
-    apm_settings:close()
-
+    -- logger.dbg("AIRPLANE: Saving", disabled_plugins)
     G_reader_settings:saveSetting("plugins_disabled", disabled_plugins)
+    G_reader_settings:flush()
 
     -- exclude anything without getNetworkInterfaceName - like android - since we can't control their wifi
     if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator()) and apm_settings:nilOrFalse("managewifi") then
@@ -611,17 +611,18 @@ function AirPlaneMode:getSubMenuItems()
             return true
           end
         end,
-        callback = function(touchmenu_instance)
+        callback = function()
           if check_plugins[plugin.name] then
             check_plugins[plugin.name] = nil
+            -- logger.dbg("Disabled ", plugin.name)
+            apm_settings:saveSetting("disabled_plugins", check_plugins)
+            apm_settings:flush()
           else
             check_plugins[plugin.name] = true
+            -- logger.dbg("Enabled ", plugin.name)
+            apm_settings:saveSetting("disabled_plugins", check_plugins)
+            apm_settings:flush()
           end
-          apm_settings:saveSetting("disabled_plugins", check_plugins)
-          if touchmenu_instance then
-            touchmenu_instance:updateItems()
-          end
-          apm_settings:flush()
         end,
         help_text = T(_("%1\n\nThis plugin is already disabled in KOReader"), plugin.description),
       })
@@ -659,9 +660,6 @@ function AirPlaneMode:addToMainMenu(menu_items)
                 timeout = 3,
               }))
             end
-          else
-            apm_settings:saveSetting("version", meta.version)
-            apm_settings:flush()
           end
           if airmode then
             return _("\u{F1D8} Disable AirPlane Mode")

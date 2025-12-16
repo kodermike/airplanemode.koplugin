@@ -8,6 +8,7 @@
 - Refactored config menu to be a separate sub menu
 - Removed message for android devices (no longer relevant)
 - Made "disable device management" visible only to users who can manage their hardware
+- Issue 36 - Fixed issue with disabling plugins introduced when adding version checking (too much flush'ing)
 
 ## v.1.0.1b (2025.11.25)
 
