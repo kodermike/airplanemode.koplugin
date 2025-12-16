@@ -1,5 +1,14 @@
 # Changelog
 
+## v.1.0.1c (development)
+
+### 🚀 Added
+
+- Issue 35 - Removed extra menu item for plugin management
+- Refactored config menu to be a separate sub menu
+- Removed message for android devices (no longer relevant)
+- Made "disable device management" visible only to users who can manage their hardware
+
 ## v.1.0.1b (2025.11.25)
 
 ### 🔥 Hotfix
