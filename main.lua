@@ -426,8 +426,10 @@ function AirPlaneMode:Disable()
     os.remove(settings_bk)
   end
 
+  -- remove the backup settings file
   settings_bk_exists = false
   if string.match(self.name, "reader") then
+    -- regardless of options, if we're in a document then save our position
     self.ui:saveSettings()
   end
   if Device:canRestart() then
