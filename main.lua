@@ -343,9 +343,12 @@ end
 
 function AirPlaneMode:Disable()
   local apm_settings = LuaSettings:open(airplanemode_config)
-  G_reader_settings:saveSetting("airplanemode", false)
   local BK_Settings = LuaSettings:open(settings_bk)
 
+  -- disable airplane mode
+  G_reader_settings:saveSetting("airplanemode", false)
+
+  -- If managing wifi, revert settingss
   if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator()) and apm_settings:nilOrFalse("managewifi") then
     if Device:hasWifiRestore() and BK_Settings:isTrue("auto_restore_wifi") then
       G_reader_settings:makeTrue("auto_restore_wifi")
@@ -391,14 +394,33 @@ function AirPlaneMode:Disable()
 
   -- first remove *everything* currently disabled
 
-  local disable_current = G_reader_settings:readSetting("plugins_disabled")
-  G_reader_settings:delSetting("plugins_disabled", disable_current)
+  -- create a list of what is currently disabled
+  local currently_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
+  -- create a list of what apm disabled
+  local apm_disabled = apm_settings:readSetting("disabled_plugins") or {}
 
-  -- Now add back the previous disables
-  local disable_again = BK_Settings:readSetting("plugins_disabled")
-  if disable_again then
-    G_reader_settings:saveSetting("plugins_disabled", disable_again)
+  -- Build the list of plugins disabled right now
+  local to_disable = {}
+  if type(currently_disabled) == "string" then
+    to_disable = { currently_disabled }
+  elseif type(currently_disabled) == "table" then
+    to_disable = currently_disabled
   end
+  -- Remove plugins that were added by airplane mode
+  for plugin, __ in pairs(apm_disabled) do
+    if to_disable[plugin] == true then
+      to_disable[plugin] = nil
+    end
+  end
+
+  if not next(to_disable) then
+    -- We now have an empty list - the only disabled plugins were the ones added by APM
+    G_reader_settings:delSetting("plugins_disabled")
+  else
+    -- Save the updated list of disabled plugins
+    G_reader_settings:saveSetting("plugins_disabled", to_disable)
+  end
+
   G_reader_settings:flush()
   if isFile(settings_bk) then
     os.remove(settings_bk)
@@ -690,3 +712,4 @@ function AirPlaneMode:addToMainMenu(menu_items)
 end
 
 return AirPlaneMode
+
