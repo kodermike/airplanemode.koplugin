@@ -231,6 +231,7 @@ function AirPlaneMode:Enable()
     if type(check_plugins) == "string" then
       if disabled_plugins[check_plugins] ~= true then
         disabled_plugins[check_plugins] = true
+        -- logger.dbg("Disabling", check_plugins)
       end
     else
       for plugin, __ in pairs(check_plugins) do
@@ -267,10 +268,9 @@ function AirPlaneMode:Enable()
         end
       end
     end
-    apm_settings:flush()
-    apm_settings:close()
-
+    -- logger.dbg("AIRPLANE: Saving", disabled_plugins)
     G_reader_settings:saveSetting("plugins_disabled", disabled_plugins)
+    G_reader_settings:flush()
 
     -- exclude anything without getNetworkInterfaceName - like android - since we can't control their wifi
     if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator()) and apm_settings:nilOrFalse("managewifi") then
@@ -343,9 +343,12 @@ end
 
 function AirPlaneMode:Disable()
   local apm_settings = LuaSettings:open(airplanemode_config)
-  G_reader_settings:saveSetting("airplanemode", false)
   local BK_Settings = LuaSettings:open(settings_bk)
 
+  -- disable airplane mode
+  G_reader_settings:saveSetting("airplanemode", false)
+
+  -- If managing wifi, revert settingss
   if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator()) and apm_settings:nilOrFalse("managewifi") then
     if Device:hasWifiRestore() and BK_Settings:isTrue("auto_restore_wifi") then
       G_reader_settings:makeTrue("auto_restore_wifi")
@@ -391,21 +394,42 @@ function AirPlaneMode:Disable()
 
   -- first remove *everything* currently disabled
 
-  local disable_current = G_reader_settings:readSetting("plugins_disabled")
-  G_reader_settings:delSetting("plugins_disabled", disable_current)
+  -- create a list of what is currently disabled
+  local currently_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
+  -- create a list of what apm disabled
+  local apm_disabled = apm_settings:readSetting("disabled_plugins") or {}
 
-  -- Now add back the previous disables
-  local disable_again = BK_Settings:readSetting("plugins_disabled")
-  if disable_again then
-    G_reader_settings:saveSetting("plugins_disabled", disable_again)
+  -- Build the list of plugins disabled right now
+  local to_disable = {}
+  if type(currently_disabled) == "string" then
+    to_disable = { currently_disabled }
+  elseif type(currently_disabled) == "table" then
+    to_disable = currently_disabled
   end
+  -- Remove plugins that were added by airplane mode
+  for plugin, __ in pairs(apm_disabled) do
+    if to_disable[plugin] == true then
+      to_disable[plugin] = nil
+    end
+  end
+
+  if not next(to_disable) then
+    -- We now have an empty list - the only disabled plugins were the ones added by APM
+    G_reader_settings:delSetting("plugins_disabled")
+  else
+    -- Save the updated list of disabled plugins
+    G_reader_settings:saveSetting("plugins_disabled", to_disable)
+  end
+
   G_reader_settings:flush()
   if isFile(settings_bk) then
     os.remove(settings_bk)
   end
 
+  -- remove the backup settings file
   settings_bk_exists = false
   if string.match(self.name, "reader") then
+    -- regardless of options, if we're in a document then save our position
     self.ui:saveSettings()
   end
   if Device:canRestart() then
@@ -611,17 +635,18 @@ function AirPlaneMode:getSubMenuItems()
             return true
           end
         end,
-        callback = function(touchmenu_instance)
+        callback = function()
           if check_plugins[plugin.name] then
             check_plugins[plugin.name] = nil
+            -- logger.dbg("Disabled ", plugin.name)
+            apm_settings:saveSetting("disabled_plugins", check_plugins)
+            apm_settings:flush()
           else
             check_plugins[plugin.name] = true
+            -- logger.dbg("Enabled ", plugin.name)
+            apm_settings:saveSetting("disabled_plugins", check_plugins)
+            apm_settings:flush()
           end
-          apm_settings:saveSetting("disabled_plugins", check_plugins)
-          if touchmenu_instance then
-            touchmenu_instance:updateItems()
-          end
-          apm_settings:flush()
         end,
         help_text = T(_("%1\n\nThis plugin is already disabled in KOReader"), plugin.description),
       })
@@ -659,9 +684,6 @@ function AirPlaneMode:addToMainMenu(menu_items)
                 timeout = 3,
               }))
             end
-          else
-            apm_settings:saveSetting("version", meta.version)
-            apm_settings:flush()
           end
           if airmode then
             return _("\u{F1D8} Disable AirPlane Mode")
@@ -692,3 +714,4 @@ function AirPlaneMode:addToMainMenu(menu_items)
 end
 
 return AirPlaneMode
+
