@@ -40,8 +40,6 @@
 
 In the Network tab, tap or click the menu for `AirPlane Mode`. If the paper airplane is dark, AirPlane Mode is currently running.
 
-![AirPlane Mode main menu](<.github/assets/menu.png>)
-
 From the top menu, you can:
 
 * enable or disable `AirPlane Mode`.
@@ -90,4 +88,4 @@ Please open an issue in GitHub so we can start looking at what isn't working rig
 
 
 
-###### Updated 2025.11.25
+###### Updated 2025.12.18
