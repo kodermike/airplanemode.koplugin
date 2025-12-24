@@ -128,10 +128,29 @@ function AirPlaneMode:init()
   self.show_value_in_footer = G_reader_settings:readSetting("airplanemode_in_footer")
   if self.show_value_in_footer then
     self:addAdditionalFooterContent()
-  else
-    self:removeAdditionalFooterContent()
   end
   self.ui.menu:registerToMainMenu(self)
+end
+
+function AirPlaneMode:update_status_bars()
+  if self.show_value_in_footer then
+    UIManager:broadcastEvent(Event:new("RefreshAdditionalContent"))
+  end
+end
+
+function AirPlaneMode:addAdditionalFooterContent()
+  if self.ui.view then
+    self.ui.view.footer:addAdditionalFooterContent(self.additional_footer_content_func)
+    self:update_status_bars()
+  end
+end
+
+function AirPlaneMode:removeAdditionalFooterContent()
+  if self.ui.view then
+    self.ui.view.footer:removeAdditionalFooterContent(self.additional_footer_content_func)
+    self:update_status_bars()
+    UIManager:broadcastEvent(Event:new("UpdateFooter", true))
+  end
 end
 
 function AirPlaneMode:initSettingsFile()
@@ -245,23 +264,6 @@ local function compareversions(old, new)
   else
     return true
   end
-end
-
-function AirPlaneMode:update_status_bars()
-  if self.show_value_in_footer then
-    UIManager:broadcastEvent(Event:new("UpdateFooter", true))
-  end
-end
-
-function AirPlaneMode:addAdditionalFooterContent()
-  self.ui.view.footer:addAdditionalFooterContent(self.additional_footer_content_func)
-  self:update_status_bars()
-end
-
-function AirPlaneMode:removeAdditionalFooterContent()
-  self.ui.view.footer:removeAdditionalFooterContent(self.additional_footer_content_finc)
-  self:update_status_bars()
-  UIManager:broadcastEvent(Event:new("UpdateFooter", true))
 end
 
 function AirPlaneMode:Enable()
