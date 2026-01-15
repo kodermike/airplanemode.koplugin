@@ -360,12 +360,20 @@ function AirPlaneMode:Disable()
     end
 
     -- According to network manager, this setting always has a value and defaults to prompt
-    local bk_wifi_enable_action_setting = BK_Settings:readSetting("wifi_enable_action") or "prompt"
-    G_reader_settings:saveSetting("wifi_enable_action", bk_wifi_enable_action_setting)
+    if BK_Settings:hasNot("wifi_enable_action") then
+      G_reader_settings:delSetting("wifi_enable_action")
+    else
+      local bk_wifi_enable_action_setting = BK_Settings:readSetting("wifi_enable_action") or "prompt"
+      G_reader_settings:saveSetting("wifi_enable_action", bk_wifi_enable_action_setting)
+    end
 
     -- According to network manager, this setting always has a value and defaults to prompt
-    local bk_wifi_disable_action_setting = BK_Settings:readSetting("wifi_disable_action") or "prompt"
-    G_reader_settings:saveSetting("wifi_disable_action", bk_wifi_disable_action_setting)
+    if BK_Settings:hasNot("wifi_disable_action") then
+      G_reader_settings:delSetting("wifi_disable_action")
+    else
+      local bk_wifi_disable_action_setting = BK_Settings:readSetting("wifi_disable_action") or "prompt"
+      G_reader_settings:saveSetting("wifi_disable_action", bk_wifi_disable_action_setting)
+    end
 
     -- got to watch out for our emulator friends :) (ie, me, testing)
     if Device:isEmulator() and BK_Settings:has("emulator_fake_wifi_connected") then
@@ -382,7 +390,10 @@ function AirPlaneMode:Disable()
     end
 
     --if NetworkMgr:getWifiState() == false and BK_Settings:isTrue("wifi_was_on") then
-    if BK_Settings:isTrue("wifi_was_on") then
+    if BK_Settings:hasNot("wifi_was_on") then
+      G_reader_settings:delSetting("wifi_was_on")
+    elseif BK_Settings:isTrue("wifi_was_on") then
+      G_reader_settings:makeTrue("wifi_was_on")
       NetworkMgr:enableWifi(nil, true)
     end
   end
@@ -714,4 +725,3 @@ function AirPlaneMode:addToMainMenu(menu_items)
 end
 
 return AirPlaneMode
-
