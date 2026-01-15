@@ -9,13 +9,19 @@
 
 </div>
 
-**AirPlane Mode** is a simple plugin to let you enable/disable anything networking related in KOReader with a single tap. Configuration options let you manage what is disabled, and how **AirPlane Mode** behaves when invoked. 
+**AirPlane Mode** is a simple plugin to let you enable/disable anything networking related in KOReader with a single tap. Configuration options let you manage what is disabled, and how **AirPlane Mode** behaves when invoked.
 
 ---
 
 ## 📥 Installation
 
 ### Installing with a release file
+
+Release files are intended to work with the current stable release of [ KOReader ](https://github.com/koreader/koreader.git).
+
+To run the most current release of AirPlane Mode, you will need to use either a nightly build (Not Yet Available) or checkout directly from github. This version of AirPlane Mode is only being tested with the nightly KOReader builds. No gurantees are made that they will function on the static releases of KOReader.
+
+#### Installing using a release archive file
 
 1. Download the latest release from [Releases](https://github.com/kodermike/airplanemode.koplugin/releases)
 1. Connect your device with USB
@@ -26,7 +32,7 @@
       - On Kindle's it is in `/mnt/us/koreader/plugins`
 1. Disconnect your device. You should be all set!
 
-### Alternate installation for kobo's    
+#### Alternate installation for Kobo's
 
 1. On the [Releases](https://github.com/kodermike/airplanemode.koplugin/releases), download `KoboRoot.tgz`.
 1. Connect your device with USB
@@ -67,6 +73,7 @@ Select any additional plugins you do not want running when AirPlane Mode is enab
 
 New with 1.0.1, the Configuration Menu lets you manage the following additional settings:
 * **Silence the restart message** - enabling this feature will mute restart notifications when enabling and disabling AirPlane mode. Other KOReader dialogs will still appear, such as `Scanning for networks`, but you will not be prompted to confirm a restart
+* **Show AirPlane Mode in reader footer** - enabling this feature will include the current AirPlane Mode status in the footer while reading. Once activated, you will also need to enable `External Content` in the `Status Bar Items` menu.
 * **Restore session after restart** - this feature is highly experimental. If enabled, when KOReader restarts the plugin will attempt to bring you back to where you left off (filebrowser or last open document), regardless of what your default setting is for restarts.
 * **Disable managing WiFi** - this feature is a side effect of work done for users on devices that don't support KOReader managing wifi, but that still wanted the advantage of being to enable and disable network related plugins. For those users, this feature is automatically enabled; for everyone else, sleecting this will disable the network management portion of the plugin. Instead, the plugin will only disable and enable all relevant plugins in one action.
 
@@ -74,11 +81,7 @@ New with 1.0.1, the Configuration Menu lets you manage the following additional 
 
 ## Gestures
 
-`AirPlane Mode` supports three gesture actions - enable, disable, and toggle. These can be configured in the regular gesture menu.
-
-## Extras
-
-In the `misc` directory, you will find a userpatch to add a notification icon in the readerfooter, for those of us that need that reminder while reading that we are in `AirPlane Mode`. To use, make sure you have (or create) a patches directory in your koreader root, then copy the `2-airplane-footer.lua` to that directory.
+`AirPlane Mode` supports three gesture actions - enable, disable, and toggle. These can be configured in the regular gesture menu. The actions can be found in the `Device` sub-menu.
 
 ---
 

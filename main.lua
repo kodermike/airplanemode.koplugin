@@ -2,6 +2,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
+local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local NetworkMgr = require("ui/network/manager")
@@ -15,6 +16,9 @@ local logger = require("logger")
 local _ = require("gettext")
 
 local meta = require("_meta")
+
+local icon_on = "\u{F1D8}"
+local icon_off = "\u{F1D9}"
 
 local settings_file = DataStorage:getDataDir() .. "/settings.reader.lua"
 local settings_bk = DataStorage:getDataDir() .. "/settings.reader.lua.airplane"
@@ -79,6 +83,25 @@ local function isFile(filename)
   return false
 end
 
+function AirPlaneMode:getStatus()
+  -- test we can see the real settings file.
+  if not isFile(settings_file) then
+    logger.err("AirPlaneMode: Settings file not found! Abort!", settings_file)
+    return false
+  end
+  -- check if we currently have a backup of our settings running
+  settings_bk_exists = isFile(settings_bk) or false
+
+  -- also verify if the airplanemode flag is set. we will use this to decide if something is funky
+  local airplanemode_active = G_reader_settings:readSetting("airplanemode") or false
+  if settings_bk_exists and airplanemode_active then
+    return true
+  elseif not airplanemode_active then
+    return false
+  end
+  return false
+end
+
 function AirPlaneMode:onDispatcherRegisterActions()
   Dispatcher:registerAction("airplanemode_enable", { category = "none", event = "Enable", title = _("AirPlane Mode Enable"), device = true })
   Dispatcher:registerAction("airplanemode_disable", { category = "none", event = "Disable", title = _("AirPlane Mode Disable"), device = true })
@@ -92,7 +115,42 @@ function AirPlaneMode:init()
   else
     self:initSettingsFile()
   end
+  self.additional_footer_content_func = function()
+    local item_prefix = self.ui.view.footer.settings.item_prefix
+    if item_prefix == "icons" then
+      if self:getStatus() then
+        return icon_on
+      else
+        return icon_off
+      end
+    end
+  end
+  self.show_value_in_footer = G_reader_settings:readSetting("airplanemode_in_footer")
+  if self.show_value_in_footer then
+    self:addAdditionalFooterContent()
+  end
   self.ui.menu:registerToMainMenu(self)
+end
+
+function AirPlaneMode:update_status_bars()
+  if self.show_value_in_footer then
+    UIManager:broadcastEvent(Event:new("RefreshAdditionalContent"))
+  end
+end
+
+function AirPlaneMode:addAdditionalFooterContent()
+  if self.ui.view then
+    self.ui.view.footer:addAdditionalFooterContent(self.additional_footer_content_func)
+    self:update_status_bars()
+  end
+end
+
+function AirPlaneMode:removeAdditionalFooterContent()
+  if self.ui.view then
+    self.ui.view.footer:removeAdditionalFooterContent(self.additional_footer_content_func)
+    self:update_status_bars()
+    UIManager:broadcastEvent(Event:new("UpdateFooter", true))
+  end
 end
 
 function AirPlaneMode:initSettingsFile()
@@ -183,13 +241,13 @@ end
 local function split(str)
   local t = {}
   local i = 0
-  for v in string.gmatch(str, '.') do
+  for v in string.gmatch(str, ".") do
     if v ~= "." then
       t[i] = v
       i = i + 1
     end
   end
-  return (t)
+  return t
 end
 --[[
 compare versions - return true means current is greater, false older
@@ -207,7 +265,6 @@ local function compareversions(old, new)
     return true
   end
 end
-
 
 function AirPlaneMode:Enable()
   local current_config = self:backup()
@@ -436,6 +493,7 @@ function AirPlaneMode:Disable()
     -- regardless of options, if we're in a document then save our position
     self.ui:saveSettings()
   end
+  UIManager:unschedule(self.update_status_bars, self)
   if Device:canRestart() then
     if apm_settings:isTrue("restoreopt") then
       saveState(self.name)
@@ -455,25 +513,6 @@ function AirPlaneMode:Disable()
       end,
     }))
   end
-end
-
-function AirPlaneMode:getStatus()
-  -- test we can see the real settings file.
-  if not isFile(settings_file) then
-    logger.err("AirPlaneMode: Settings file not found! Abort!", settings_file)
-    return false
-  end
-  -- check if we currently have a backup of our settings running
-  settings_bk_exists = isFile(settings_bk) or false
-
-  -- also verify if the airplanemode flag is set. we will use this to decide if something is funky
-  local airplanemode_active = G_reader_settings:readSetting("airplanemode") or false
-  if settings_bk_exists and airplanemode_active then
-    return true
-  elseif not airplanemode_active then
-    return false
-  end
-  return false
 end
 
 function AirPlaneMode:onEnable()
@@ -506,95 +545,106 @@ function AirPlaneMode:getConfigMenuItems()
   local airplane_config_table = {}
   local airmode = self:getStatus()
 
-  table.insert(airplane_config_table,
-    {
-      text = _("AirPlane Mode Plugin Manager"),
-      sub_item_table_func = function()
-        if airmode then
-          UIManager:show(InfoMessage:new({
-            text = _("AirPlane Mode cannot be configured while running"),
-            timeout = 3,
-          }))
-        else
-          return self:getSubMenuItems()
+  table.insert(airplane_config_table, {
+    text = _("AirPlane Mode Plugin Manager"),
+    sub_item_table_func = function()
+      if airmode then
+        UIManager:show(InfoMessage:new({
+          text = _("AirPlane Mode cannot be configured while running"),
+          timeout = 3,
+        }))
+      else
+        return self:getSubMenuItems()
+      end
+    end,
+  })
+  table.insert(airplane_config_table, {
+    text = _("Silence the restart message"),
+    callback = function()
+      apm_settings:toggle("silentmode")
+      apm_settings:flush()
+    end,
+    checked_func = function()
+      if apm_settings:isTrue("silentmode") then
+        return true
+      else
+        return false
+      end
+    end,
+    enabled_func = function()
+      if Device:canRestart() then
+        return true
+      else
+        return false
+      end
+    end,
+  })
+  table.insert(airplane_config_table, {
+    text = _("Show AirPlaneMode in reader footer"),
+    checked_func = function()
+      if self.show_value_in_footer then
+        return true
+      else
+        return false
+      end
+    end,
+    callback = function()
+      self.show_value_in_footer = not self.show_value_in_footer
+      G_reader_settings:saveSetting("airplanemode_in_footer", self.show_value_in_footer)
+      if self.show_value_in_footer then
+        self:addAdditionalFooterContent()
+      else
+        self:removeAdditionalFooterContent()
+      end
+    end,
+  })
+  table.insert(airplane_config_table, {
+    text = _("Restore session after restart [EXPERIMENTAL]"),
+    callback = function()
+      apm_settings:toggle("restoreopt")
+      apm_settings:flush()
+    end,
+    checked_func = function()
+      if apm_settings:isTrue("restoreopt") then
+        return true
+      else
+        return false
+      end
+    end,
+    enabled_func = function()
+      if Device:canRestart() then
+        return true
+      else
+        return false
+      end
+    end,
+  })
+  table.insert(airplane_config_table, {
+    text = _("Roaming Mode [EXPERIMENTAL]"),
+    callback = function()
+      apm_settings:toggle("managewifi")
+      apm_settings:flush()
+    end,
+    help_text = _("Disable managing the WiFi device when AirPlane Mode is engaged."),
+    checked_func = function()
+      if apm_settings:isTrue("managewifi") then
+        return true
+      else
+        return false
+      end
+    end,
+    enabled_func = function()
+      if NetworkMgr:getNetworkInterfaceName() or Device:isEmulator() then
+        return true
+      else
+        if not apm_settings:isTrue("managewifi") then
+          apm_settings:makeTrue("managewifi")
+          apm_settings:flush()
         end
-      end,
-    }
-  )
-  table.insert(airplane_config_table,
-    {
-      text = _("Silence the restart message"),
-      callback = function()
-        apm_settings:toggle("silentmode")
-        apm_settings:flush()
-      end,
-      checked_func = function()
-        if apm_settings:isTrue("silentmode") then
-          return true
-        else
-          return false
-        end
-      end,
-      enabled_func = function()
-        if Device:canRestart() then
-          return true
-        else
-          return false
-        end
-      end,
-    }
-  )
-  table.insert(airplane_config_table,
-    {
-      text = _("Restore session after restart [EXPERIMENTAL]"),
-      callback = function()
-        apm_settings:toggle("restoreopt")
-        apm_settings:flush()
-      end,
-      checked_func = function()
-        if apm_settings:isTrue("restoreopt") then
-          return true
-        else
-          return false
-        end
-      end,
-      enabled_func = function()
-        if Device:canRestart() then
-          return true
-        else
-          return false
-        end
-      end,
-    }
-  )
-  table.insert(airplane_config_table,
-    {
-      text = _("Roaming Mode [EXPERIMENTAL]"),
-      callback = function()
-        apm_settings:toggle("managewifi")
-        apm_settings:flush()
-      end,
-      help_text = _("Disable managing the WiFi device when AirPlane Mode is engaged."),
-      checked_func = function()
-        if apm_settings:isTrue("managewifi") then
-          return true
-        else
-          return false
-        end
-      end,
-      enabled_func = function()
-        if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator()) then
-          return true
-        else
-          if not apm_settings:isTrue("managewifi") then
-            apm_settings:makeTrue("managewifi")
-            apm_settings:flush()
-          end
-          return false
-        end
-      end,
-    }
-  )
+        return false
+      end
+    end,
+  })
   return airplane_config_table
 end
 
@@ -667,9 +717,9 @@ function AirPlaneMode:addToMainMenu(menu_items)
   menu_items.airplanemode = {
     text_func = function()
       if airmode then
-        return _("\u{F1D8} Airplane Mode")
+        return T(_("%1 Airplane Mode"), icon_on)
       else
-        return _("\u{F1D9} Airplane Mode")
+        return T(_("%1 Airplane Mode"), icon_off)
       end
     end,
     help_text = T(_("A simple plugin that helps you when you're on the go.\n\n\nv.%1"), meta.version),
@@ -690,9 +740,9 @@ function AirPlaneMode:addToMainMenu(menu_items)
             end
           end
           if airmode then
-            return _("\u{F1D8} Disable AirPlane Mode")
+            return T(_("%1 Disable AirPlane Mode"), icon_on)
           else
-            return _("\u{F1D9} Enable AirPlane Mode")
+            return T(_("%1 Enable AirPlane Mode"), icon_off)
           end
         end,
         separator = true,
@@ -712,7 +762,6 @@ function AirPlaneMode:addToMainMenu(menu_items)
           return self:getConfigMenuItems()
         end,
       },
-
     },
   }
 end
