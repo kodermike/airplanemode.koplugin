@@ -10,6 +10,7 @@
 - Made "disable device management" visible only to users who can manage their hardware
 - Issue 36 - Part 1 - Fixed issue with disabling plugins introduced when adding version checking (too much flush'ing)
 - Issue 36 - Part 2 - Reworked how disabled plugins get re-enabled. I was just retoring the pre-enable plugins, but that would erase anything added by users. Instead, the plugin now takes the list of currently disabled plugins and just removes the ones defined in airplane mode's disable list.
+- Issue 45 - disabling AirPlaneMode wiped disabled plugin list and re-enabled AirPlaneMode plugin list only
 
 ## v.1.0.1b (2025.11.25)
 
