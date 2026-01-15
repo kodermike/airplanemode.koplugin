@@ -444,9 +444,13 @@ function AirPlaneMode:Disable()
     end
   end
 
-  -- re-enable calibre wirless if it was before
-  if not BK_Settings:isFalse("calibre_wireless") then
+  -- re-set calibre_wirless to previous setting, or delete it if it didn't exist
+  if BK_Settings:isTrue("calibre_wireless") then
     G_reader_settings:makeTrue("calibre_wireless")
+  elseif BK_Settings:isFalse("calibre_wireless") then
+    G_reader_settings:makeFalse("calibre_wireless")
+  else
+    G_reader_settings:delSetting("calibre_wireless")
   end
 
   -- first remove *everything* currently disabled
