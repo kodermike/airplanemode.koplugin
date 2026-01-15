@@ -83,6 +83,15 @@ local function isFile(filename)
   return false
 end
 
+-- Lifted whole from pluginloader because it was the only way to dup the function :/
+local function getPluginInfo(plugin)
+  local t = {}
+  t.name = plugin.name
+  t.fullname = string.format("%s", plugin.fullname or plugin.name)
+  t.description = string.format("%s", plugin.description)
+  return t
+ end
+
 function AirPlaneMode:getStatus()
   -- test we can see the real settings file.
   if not isFile(settings_file) then
@@ -453,24 +462,22 @@ function AirPlaneMode:Disable()
     G_reader_settings:delSetting("calibre_wireless")
   end
 
-  -- first remove *everything* currently disabled
-
-  -- create a list of what is currently disabled
-  local currently_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
-  -- create a list of what apm disabled
   local apm_disabled = apm_settings:readSetting("disabled_plugins") or {}
 
+  -- create a list of what is currently disabled
+  local previously_disabled = BK_Settings:readSetting("plugins_disabled") or {}
   -- Build the list of plugins disabled right now
+  local currently_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
   local to_disable = {}
-  if type(currently_disabled) == "string" then
-    to_disable = { currently_disabled }
-  elseif type(currently_disabled) == "table" then
-    to_disable = currently_disabled
-  end
-  -- Remove plugins that were added by airplane mode
-  for plugin, __ in pairs(apm_disabled) do
-    if to_disable[plugin] == true then
-      to_disable[plugin] = nil
+
+  -- loop currently disabled items
+  for plugin, __ in pairs(currently_disabled) do
+    -- if airplane mode disabled it and it was disabled before, keep it disabled
+    if apm_disabled[plugin] and previously_disabled[plugin] then
+      to_disable[plugin] = true
+      -- if it wasn't disabled in airplanemode, keep it disabled
+    elseif not apm_disabled[plugin] then
+      to_disable[plugin] = true
     end
   end
 
@@ -529,15 +536,6 @@ function AirPlaneMode:onToggle()
   else
     self:Enable()
   end
-end
-
--- Lifted whole from pluginloader because it was the only way to dup the function :/
-local function getMenuTable(plugin)
-  local t = {}
-  t.name = plugin.name
-  t.fullname = string.format("%s", plugin.fullname or plugin.name)
-  t.description = string.format("%s", plugin.description)
-  return t
 end
 
 function AirPlaneMode:getConfigMenuItems()
@@ -656,13 +654,13 @@ function AirPlaneMode:getSubMenuItems()
 
   --Loop through os plugins that are enabled and mark that
   for _, plugin in ipairs(os_enabled_plugins) do
-    local element = getMenuTable(plugin)
+    local element = getPluginInfo(plugin)
     element.enable = true
     table.insert(os_all_plugins, element)
   end
   -- first loop through disabled plugins and mark them in our own file if they don't already exist
   for _, plugin in ipairs(os_disabled_plugins) do
-    local element = getMenuTable(plugin)
+    local element = getPluginInfo(plugin)
     if not check_plugins[plugin.name] then
       check_plugins[element.name] = true
     end
