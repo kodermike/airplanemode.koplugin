@@ -9,7 +9,7 @@
 
 </div>
 
-**AirPlane Mode** is a simple plugin to let you enable/disable anything networking related in KOReader with a single tap. Configuration options let you manage what is disabled, and how **AirPlane Mode** behaves when invoked.
+**AirPlane Mode** is a simple plugin to let you enable/disable plugins and networking in [ KOReader ](https://github.com/koreader/koreader.git) with a single tap. Configuration options let you manage what is disabled, and how **AirPlane Mode** behaves when invoked.
 
 ---
 
@@ -17,9 +17,11 @@
 
 ### Installing with a release file
 
-Release files are intended to work with the current stable release of [ KOReader ](https://github.com/koreader/koreader.git).
+```
+Stable release files (X.X.0) are intended to work with the current stable release of KOReader.
 
-To run the most current release of AirPlane Mode, you will need to use either a nightly build (Not Yet Available) or checkout directly from github. This version of AirPlane Mode is only being tested with the nightly KOReader builds. No gurantees are made that they will function on the static releases of KOReader.
+Up to date releases (X.X.X) and direct checkouts of the current main branch in GitHub are only being tested with the nightly KOReader builds. No guarantees are made that they will function on the stable releases of KOReader.
+```
 
 #### Installing using a release archive file
 
@@ -30,11 +32,11 @@ To run the most current release of AirPlane Mode, you will need to use either a 
     1. unpack a release file in your plugins directory. For example,
       - On Kobo, this would be in `.adds/koreader/plugins`
       - On Kindle's it is in `/mnt/us/koreader/plugins`
-1. Disconnect your device. You should be all set!
+1. Disconnect your device and restart KOReader. You should be all set!
 
 #### Alternate installation for Kobo's
 
-1. On the [Releases](https://github.com/kodermike/airplanemode.koplugin/releases), download `KoboRoot.tgz`.
+1. On the [Releases](https://github.com/kodermike/airplanemode.koplugin/releases) page, download `KoboRoot.tgz`.
 1. Connect your device with USB
 1. Copy the the `KoboRoot.tgz` file to the `.kobo` directory on your mounted kobo.
 1. Disconnect USB, then reboot your reader. In order for the `KoboRoot.tgz` file to be unpacked, you will need to exit KOReader completely and restart your Kobo so that the native Kobo manager can unpack the `KoboRoot.tgz` file
@@ -49,18 +51,8 @@ In the Network tab, tap or click the menu for `AirPlane Mode`. If the paper airp
 From the top menu, you can:
 
 * enable or disable `AirPlane Mode`.
-* edit the list of plugins that are disabled when running `AirPlane Mode`. By default, the following core plugins that rely on networking are disabled.
+* access the configuration menu for `AirPlane Mode`
 
-  * `Calibre` [^1]
-  * `HTTP Inspector`
-  * `News Downloader`
-  * `OPDS`
-  * `Progress Sync`
-  * `SSH`
-  * `Time Sync`
-  * `Wallabag`
-
-[^1]: Calibre change: Previous versions of this plugin completely disabled the Calibre plugin, which had the unfortunate side effect of disabling calibre metadata searching. The default behavior now is to only disable the wireless function for Calibre
 
 | ![AirPlane Mode plugin manager](<.github/assets/menu1.jpg>)
 | ------ |
@@ -71,7 +63,18 @@ Select any additional plugins you do not want running when AirPlane Mode is enab
 
 ![AirPlane Mode Configuration Menu](<.github/assets/advanced_config.png>)
 
-New with 1.0.1, the Configuration Menu lets you manage the following additional settings:
+* **AirPlane Mode Plugin Manager** - edit the list of plugins that are disabled when running `AirPlane Mode`. By default, the following core plugins that rely on networking are disabled. These are only suggested defaults - using this menu, you can keep them enabled, or choose other plugins that you want disabled while `AirPlane Mode` is running.
+
+  * `Calibre` [^1]
+  * `HTTP Inspector`
+  * `News Downloader`
+  * `OPDS`
+  * `Progress Sync`
+  * `SSH`
+  * `Time Sync`
+  * `Wallabag`
+
+[^1]: Calibre change: Previous versions of this plugin completely disabled the Calibre plugin, which had the unfortunate side effect of disabling calibre metadata searching. The default behavior now is to only disable the wireless function for Calibre but leave the plugin enabled
 * **Silence the restart message** - enabling this feature will mute restart notifications when enabling and disabling AirPlane mode. Other KOReader dialogs will still appear, such as `Scanning for networks`, but you will not be prompted to confirm a restart
 * **Show AirPlane Mode in reader footer** - enabling this feature will include the current AirPlane Mode status in the footer while reading. Once activated, you will also need to enable `External Content` in the `Status Bar Items` menu.
 * **Restore session after restart** - this feature is highly experimental. If enabled, when KOReader restarts the plugin will attempt to bring you back to where you left off (filebrowser or last open document), regardless of what your default setting is for restarts.
@@ -81,14 +84,14 @@ New with 1.0.1, the Configuration Menu lets you manage the following additional 
 
 ## Gestures
 
-`AirPlane Mode` supports three gesture actions - enable, disable, and toggle. These can be configured in the regular gesture menu. The actions can be found in the `Device` sub-menu.
+`AirPlane Mode` supports three gesture actions - enable, disable, and toggle. These can be configured in the regular gesture menu under the `Device` sub-menu.
 
 ---
 
 ## Find a bug?
 
-Please open an issue in GitHub so we can start looking at what isn't working right.
+Please open an issue in GitHub so we can start looking at what isn't working! If possible, please include your `crash.log` along with a detailed description of what you ran into.
 
 
 
-###### Updated 2025.12.18
+###### Updated 2026.01.17
