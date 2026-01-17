@@ -4,6 +4,7 @@
 
 ### 🚀 Added
 
+- Issue 52 - adding github actions for linting and release builds
 - Issue 46 - wifi settings that weren't in the original configuration need to be just removed (*except if an emulator*)
 - Issue 45 - disabling AirPlaneMode wiped disabled plugin list and re-enabled AirPlaneMode plugin list only
 - Issue 44 - largely cosmetic, but the calibre_wireless value was still present in the config even if it wasn't there previously

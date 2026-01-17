@@ -1,0 +1,131 @@
+name: Build & Publish Release Archives
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup ENV Vars
+        run: |
+          set -e
+          VERSION=$(echo "$GITHUB_REF" | sed -n 's_^refs/tags/__p')
+          echo "VERSION=$VERSION" >> ${GITHUB_ENV}
+          echo "Version: $VERSION"
+          PLUGIN_DIR=airplanemode.koplugin
+          echo "PLUGIN_DIR=${PLUGIN_DIR}" >> ${GITHUB_ENV}
+          echo "Plugin Dir: ${PLUGIN_DIR}"
+          ARCHIVE_NAME="${PLUGIN_DIR}-v${VERSION}"
+          echo "ARCHIVE_NAME=${ARCHIVE_NAME}" >> ${GITHUB_ENV}
+          echo "Archive Name: ${ARCHIVE_NAME}"
+          PKG_ROOT="airplanemode_pkg"
+          echo "PKG_ROOT=${PKG_ROOT}" >> ${GITHUB_ENV}
+          echo "Package Root: ${PKG_ROOT}"
+          KOROOT="mnt/onboard/.adds/koreader/plugins"
+          echo "KOROOT=${KOROOT}" >> ${GITHUB_ENV}
+          echo "Kobo Root: ${KOROOT}"
+
+      - name: Create Release Setup
+        run: |
+          set -e
+          [[ -d "${PKG_ROOT}" ]] && rm -rf "${PKG_ROOT}"
+          mkdir -p "${PKG_ROOT}/${PLUGIN_DIR}"
+          mkdir -p "${PKG_ROOT}/${KOROOT}/${PLUGIN_DIR}"
+          shopt -s extglob && \
+          cp $(/bin/ls|grep -v ${PKG_ROOT}) "${PKG_ROOT}/${PLUGIN_DIR}" && \
+          cp $(/bin/ls|grep -v ${PKG_ROOT}) "${PKG_ROOT}/${KOROOT}/${PLUGIN_DIR}"
+          
+      - name: Create zip Archive
+        run: |
+          apt-get install -y zip && \
+          cd ${PKG_ROOT} && zip -r "../${ARCHIVE_NAME}.zip" "${PLUGIN_DIR}"
+      
+      - name: Create tar Archive
+        run: |
+          # PLUGIN_DIR=${{ env.plugin_dir }}
+          # ARCHIVE_NAME=${{ env.archive_name }}
+          # PKG_ROOT=${{ env.pkg_root }}
+          cd ${PKG_ROOT} && tar zcf "../${ARCHIVE_NAME}.tar.gz" "${PLUGIN_DIR}"
+      
+      - name: Create KoboRoot Archive
+        run: |
+          # ARCHIVE_NAME=${{ env.archive_name }}
+          # PKG_ROOT=${{ env.pkg_root }}
+          # KOROOT=${{ env.koroot }}
+          cd ${PKG_ROOT} && tar zcf "../KoboRoot.tgz" "${KOROOT}"
+      
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          # VERSION=${{ env.version }}
+          echo "Extracting changelog for version: $VERSION"
+          
+          # Extract changelog entry for this version from CHANGELOG.md
+          # Use a more reliable method: find the version section and extract until next version
+          START_LINE=$(grep -n "^## \[$VERSION\]" CHANGELOG.md | head -1 | cut -d: -f1)
+          
+          if [ -z "$START_LINE" ]; then
+            echo "⚠ No changelog entry found for version $VERSION"
+            echo "## Version $VERSION" > release_notes.txt
+            echo "" >> release_notes.txt
+            echo "See [CHANGELOG.md](CHANGELOG.md) for details." >> release_notes.txt
+          else
+            echo "Found changelog entry at line $START_LINE"
+            
+            # Find the next version header (if any)
+            NEXT_LINE=$(awk -v start="$START_LINE" 'NR > start && /^## \[/ {print NR; exit}' CHANGELOG.md)
+            
+            if [ -z "$NEXT_LINE" ]; then
+              # No next version found, extract to end of file
+              sed -n "${START_LINE},\$p" CHANGELOG.md > release_notes.txt
+            else
+              # Extract up to (but not including) next version
+              END_LINE=$((NEXT_LINE - 1))
+              sed -n "${START_LINE},${END_LINE}p" CHANGELOG.md > release_notes.txt
+            fi
+            
+            # Remove the version header line (first line: "## [VERSION] - DATE")
+            sed -i '1d' release_notes.txt
+            
+            # Remove trailing empty lines using perl (more reliable than sed)
+            perl -i -pe 'chomp if eof' release_notes.txt
+            # Remove any remaining trailing newlines
+            perl -i -0pe 's/\n+$//' release_notes.txt
+          fi
+          
+          # Verify we have content
+          if [ ! -s release_notes.txt ]; then
+            echo "⚠ Extracted changelog is empty, creating default"
+            echo "## Version $VERSION" > release_notes.txt
+            echo "" >> release_notes.txt
+            echo "See [CHANGELOG.md](CHANGELOG.md) for details." >> release_notes.txt
+          fi
+          
+          echo "--- Release Notes ---"
+          cat release_notes.txt
+          echo "--- End Release Notes ---"
+          echo "File size: $(wc -c < release_notes.txt) bytes"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ${{ env.archive_name }}.zip
+            ${{ env.archive_name }}.tar.gz
+            KoboRoot.tgz
+          body_path: release_notes.txt
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+
