@@ -1,6 +1,6 @@
 # Changelog
 
-## v.1.0.1c (development)
+## v.1.0.2
 
 ### 🚀 Added
 
