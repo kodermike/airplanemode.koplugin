@@ -90,7 +90,7 @@ local function getPluginInfo(plugin)
   t.fullname = string.format("%s", plugin.fullname or plugin.name)
   t.description = string.format("%s", plugin.description)
   return t
- end
+end
 
 function AirPlaneMode:getStatus()
   -- test we can see the real settings file.
@@ -224,7 +224,7 @@ end
 local function stopOtherPlugins(stopp, fplugin, plugin)
   -- try to run stopPlugin if available since it's cleaner
   if stopp then
-    local mstatus, merr = pcall(function()
+    local mstatus, __ = pcall(function()
       pcall(fplugin["stopPlugin"]())
     end)
     if stringto(mstatus) == false then
@@ -300,7 +300,7 @@ function AirPlaneMode:Enable()
         -- logger.dbg("Disabling", check_plugins)
       end
     else
-      for plugin, __ in pairs(check_plugins) do
+      for plugin, _ in pairs(check_plugins) do
         if disabled_plugins[plugin] ~= true then
           -- Check the current plugin  for status and stop if necessary
           local modcheck = self.ui[plugin]
@@ -313,7 +313,7 @@ function AirPlaneMode:Enable()
               -- The plugin has a stop method
               if type(modcheck["isRunning"]) == "function" then
                 -- The plugin has an isRunning method - use that to determine if we should try and stop it
-                local status, err = pcall(function()
+                local status, __ = pcall(function()
                   pcall(modcheck["isRunning"]())
                 end)
                 -- if the status came back that the plugin was running
