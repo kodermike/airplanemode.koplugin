@@ -47,27 +47,20 @@ jobs:
           
       - name: Create zip Archive
         run: |
-          apt-get install -y zip && \
+          sudo apt-get install -y zip && \
           cd ${PKG_ROOT} && zip -r "../${ARCHIVE_NAME}.zip" "${PLUGIN_DIR}"
       
       - name: Create tar Archive
         run: |
-          # PLUGIN_DIR=${{ env.plugin_dir }}
-          # ARCHIVE_NAME=${{ env.archive_name }}
-          # PKG_ROOT=${{ env.pkg_root }}
           cd ${PKG_ROOT} && tar zcf "../${ARCHIVE_NAME}.tar.gz" "${PLUGIN_DIR}"
       
       - name: Create KoboRoot Archive
         run: |
-          # ARCHIVE_NAME=${{ env.archive_name }}
-          # PKG_ROOT=${{ env.pkg_root }}
-          # KOROOT=${{ env.koroot }}
           cd ${PKG_ROOT} && tar zcf "../KoboRoot.tgz" "${KOROOT}"
       
       - name: Extract changelog for this version
         id: changelog
         run: |
-          # VERSION=${{ env.version }}
           echo "Extracting changelog for version: $VERSION"
           
           # Extract changelog entry for this version from CHANGELOG.md
@@ -120,8 +113,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            ${{ env.archive_name }}.zip
-            ${{ env.archive_name }}.tar.gz
+            ${{ env.ARCHIVE_NAME }}.zip
+            ${{ env.ARCHIVE_NAME }}.tar.gz
             KoboRoot.tgz
           body_path: release_notes.txt
           draft: false
