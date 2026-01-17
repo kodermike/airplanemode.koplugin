@@ -25,7 +25,7 @@ jobs:
           PLUGIN_DIR=airplanemode.koplugin
           echo "PLUGIN_DIR=${PLUGIN_DIR}" >> ${GITHUB_ENV}
           echo "Plugin Dir: ${PLUGIN_DIR}"
-          ARCHIVE_NAME="${PLUGIN_DIR}-v${VERSION}"
+          ARCHIVE_NAME="${PLUGIN_DIR}-${VERSION}"
           echo "ARCHIVE_NAME=${ARCHIVE_NAME}" >> ${GITHUB_ENV}
           echo "Archive Name: ${ARCHIVE_NAME}"
           PKG_ROOT="airplanemode_pkg"
