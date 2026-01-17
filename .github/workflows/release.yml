@@ -117,7 +117,7 @@ jobs:
           echo "File size: $(wc -c < release_notes.txt) bytes"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             ${{ env.archive_name }}.zip
