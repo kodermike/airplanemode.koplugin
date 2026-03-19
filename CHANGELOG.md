@@ -1,10 +1,20 @@
 # Changelog
 
-## v.1.0.2
+## v.1.2.0
+
+- for when you mess up your own tagging scheme.
+
+## v.1.1.0
 
 ### 🚀 Added
 
 - Added additional settings flushes - in final testing for the next release, discovered that without those extra flushes changes weren't being properly propagated.
+- New Koreader release, bumping this build for stable users.
+
+## v.1.0.2
+
+### 🚀 Added
+
 - Issue 52 - adding github actions for linting and release builds
 - Issue 46 - wifi settings that weren't in the original configuration need to be just removed (*except if an emulator*)
 - Issue 45 - disabling AirPlaneMode wiped disabled plugin list and re-enabled AirPlaneMode plugin list only

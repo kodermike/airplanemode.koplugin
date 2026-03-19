@@ -18,9 +18,7 @@
 ### Installing with a release file
 
 ```
-Stable release files (X.X.0) are intended to work with the current stable release of KOReader.
-
-Up to date releases (X.X.X) and direct checkouts of the current main branch in GitHub are only being tested with the nightly KOReader builds. No guarantees are made that they will function on the stable releases of KOReader.
+Version 1.1.0 is only partially compatible with KOReader releases before 2026.03. Previous releases will not be able to utilize the option for a reader footer option.
 ```
 
 #### Installing using a release archive file
@@ -94,4 +92,4 @@ Please open an issue in GitHub so we can start looking at what isn't working! If
 
 
 
-###### Updated 2026.01.17
+###### Updated 2026.03.18
