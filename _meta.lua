@@ -3,5 +3,5 @@ return {
   name = "airplanemode",
   fullname = _("AirPlaneMode"),
   description = _([[This plugin adds an Airplane Mode.]]),
-  version = "1.0.2"
+  version = "1.1.0"
 }

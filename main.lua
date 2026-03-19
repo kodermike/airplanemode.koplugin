@@ -281,6 +281,7 @@ function AirPlaneMode:Enable()
     self:initSettingsFile()
     -- mark airplane as active
     G_reader_settings:saveSetting("airplanemode", true)
+    G_reader_settings:flush()
 
     -- [[ disable plugins, wireless, all of it ]]
 
@@ -292,7 +293,6 @@ function AirPlaneMode:Enable()
     local apm_settings = LuaSettings:open(airplanemode_config)
     local check_plugins = apm_settings:readSetting("disabled_plugins") or {}
     local disabled_plugins = G_reader_settings:readSetting("plugins_disabled") or {}
-
     -- a pair of loops for the logger
     if type(check_plugins) == "string" then
       if disabled_plugins[check_plugins] ~= true then
@@ -354,12 +354,14 @@ function AirPlaneMode:Enable()
       local wifi_enable_action_setting = G_reader_settings:readSetting("wifi_enable_action") or "prompt"
       if wifi_enable_action_setting == "turn_on" then
         G_reader_settings:saveSetting("wifi_enable_action", "prompt")
+        G_reader_settings:flush()
       end
 
       -- According to network manager, this setting always has a value and defaults to prompt
       local wifi_disable_action_setting = G_reader_settings:readSetting("wifi_disable_action") or "prompt"
       if wifi_disable_action_setting ~= "turn_off" then
         G_reader_settings:saveSetting("wifi_disable_action", "turn_off")
+        G_reader_settings:flush()
       end
 
       if Device:isEmulator() and G_reader_settings:isTrue("emulator_fake_wifi_connected") then
@@ -413,6 +415,7 @@ function AirPlaneMode:Disable()
 
   -- disable airplane mode
   G_reader_settings:saveSetting("airplanemode", false)
+  G_reader_settings:flush()
 
   -- If managing wifi, revert settingss
   if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator()) and apm_settings:nilOrFalse("managewifi") then
@@ -431,6 +434,7 @@ function AirPlaneMode:Disable()
     else
       local bk_wifi_enable_action_setting = BK_Settings:readSetting("wifi_enable_action") or "prompt"
       G_reader_settings:saveSetting("wifi_enable_action", bk_wifi_enable_action_setting)
+      G_reader_settings:flush()
     end
 
     -- According to network manager, this setting always has a value and defaults to prompt
@@ -439,6 +443,7 @@ function AirPlaneMode:Disable()
     else
       local bk_wifi_disable_action_setting = BK_Settings:readSetting("wifi_disable_action") or "prompt"
       G_reader_settings:saveSetting("wifi_disable_action", bk_wifi_disable_action_setting)
+      G_reader_settings:flush()
     end
 
     -- got to watch out for our emulator friends :) (ie, me, testing)
@@ -449,6 +454,7 @@ function AirPlaneMode:Disable()
     else
       G_reader_settings:delSetting("emulator_fake_wifi_connected")
     end
+    G_reader_settings:flush()
 
     if BK_Settings:isTrue("http_proxy_enabled") then
       -- flip the real config
@@ -497,7 +503,8 @@ function AirPlaneMode:Disable()
     G_reader_settings:delSetting("plugins_disabled")
   else
     -- Save the updated list of disabled plugins
-    G_reader_settings:saveSetting("plugins_disabled", to_disable)
+    G_reader_settings:savebSetting("plugins_disabled", to_disable)
+    G_reader_settings:flush()
   end
 
   G_reader_settings:flush()
@@ -600,6 +607,7 @@ function AirPlaneMode:getConfigMenuItems()
     callback = function()
       self.show_value_in_footer = not self.show_value_in_footer
       G_reader_settings:saveSetting("airplanemode_in_footer", self.show_value_in_footer)
+      G_reader_settings:flush()
       if self.show_value_in_footer then
         self:addAdditionalFooterContent()
       else
