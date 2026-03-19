@@ -4,6 +4,7 @@
 
 ### 🚀 Added
 
+- Added additional settings flushes - in final testing for the next release, discovered that without those extra flushes changes weren't being properly propagated.
 - Issue 52 - adding github actions for linting and release builds
 - Issue 46 - wifi settings that weren't in the original configuration need to be just removed (*except if an emulator*)
 - Issue 45 - disabling AirPlaneMode wiped disabled plugin list and re-enabled AirPlaneMode plugin list only
