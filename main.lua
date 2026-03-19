@@ -503,7 +503,7 @@ function AirPlaneMode:Disable()
     G_reader_settings:delSetting("plugins_disabled")
   else
     -- Save the updated list of disabled plugins
-    G_reader_settings:savebSetting("plugins_disabled", to_disable)
+    G_reader_settings:saveSetting("plugins_disabled", to_disable)
     G_reader_settings:flush()
   end
 
