@@ -1,5 +1,9 @@
 # Changelog
 
+## v.1.2.1
+- Fixed logic bug for version comparisons (was trying to compare ints, but sometimes I had alphanumeric versions)
+- Fixed a typo that could cause crashes
+
 ## v.1.2.0
 
 - for when you mess up your own tagging scheme.
