@@ -247,14 +247,15 @@ local function stopOtherPlugins(stopp, fplugin, plugin)
   end
 end
 
-local function split(str)
+local function split(str,sep)
+  sep = sep or "."
   local t = {}
-  local i = 0
-  for v in string.gmatch(str, ".") do
-    if v ~= "." then
-      t[i] = v
-      i = i + 1
+  for s in string.gmatch(str, "([^" .. sep .. "]+)") do
+    -- If it isn't an int, ie 55b, convert to an int first
+    if not tonumber(s) then
+      s = string.gsub(s, "[a-zA-Z]", "")
     end
+    t[#t + 1] = s
   end
   return t
 end
