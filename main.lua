@@ -92,7 +92,7 @@ local function getPluginInfo(plugin)
   return t
 end
 
-function AirPlaneMode:getStatus()
+function AirPlaneMode.getStatus()
   -- test we can see the real settings file.
   if not isFile(settings_file) then
     logger.err("AirPlaneMode: Settings file not found! Abort!", settings_file)
@@ -111,7 +111,7 @@ function AirPlaneMode:getStatus()
   return false
 end
 
-function AirPlaneMode:onDispatcherRegisterActions()
+function AirPlaneMode.onDispatcherRegisterActions()
   Dispatcher:registerAction("airplanemode_enable", { category = "none", event = "Enable", title = _("AirPlane Mode Enable"), device = true })
   Dispatcher:registerAction("airplanemode_disable", { category = "none", event = "Disable", title = _("AirPlane Mode Disable"), device = true })
   Dispatcher:registerAction("airplanemode_toggle", { category = "none", event = "Toggle", title = _("AirPlane Mode Toggle"), device = true, separator = true })
@@ -162,7 +162,7 @@ function AirPlaneMode:removeAdditionalFooterContent()
   end
 end
 
-function AirPlaneMode:initSettingsFile()
+function AirPlaneMode.initSettingsFile()
   if isFile(airplanemode_config) == true then
     return
   else
@@ -179,7 +179,7 @@ function AirPlaneMode:initSettingsFile()
   end
 end
 
-function AirPlaneMode:migrateconfig()
+function AirPlaneMode.migrateconfig()
   local old_config_file = DataStorage:getDataDir() .. "/settings/airplane_plugins.lua"
   local old_config = LuaSettings:open(old_config_file)
   local new_config = LuaSettings:open(airplanemode_config)
@@ -199,7 +199,7 @@ function AirPlaneMode:migrateconfig()
   end
 end
 
-function AirPlaneMode:backup()
+function AirPlaneMode.backup()
   if isFile(settings_file) then
     if isFile(settings_bk) then
       os.remove(settings_bk)
@@ -244,35 +244,6 @@ local function stopOtherPlugins(stopp, fplugin, plugin)
     if stringto(sstatus) == false then
       logger.err("AirPlaneMode: Failed to stop", plugin, ":", serr)
     end
-  end
-end
-
-local function split(str,sep)
-  sep = sep or "."
-  local t = {}
-  for s in string.gmatch(str, "([^" .. sep .. "]+)") do
-    -- If it isn't an int, ie 55b, convert to an int first
-    if not tonumber(s) then
-      s = string.gsub(s, "[a-zA-Z]", "")
-    end
-    t[#t + 1] = s
-  end
-  return t
-end
---[[
-compare versions - return true means current is greater, false older
-]]
-local function compareversions(old, new)
-  local oldv = split(old)
-  local newv = split(new)
-  if oldv[0] > newv[0] then
-    return false
-  elseif oldv[1] > newv[1] then
-    return false
-  elseif oldv[2] > newv[2] then
-    return false
-  else
-    return true
   end
 end
 
@@ -666,7 +637,7 @@ function AirPlaneMode:getConfigMenuItems()
   return airplane_config_table
 end
 
-function AirPlaneMode:getSubMenuItems()
+function AirPlaneMode.getSubMenuItems()
   local apm_settings = LuaSettings:open(airplanemode_config)
   local check_plugins = apm_settings:readSetting("disabled_plugins") or {}
   local os_enabled_plugins, os_disabled_plugins = PluginLoader:loadPlugins()
@@ -746,16 +717,9 @@ function AirPlaneMode:addToMainMenu(menu_items)
       {
         text_func = function()
           local curversion = apm_settings:readSetting("version")
-          if (curversion ~= nil) and (curversion ~= meta.version) then
-            if compareversions(curversion, meta.version) then
-              apm_settings:saveSetting("version", meta.version)
-              apm_settings:flush()
-            else
-              UIManager:show(InfoMessage:new({
-                text = T(_("You are running a version of AirPlane Mode older than your configuration file. You may experience issues.")),
-                timeout = 3,
-              }))
-            end
+          if (curversion ~= nil) or (curversion ~= meta.version) then
+            apm_settings:saveSetting("version", meta.version)
+            apm_settings:flush()
           end
           if airmode then
             return T(_("%1 Disable AirPlane Mode"), icon_on)
