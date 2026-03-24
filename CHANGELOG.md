@@ -1,6 +1,11 @@
 # Changelog
 
-## v.1.2.1
+## v.1.2.2 🔥
+
+- More version comparison fun. Removed it. Found while testing issue #60
+
+## v.1.2.1 🔥
+
 - Fixed logic bug for version comparisons (was trying to compare ints, but sometimes I had alphanumeric versions)
 - Fixed a typo that could cause crashes
 
@@ -20,7 +25,7 @@
 ### 🚀 Added
 
 - Issue 52 - adding github actions for linting and release builds
-- Issue 46 - wifi settings that weren't in the original configuration need to be just removed (*except if an emulator*)
+- Issue 46 - wifi settings that weren't in the original configuration need to be just removed (_except if an emulator_)
 - Issue 45 - disabling AirPlaneMode wiped disabled plugin list and re-enabled AirPlaneMode plugin list only
 - Issue 44 - largely cosmetic, but the calibre_wireless value was still present in the config even if it wasn't there previously
 - Issue 40 - Removed the need for a patch for the reader footer, incorporated the ability to enable/disable in the regular configuration. Also removed the patch and associated folder since they are no long necessary. Documentation updated with the new menu options.
@@ -33,7 +38,6 @@
   - Removed message for android devices (no longer relevant)
   - Made "disable device management" visible only to users who can manage their hardware
 
-
 ## v.1.0.1b (2025.11.25)
 
 ### 🔥 Hotfix
@@ -44,7 +48,7 @@
 
 ### 🚀 Added
 
-- Added better version management. The plugin will now warn if being run with a config from a newer version; the _meta file has been updated to list the version so that external plugin managers like [UpdatesManager](https://github.com/advokatb/updatesmanager.koplugin) can easily identify whether a local install needs updating; general clean up around how the version is stored and updated within the configs
+- Added better version management. The plugin will now warn if being run with a config from a newer version; the \_meta file has been updated to list the version so that external plugin managers like [UpdatesManager](https://github.com/advokatb/updatesmanager.koplugin) can easily identify whether a local install needs updating; general clean up around how the version is stored and updated within the configs
 
 - Added optional toggling for managing whether the plugin manages the WiFi device. There are scenarios (like Android devices) where we can't, but the lack of management breaks using the plugin for just bulk disabling/enabling WiFi related plugins and options.
 
@@ -72,7 +76,6 @@
   - Introduced internal version tracking so future releases can more easily track upgrade and migration requirements. As a bonus, this should make asking users for which version they installed easier.
 
   - Changed what (and how to some extent) we store in the airplanemode configuration file. Existing users should be migrated seemlessly the first time they launch koreader with the new version.
-
 
 ### 🩹 Fixes
 
