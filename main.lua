@@ -141,6 +141,7 @@ function AirPlaneMode:init()
   self.ui.menu:registerToMainMenu(self)
 end
 
+--[[ reader statusbar hooks ]] --
 function AirPlaneMode:update_status_bars()
   if self.show_value_in_footer then
     UIManager:broadcastEvent(Event:new("RefreshAdditionalContent"))
@@ -162,6 +163,7 @@ function AirPlaneMode:removeAdditionalFooterContent()
   end
 end
 
+--[[ settings ]] --
 function AirPlaneMode.initSettingsFile()
   if isFile(airplanemode_config) == true then
     return
@@ -179,6 +181,7 @@ function AirPlaneMode.initSettingsFile()
   end
 end
 
+-- migrate old config to new format if necessary
 function AirPlaneMode.migrateconfig()
   local old_config_file = DataStorage:getDataDir() .. "/settings/airplane_plugins.lua"
   local old_config = LuaSettings:open(old_config_file)
@@ -196,6 +199,25 @@ function AirPlaneMode.migrateconfig()
   -- I know, why wouldn't it be there, but caution always
   if isFile(old_config_file) then
     os.remove(old_config_file)
+  end
+end
+
+-- hook for deleteplugin calls
+function AirPlaneMode.deletePluginSettings()
+  if G_reader_settings:readSetting("airplanemode") then
+    UIManager:show(InfoMessage:new({
+      text = _("Removing AirPlane Mode while still running. Plugins and networking will not be automatically restored."),
+      timeout = 3,
+    }))
+  end
+  if G_reader_settings:has("airplanemode") then G_reader_settings:delSetting("airplanemode") end
+  if G_reader_settings:has("airplanemode_in_footer") then G_reader_settings:delSetting("airplanemode_in_footer") end
+  G_reader_settings:flush()
+  if isFile(airplanemode_config) then
+    os.remove(airplanemode_config)
+  end
+  if isFile(airplanemode_config .. ".old") then
+    os.remove(airplanemode_config .. ".old")
   end
 end
 
