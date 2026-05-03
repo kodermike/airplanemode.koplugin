@@ -7,6 +7,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local NetworkMgr = require("ui/network/manager")
 local PluginLoader = require("pluginloader")
+local SelfUpdate = require("selfupdate")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiutil = require("ffi/util")
@@ -115,6 +116,11 @@ function AirPlaneMode.onDispatcherRegisterActions()
   Dispatcher:registerAction("airplanemode_enable", { category = "none", event = "Enable", title = _("AirPlane Mode Enable"), device = true })
   Dispatcher:registerAction("airplanemode_disable", { category = "none", event = "Disable", title = _("AirPlane Mode Disable"), device = true })
   Dispatcher:registerAction("airplanemode_toggle", { category = "none", event = "Toggle", title = _("AirPlane Mode Toggle"), device = true, separator = true })
+end
+
+function AirPlaneMode:selfUpdate()
+    print("\n\n\n\nAm I passing a version?", meta.version,"\n\nfwiw, we are also in self.path of", self.path,"\n\n\n\n\n")
+    SelfUpdate:checkForUpdate(self.path, meta.version)
 end
 
 function AirPlaneMode:init()
@@ -633,7 +639,20 @@ function AirPlaneMode:getConfigMenuItems()
         return false
       end
     end,
+    })
+  table.insert(airplane_config_table, {
+
+      text_func = function()
+          if meta.version then
+              return T(_("Check for update (v%1)"), meta.version)
+          end
+          return _("Check for update")
+      end,
+      callback = function()
+          SelfUpdate:checkForUpdate(self.path, meta.version)
+      end,
   })
+
   return airplane_config_table
 end
 
