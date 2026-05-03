@@ -14,6 +14,7 @@ local T = ffiutil.template
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
+local PluginChecker = require("modules/pluginchecker")
 
 local meta = require("_meta")
 
@@ -83,14 +84,6 @@ local function isFile(filename)
   return false
 end
 
--- Lifted whole from pluginloader because it was the only way to dup the function :/
-local function getPluginInfo(plugin)
-  local t = {}
-  t.name = plugin.name
-  t.fullname = string.format("%s", plugin.fullname or plugin.name)
-  t.description = string.format("%s", plugin.description)
-  return t
-end
 
 function AirPlaneMode.getStatus()
   -- test we can see the real settings file.
@@ -556,7 +549,8 @@ function AirPlaneMode:getConfigMenuItems()
   local airmode = self:getStatus()
 
   table.insert(airplane_config_table, {
-    text = _("AirPlane Mode Plugin Manager"),
+    text = _("Manage Bultin Plugins"),
+    help_text = _("Checked plugins will be disabled when AirPlaneMode is enabled."),
     sub_item_table_func = function()
       if airmode then
         UIManager:show(InfoMessage:new({
@@ -564,7 +558,21 @@ function AirPlaneMode:getConfigMenuItems()
           timeout = 3,
         }))
       else
-        return self:getSubMenuItems()
+        return self:PluginMenu(true)
+      end
+    end,
+  })
+  table.insert(airplane_config_table, {
+    text = _("Manage User Added Plugins"),
+    help_text = _("Checked plugins will be disabled when AirPlaneMode is enabled."),
+    sub_item_table_func = function()
+      if airmode then
+        UIManager:show(InfoMessage:new({
+          text = _("AirPlane Mode cannot be configured while running"),
+          timeout = 3,
+        }))
+      else
+        return self:PluginMenu(false)
       end
     end,
   })
@@ -659,67 +667,12 @@ function AirPlaneMode:getConfigMenuItems()
   return airplane_config_table
 end
 
-function AirPlaneMode.getSubMenuItems()
+function AirPlaneMode.PluginMenu(self, builtin)
   local apm_settings = LuaSettings:open(airplanemode_config)
   local check_plugins = apm_settings:readSetting("disabled_plugins") or {}
-  local os_enabled_plugins, os_disabled_plugins = PluginLoader:loadPlugins()
-  local os_all_plugins = {}
-
-  --Loop through os plugins that are enabled and mark that
-  for _, plugin in ipairs(os_enabled_plugins) do
-    local element = getPluginInfo(plugin)
-    element.enable = true
-    table.insert(os_all_plugins, element)
-  end
-  -- first loop through disabled plugins and mark them in our own file if they don't already exist
-  for _, plugin in ipairs(os_disabled_plugins) do
-    local element = getPluginInfo(plugin)
-    if not check_plugins[plugin.name] then
-      check_plugins[element.name] = true
-    end
-    element.enable = nil
-    table.insert(os_all_plugins, element)
-  end
-
-  table.sort(os_all_plugins, function(v1, v2)
-    return v1.fullname < v2.fullname
-  end)
-
-  local airplane_plugin_table = {}
-  for __, plugin in ipairs(os_all_plugins) do
-    if plugin.name ~= "airplanemode" then
-      table.insert(airplane_plugin_table, {
-        text = _(plugin.fullname),
-        checked_func = function()
-          return check_plugins[plugin.name]
-        end,
-        enabled_func = function()
-          if (plugin.enable == false) or (plugin.enable == nil) then
-            return false
-          else
-            return true
-          end
-        end,
-        callback = function()
-          if check_plugins[plugin.name] then
-            check_plugins[plugin.name] = nil
-            -- logger.dbg("Disabled ", plugin.name)
-            apm_settings:saveSetting("disabled_plugins", check_plugins)
-            apm_settings:flush()
-          else
-            check_plugins[plugin.name] = true
-            -- logger.dbg("Enabled ", plugin.name)
-            apm_settings:saveSetting("disabled_plugins", check_plugins)
-            apm_settings:flush()
-          end
-        end,
-        help_text = T(_("%1\n\nThis plugin is already disabled in KOReader"), plugin.description),
-      })
-    end
-  end
-  apm_settings:flush()
-  apm_settings:close()
-  return airplane_plugin_table
+  local plugin_list = PluginChecker:getPlugins(builtin)
+  local plugin_menu = PluginChecker:menuBuilder(builtin, plugin_list)
+  return plugin_menu
 end
 
 function AirPlaneMode:addToMainMenu(menu_items)
