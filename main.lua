@@ -18,6 +18,8 @@ local PluginChecker = require("modules/pluginchecker")
 
 local meta = require("_meta")
 
+local U = require("modules/utilities")
+
 local icon_on = "\u{F1D8}"
 local icon_off = "\u{F1D9}"
 
@@ -84,11 +86,10 @@ local function isFile(filename)
   return false
 end
 
-
 function AirPlaneMode.getStatus()
   -- test we can see the real settings file.
   if not isFile(settings_file) then
-    logger.err("AirPlaneMode: Settings file not found! Abort!", settings_file)
+    logger.err("AIRPLANEMODE: Settings file not found! Abort!", settings_file)
     return false
   end
   -- check if we currently have a backup of our settings running
@@ -115,7 +116,12 @@ function AirPlaneMode:init()
   if isFile(DataStorage:getDataDir() .. "/settings/airplane_plugins.lua") then
     self:migrateconfig()
   else
-    self:initSettingsFile()
+    local apm_settings = LuaSettings:open(airplanemode_config)
+
+    if not isFile(airplanemode_config) then
+      self:initSettingsFile()
+    end
+    apm_settings:close()
   end
   self.additional_footer_content_func = function()
     local item_prefix = self.ui.view.footer.settings.item_prefix
@@ -134,7 +140,8 @@ function AirPlaneMode:init()
   self.ui.menu:registerToMainMenu(self)
 end
 
---[[ reader statusbar hooks ]] --
+--[[ reader statusbar hooks ]]
+--
 function AirPlaneMode:update_status_bars()
   if self.show_value_in_footer then
     UIManager:broadcastEvent(Event:new("RefreshAdditionalContent"))
@@ -156,24 +163,48 @@ function AirPlaneMode:removeAdditionalFooterContent()
   end
 end
 
---[[ settings ]] --
+--[[ settings ]]
+--
 function AirPlaneMode.initSettingsFile()
+  -- If the file already exists, bail out early
   if isFile(airplanemode_config) == true then
+    logger.dbg("AIRPLANEMODE: initSettingsFile - file exists, skipping: ", airplanemode_config)
     return
   else
     local apm_settings = LuaSettings:open(airplanemode_config)
+    -- Only write defaults if the setting is not already present (avoid clobbering)
+    local cur_disabled = apm_settings:readSetting("disabled_plugins")
+    if cur_disabled ~= nil then
+      logger.dbg("AIRPLANEMODE: initSettingsFile - disabled_plugins already present, skipping. traceback:\n", debug.traceback())
+      apm_settings:flush()
+      apm_settings:close()
+      return
+    end
+
     apm_settings:saveSetting("version", meta.version)
     local default_disable = {}
     local default_disable_list = { "newsdownloader", "wallabag", "kosync", "opds", "SSH", "timesync", "httpinspector" }
     for __, plugin in ipairs(default_disable_list) do
       default_disable[plugin] = true
     end
+    logger.dbg("AIRPLANEMODE: Saving default settings to ", airplanemode_config, " at ", os.time(), "\nstack:\n", debug.traceback())
     apm_settings:saveSetting("disabled_plugins", default_disable)
     apm_settings:flush()
     apm_settings:close()
   end
 end
 
+function AirPlaneMode.dumpSettings()
+  -- Short-lived verification: read on-disk file contents and log them
+  local fh = io.open(airplanemode_config, "r")
+  if fh then
+    local contents = fh:read("*a")
+    fh:close()
+    logger.dbg("AIRPLANEMODE: on-disk airplanemode.lua after save:\n", contents)
+  else
+    logger.err("AIRPLANEMODE: failed to open on-disk airplanemode.lua for verification: ", airplanemode_config)
+  end
+end
 -- migrate old config to new format if necessary
 function AirPlaneMode.migrateconfig()
   local old_config_file = DataStorage:getDataDir() .. "/settings/airplane_plugins.lua"
@@ -197,19 +228,26 @@ end
 
 -- hook for deleteplugin calls
 function AirPlaneMode.deletePluginSettings()
+  logger.dbg("AIRPLANEMODE: deletePluginSettings called at ", os.time(), "\nstack:\n", debug.traceback())
   if G_reader_settings:readSetting("airplanemode") then
     UIManager:show(InfoMessage:new({
       text = _("Removing AirPlane Mode while still running. Plugins and networking will not be automatically restored."),
       timeout = 3,
     }))
   end
-  if G_reader_settings:has("airplanemode") then G_reader_settings:delSetting("airplanemode") end
-  if G_reader_settings:has("airplanemode_in_footer") then G_reader_settings:delSetting("airplanemode_in_footer") end
+  if G_reader_settings:has("airplanemode") then
+    G_reader_settings:delSetting("airplanemode")
+  end
+  if G_reader_settings:has("airplanemode_in_footer") then
+    G_reader_settings:delSetting("airplanemode_in_footer")
+  end
   G_reader_settings:flush()
   if isFile(airplanemode_config) then
+    logger.dbg("AIRPLANEMODE: deletePluginSettings removing file: ", airplanemode_config)
     os.remove(airplanemode_config)
   end
   if isFile(airplanemode_config .. ".old") then
+    logger.dbg("AIRPLANEMODE: deletePluginSettings removing file: ", airplanemode_config .. ".old")
     os.remove(airplanemode_config .. ".old")
   end
 end
@@ -222,7 +260,7 @@ function AirPlaneMode.backup()
     ffiutil.copyFile(settings_file, settings_bk)
     return isFile(settings_bk) and true or false
   else
-    logger.err("AirPlaneMode: Failed to find settings file at: ", settings_file)
+    logger.err("AIRPLANEMODE: Failed to find settings file at: ", settings_file)
     return false
   end
 end
@@ -238,6 +276,7 @@ end
 
 local function stopOtherPlugins(stopp, fplugin, plugin)
   -- try to run stopPlugin if available since it's cleaner
+  logger.dbg("AIRPLANEMODE: Stopping plugin", plugin)
   if stopp then
     local mstatus, __ = pcall(function()
       pcall(fplugin["stopPlugin"]())
@@ -248,7 +287,7 @@ local function stopOtherPlugins(stopp, fplugin, plugin)
         pcall(fplugin["stop"]())
       end)
       if stringto(sstatus) == false then
-        logger.err("AirPlaneMode: Failed to stop", plugin, ":", serr)
+        logger.err("AIRPLANEMODE: Failed to stop", plugin, ":", serr)
       end
     end
   else
@@ -257,15 +296,16 @@ local function stopOtherPlugins(stopp, fplugin, plugin)
       pcall(fplugin["stop"]())
     end)
     if stringto(sstatus) == false then
-      logger.err("AirPlaneMode: Failed to stop", plugin, ":", serr)
+      logger.err("AIRPLANEMODE: Failed to stop", plugin, ":", serr)
     end
   end
 end
 
 function AirPlaneMode:Enable()
+  self.dumpSettings()
   local current_config = self:backup()
+  self.dumpSettings()
   if current_config then
-    self:initSettingsFile()
     -- mark airplane as active
     G_reader_settings:saveSetting("airplanemode", true)
     G_reader_settings:flush()
@@ -278,17 +318,21 @@ function AirPlaneMode:Enable()
     end
 
     local apm_settings = LuaSettings:open(airplanemode_config)
-    local check_plugins = apm_settings:readSetting("disabled_plugins") or {}
+
+    local check_plugins = U:readPlugins()
+
     local disabled_plugins = G_reader_settings:readSetting("plugins_disabled") or {}
     -- a pair of loops for the logger
     if type(check_plugins) == "string" then
       if disabled_plugins[check_plugins] ~= true then
         disabled_plugins[check_plugins] = true
-        -- logger.dbg("Disabling", check_plugins)
+        logger.dbg("AIRPLANEMODE: Disabling [string]", check_plugins)
       end
     else
       for plugin, _ in pairs(check_plugins) do
+        logger.dbg("AIRPLANEMODE: Disabling", plugin)
         if disabled_plugins[plugin] ~= true then
+          logger.dbg("AIRPLANEMODE: Disabling", plugin, "was true")
           -- Check the current plugin  for status and stop if necessary
           local modcheck = self.ui[plugin]
           -- if the passed name was a plugin continue
@@ -321,7 +365,7 @@ function AirPlaneMode:Enable()
         end
       end
     end
-    -- logger.dbg("AIRPLANE: Saving", disabled_plugins)
+    logger.dbg("AIRPLANEMODE: Saving", disabled_plugins)
     G_reader_settings:saveSetting("plugins_disabled", disabled_plugins)
     G_reader_settings:flush()
 
@@ -392,7 +436,7 @@ function AirPlaneMode:Enable()
       }))
     end
   else
-    logger.err("AirPlaneMode: Failed to create backup file and execute")
+    logger.err("AIRPLANEMODE: Failed to create backup file and execute")
   end
 end
 
@@ -548,34 +592,27 @@ function AirPlaneMode:getConfigMenuItems()
   local airplane_config_table = {}
   local airmode = self:getStatus()
 
-  table.insert(airplane_config_table, {
-    text = _("Manage Bultin Plugins"),
-    help_text = _("Checked plugins will be disabled when AirPlaneMode is enabled."),
-    sub_item_table_func = function()
-      if airmode then
-        UIManager:show(InfoMessage:new({
-          text = _("AirPlane Mode cannot be configured while running"),
-          timeout = 3,
-        }))
-      else
-        return self:PluginMenu(true)
-      end
-    end,
-  })
-  table.insert(airplane_config_table, {
-    text = _("Manage User Added Plugins"),
-    help_text = _("Checked plugins will be disabled when AirPlaneMode is enabled."),
-    sub_item_table_func = function()
-      if airmode then
-        UIManager:show(InfoMessage:new({
-          text = _("AirPlane Mode cannot be configured while running"),
-          timeout = 3,
-        }))
-      else
-        return self:PluginMenu(false)
-      end
-    end,
-  })
+  if airmode then
+    table.insert(airplane_config_table, {
+      text = T(_("%1 Plugin management suspended in flight"), icon_on),
+    })
+  else
+    table.insert(airplane_config_table, {
+      text = _("Manage Builtin Plugins"),
+      help_text = _("Checked plugins will be disabled when AirPlaneMode is enabled."),
+      sub_item_table_func = function()
+        return self:PluginMenu(true, apm_settings)
+      end,
+    })
+
+    table.insert(airplane_config_table, {
+      text = _("Manage User Added Plugins"),
+      help_text = _("Checked plugins will be disabled when AirPlaneMode is enabled."),
+      sub_item_table_func = function()
+        return self:PluginMenu(false, apm_settings)
+      end,
+    })
+  end
   table.insert(airplane_config_table, {
     text = _("Silence the restart message"),
     callback = function()
@@ -667,9 +704,7 @@ function AirPlaneMode:getConfigMenuItems()
   return airplane_config_table
 end
 
-function AirPlaneMode.PluginMenu(self, builtin)
-  local apm_settings = LuaSettings:open(airplanemode_config)
-  local check_plugins = apm_settings:readSetting("disabled_plugins") or {}
+function AirPlaneMode.PluginMenu(self, builtin, settings_handle)
   local plugin_list = PluginChecker:getPlugins(builtin)
   local plugin_menu = PluginChecker:menuBuilder(builtin, plugin_list)
   return plugin_menu
@@ -692,7 +727,7 @@ function AirPlaneMode:addToMainMenu(menu_items)
       {
         text_func = function()
           local curversion = apm_settings:readSetting("version")
-          if (curversion ~= nil) or (curversion ~= meta.version) then
+          if (curversion == nil) or (curversion ~= meta.version) then
             apm_settings:saveSetting("version", meta.version)
             apm_settings:flush()
           end

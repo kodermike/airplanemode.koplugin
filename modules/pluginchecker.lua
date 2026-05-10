@@ -11,6 +11,8 @@ local T = ffiutil.template
 local logger = require("logger")
 local _ = require("gettext")
 
+local U = require("modules/utilities")
+
 local airplanemode_config = DataStorage:getDataDir() .. "/settings/airplanemode.lua"
 
 local BUILTIN_PLUGINS = {
@@ -51,11 +53,7 @@ local BUILTIN_PLUGINS = {
   ["timesync"] = true,
   ["vocabbuilder"] = true,
   ["wallabag"] = true,
-
 }
-local apm_settings = LuaSettings:open(airplanemode_config)
-local check_plugins = apm_settings:readSetting("disabled_plugins") or {}
-
 
 local PluginChecker = {
   show_info = true,
@@ -75,41 +73,47 @@ local function getPluginInfo(plugin)
 end
 
 function PluginChecker.getPlugins(self, builtin)
+  local check_plugins = U:readPlugins()
   local os_enabled_plugins, os_disabled_plugins = PluginLoader:loadPlugins()
   local plugin_list = {}
 
   --Loop through os plugins that are enabled and mark that
   for _, plugin in ipairs(os_enabled_plugins) do
-    local element = getPluginInfo(plugin)
-    element.enable = true
-    if builtin then
-      if BUILTIN_PLUGINS[plugin.name] == true then
-        table.insert(plugin_list, element)
-      end
-    else
-      if BUILTIN_PLUGINS[plugin.name] == nil then
-        table.insert(plugin_list, element)
-      end
+    if (builtin == true and BUILTIN_PLUGINS[plugin.name]) or (builtin == false and not BUILTIN_PLUGINS[plugin.name]) then
+      local element = getPluginInfo(plugin)
+      element.enable = true
+
+      table.insert(plugin_list, element)
     end
   end
   -- first loop through disabled plugins and mark them in our own file if they don't already exist
   for _, plugin in ipairs(os_disabled_plugins) do
-    local element = getPluginInfo(plugin)
-    if not check_plugins[plugin.name] then
-      check_plugins[element.name] = true
+    if (builtin == true and BUILTIN_PLUGINS[plugin.name]) or (builtin == false and not BUILTIN_PLUGINS[plugin.name]) then
+      local element = getPluginInfo(plugin)
+      if not check_plugins[plugin.name] then
+        check_plugins[element.name] = true
+      end
+      element.enable = nil
+      table.insert(plugin_list, element)
     end
-    element.enable = nil
-    table.insert(plugin_list, element)
   end
-  table.sort(plugin_list, function(a, b) return a.fullname < b.fullname end)
+  table.sort(plugin_list, function(a, b)
+    return a.fullname < b.fullname
+  end)
   return plugin_list
 end
 
 -- Build a menu from the passed plugin list
 function PluginChecker.menuBuilder(self, builtin, plugin_list)
   local airplane_plugin_table = {}
-  if #plugin_list == 0 then
-    logger.dbg("AirPlaneMode: menuBuilder plugin_list is empty")
+  -- Since we're in AirPlaneMode, and we skip AirPlaneMode, then a list of 0 is an empty list in this context
+  if builtin == false and #plugin_list == 0 then
+    logger.dbg("AIRPLANEMODE: menuBuilder plugin_list is empty")
+    table.insert(airplane_plugin_table, {
+      text = _("No user installed plugins available to manage"),
+      enabled = false,
+      help_text = _("The only plugin installed is AirPlaneMode - nothing to manage"),
+    })
     return airplane_plugin_table
   end
   for __, plugin in ipairs(plugin_list) do
@@ -118,7 +122,14 @@ function PluginChecker.menuBuilder(self, builtin, plugin_list)
         table.insert(airplane_plugin_table, {
           text = _(plugin.fullname),
           checked_func = function()
-            return check_plugins[plugin.name]
+            -- Read the latest setting from disk to avoid stale in-memory cache
+            -- local apm = LuaSettings:open(airplanemode_config)
+            -- local cp = apm:readSetting("disabled_plugins") or {}
+            -- local val = cp[plugin.name]
+            -- apm:close()
+            local cp = U:readPlugins()
+            local val = cp[plugin.name]
+            return val
           end,
           enabled_func = function()
             if (plugin.enable == false) or (plugin.enable == nil) then
@@ -128,17 +139,36 @@ function PluginChecker.menuBuilder(self, builtin, plugin_list)
             end
           end,
           callback = function()
-            if check_plugins[plugin.name] then
-              check_plugins[plugin.name] = nil
-              -- logger.dbg("Disabled ", plugin.name)
-              apm_settings:saveSetting("disabled_plugins", check_plugins)
-              apm_settings:flush()
+            -- Re-open settings on each toggle to ensure we operate on latest on-disk state
+            -- local apm = LuaSettings:open(airplanemode_config)
+            -- local cp = apm:readSetting("disabled_plugins") or {}
+            local cp = U:readPlugins()
+            if cp[plugin.name] then
+              cp[plugin.name] = nil
+              logger.dbg("AIRPLANEMODE: Disabled ", plugin.name)
             else
-              check_plugins[plugin.name] = true
-              -- logger.dbg("Enabled ", plugin.name)
-              apm_settings:saveSetting("disabled_plugins", check_plugins)
-              apm_settings:flush()
+              cp[plugin.name] = true
+              logger.dbg("AIRPLANEMODE: Enabled ", plugin.name)
             end
+            U:savePlugins(cp)
+
+            -- apm:saveSetting("disabled_plugins", cp)
+            -- apm:flush()
+            -- apm:close()
+
+            -- Short-lived verification: read on-disk file contents and log them
+            local fh = io.open(airplanemode_config, "r")
+            if fh then
+              local contents = fh:read("*a")
+              fh:close()
+              logger.dbg("AIRPLANEMODE: on-disk airplanemode.lua after save:\n", contents)
+            else
+              logger.err("AIRPLANEMODE: failed to open on-disk airplanemode.lua for verification: ", airplanemode_config)
+            end
+            -- Broadcast a UI update so menus/checkboxes refresh
+            local UIManager = require("ui/uimanager")
+            local Event = require("ui/event")
+            UIManager:broadcastEvent(Event:new("UpdateMenu", true))
           end,
           help_text = T(_("%1\n\nThis plugin is already disabled in KOReader"), plugin.description),
         })
