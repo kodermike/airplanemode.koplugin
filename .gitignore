@@ -15,5 +15,9 @@ NOTES.md
 *.zip
 *.tgz
 
+# Ignore zed workspace
+.zed
+
+
 # Ignore anything in the local bundles
 bundles/
