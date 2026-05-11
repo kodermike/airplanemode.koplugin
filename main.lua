@@ -38,8 +38,8 @@ local function restoreState()
   -- grab the current startup mode
   local apm_settings = LuaSettings:open(airplanemode_config)
   -- we just rebooted to change apm states, now switch pref back
-  local last_start = apm_settings:readSetting("restartMode")
-  if apm_settings:isTrue("restoreopt") then
+  local last_start = U:APMreadSetting("restartMode")
+  if U:APMisTrue("restoreopt") then
     if last_start ~= nil then
       G_reader_settings:saveSetting("start_with", last_start)
       apm_settings:saveSetting("restartMode", nil)
@@ -173,7 +173,7 @@ function AirPlaneMode.initSettingsFile()
   else
     local apm_settings = LuaSettings:open(airplanemode_config)
     -- Only write defaults if the setting is not already present (avoid clobbering)
-    local cur_disabled = apm_settings:readSetting("disabled_plugins")
+    local cur_disabled = U:readAPMPlugins()
     if cur_disabled ~= nil then
       logger.dbg("AIRPLANEMODE: initSettingsFile - disabled_plugins already present, skipping. traceback:\n", debug.traceback())
       apm_settings:flush()
@@ -319,7 +319,7 @@ function AirPlaneMode:Enable()
 
     local apm_settings = LuaSettings:open(airplanemode_config)
 
-    local check_plugins = U:readPlugins()
+    local check_plugins = U:readAPMPlugins()
 
     local disabled_plugins = G_reader_settings:readSetting("plugins_disabled") or {}
     -- a pair of loops for the logger
@@ -417,7 +417,7 @@ function AirPlaneMode:Enable()
     end
 
     if Device:canRestart() then
-      if apm_settings:isTrue("restoreopt") then
+      if U:APMisTrue("restoreopt") then
         saveState(self.name)
       end
       if apm_settings:nilOrFalse("silentmode") then
@@ -510,7 +510,7 @@ function AirPlaneMode:Disable()
     G_reader_settings:delSetting("calibre_wireless")
   end
 
-  local apm_disabled = apm_settings:readSetting("disabled_plugins") or {}
+  local apm_disabled = U:readAPMPlugins()
 
   -- create a list of what is currently disabled
   local previously_disabled = BK_Settings:readSetting("plugins_disabled") or {}
@@ -551,7 +551,7 @@ function AirPlaneMode:Disable()
   end
   UIManager:unschedule(self.update_status_bars, self)
   if Device:canRestart() then
-    if apm_settings:isTrue("restoreopt") then
+    if U:APMisTrue("restoreopt") then
       saveState(self.name)
     end
     if apm_settings:nilOrFalse("silentmode") then
@@ -616,11 +616,11 @@ function AirPlaneMode:getConfigMenuItems()
   table.insert(airplane_config_table, {
     text = _("Silence the restart message"),
     callback = function()
-      apm_settings:toggle("silentmode")
+      U:APMtoggle("silentmode")
       apm_settings:flush()
     end,
     checked_func = function()
-      if apm_settings:isTrue("silentmode") then
+      if U:APMisTrue("silentmode") then
         return true
       else
         return false
@@ -657,11 +657,11 @@ function AirPlaneMode:getConfigMenuItems()
   table.insert(airplane_config_table, {
     text = _("Restore session after restart [EXPERIMENTAL]"),
     callback = function()
-      apm_settings:toggle("restoreopt")
+      U:APMtoggle("restoreopt")
       apm_settings:flush()
     end,
     checked_func = function()
-      if apm_settings:isTrue("restoreopt") then
+      if U:APMisTrue("restoreopt") then
         return true
       else
         return false
@@ -678,12 +678,12 @@ function AirPlaneMode:getConfigMenuItems()
   table.insert(airplane_config_table, {
     text = _("Roaming Mode [EXPERIMENTAL]"),
     callback = function()
-      apm_settings:toggle("managewifi")
+      U:APMtoggle("managewifi")
       apm_settings:flush()
     end,
     help_text = _("Disable managing the WiFi device when AirPlane Mode is engaged."),
     checked_func = function()
-      if apm_settings:isTrue("managewifi") then
+      if U:APMisTrue("managewifi") then
         return true
       else
         return false
@@ -693,7 +693,7 @@ function AirPlaneMode:getConfigMenuItems()
       if NetworkMgr:getNetworkInterfaceName() or Device:isEmulator() then
         return true
       else
-        if not apm_settings:isTrue("managewifi") then
+        if not U:APMisTrue("managewifi") then
           apm_settings:makeTrue("managewifi")
           apm_settings:flush()
         end
@@ -726,7 +726,7 @@ function AirPlaneMode:addToMainMenu(menu_items)
     sub_item_table = {
       {
         text_func = function()
-          local curversion = apm_settings:readSetting("version")
+          local curversion = U:APMreadSetting("version")
           if (curversion == nil) or (curversion ~= meta.version) then
             apm_settings:saveSetting("version", meta.version)
             apm_settings:flush()

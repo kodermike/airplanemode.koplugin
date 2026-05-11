@@ -73,7 +73,7 @@ local function getPluginInfo(plugin)
 end
 
 function PluginChecker.getPlugins(self, builtin)
-  local check_plugins = U:readPlugins()
+  local check_plugins = U:readAPMPlugins()
   local os_enabled_plugins, os_disabled_plugins = PluginLoader:loadPlugins()
   local plugin_list = {}
 
@@ -127,7 +127,7 @@ function PluginChecker.menuBuilder(self, builtin, plugin_list)
             -- local cp = apm:readSetting("disabled_plugins") or {}
             -- local val = cp[plugin.name]
             -- apm:close()
-            local cp = U:readPlugins()
+            local cp = U:readAPMPlugins()
             local val = cp[plugin.name]
             return val
           end,
@@ -142,7 +142,7 @@ function PluginChecker.menuBuilder(self, builtin, plugin_list)
             -- Re-open settings on each toggle to ensure we operate on latest on-disk state
             -- local apm = LuaSettings:open(airplanemode_config)
             -- local cp = apm:readSetting("disabled_plugins") or {}
-            local cp = U:readPlugins()
+            local cp = U:readAPMPlugins()
             if cp[plugin.name] then
               cp[plugin.name] = nil
               logger.dbg("AIRPLANEMODE: Disabled ", plugin.name)
@@ -150,7 +150,7 @@ function PluginChecker.menuBuilder(self, builtin, plugin_list)
               cp[plugin.name] = true
               logger.dbg("AIRPLANEMODE: Enabled ", plugin.name)
             end
-            U:savePlugins(cp)
+            U:saveAPMPlugins(cp)
 
             -- apm:saveSetting("disabled_plugins", cp)
             -- apm:flush()
