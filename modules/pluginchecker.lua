@@ -13,8 +13,6 @@ local _ = require("gettext")
 
 local U = require("modules/utilities")
 
-local airplanemode_config = DataStorage:getDataDir() .. "/settings/airplanemode.lua"
-
 local BUILTIN_PLUGINS = {
   ["archiveviewer"] = true,
   ["autodim"] = true,
@@ -73,7 +71,7 @@ local function getPluginInfo(plugin)
 end
 
 function PluginChecker.getPlugins(self, builtin)
-  local check_plugins = U:readAPMPlugins()
+  local check_plugins = U:readAPMplugins()
   local os_enabled_plugins, os_disabled_plugins = PluginLoader:loadPlugins()
   local plugin_list = {}
 
@@ -123,11 +121,7 @@ function PluginChecker.menuBuilder(self, builtin, plugin_list)
           text = _(plugin.fullname),
           checked_func = function()
             -- Read the latest setting from disk to avoid stale in-memory cache
-            -- local apm = LuaSettings:open(airplanemode_config)
-            -- local cp = apm:readSetting("disabled_plugins") or {}
-            -- local val = cp[plugin.name]
-            -- apm:close()
-            local cp = U:readAPMPlugins()
+            local cp = U:readAPMplugins()
             local val = cp[plugin.name]
             return val
           end,
@@ -140,9 +134,7 @@ function PluginChecker.menuBuilder(self, builtin, plugin_list)
           end,
           callback = function()
             -- Re-open settings on each toggle to ensure we operate on latest on-disk state
-            -- local apm = LuaSettings:open(airplanemode_config)
-            -- local cp = apm:readSetting("disabled_plugins") or {}
-            local cp = U:readAPMPlugins()
+            local cp = U:readAPMplugins()
             if cp[plugin.name] then
               cp[plugin.name] = nil
               logger.dbg("AIRPLANEMODE: Disabled ", plugin.name)
@@ -150,21 +142,7 @@ function PluginChecker.menuBuilder(self, builtin, plugin_list)
               cp[plugin.name] = true
               logger.dbg("AIRPLANEMODE: Enabled ", plugin.name)
             end
-            U:saveAPMPlugins(cp)
-
-            -- apm:saveSetting("disabled_plugins", cp)
-            -- apm:flush()
-            -- apm:close()
-
-            -- Short-lived verification: read on-disk file contents and log them
-            local fh = io.open(airplanemode_config, "r")
-            if fh then
-              local contents = fh:read("*a")
-              fh:close()
-              logger.dbg("AIRPLANEMODE: on-disk airplanemode.lua after save:\n", contents)
-            else
-              logger.err("AIRPLANEMODE: failed to open on-disk airplanemode.lua for verification: ", airplanemode_config)
-            end
+            U:saveAPMplugins(cp)
             -- Broadcast a UI update so menus/checkboxes refresh
             local UIManager = require("ui/uimanager")
             local Event = require("ui/event")
