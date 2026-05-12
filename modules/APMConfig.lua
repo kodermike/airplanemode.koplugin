@@ -13,11 +13,15 @@ function APMConfig:init()
   local settings_file = DataStorage:getDataDir() .. "/settings.reader.lua"
   local settings_bk = DataStorage:getDataDir() .. "/settings.reader.lua.airplane"
   local airplanemode_config = DataStorage:getDataDir() .. "/settings/airplanemode.lua"
+  local airplanemode_old = airplanemode_config .. ".old"
+  local prev_config = DataStorage:getDataDir() .. "/settings/airplane_plugins.lua"
 
   return {
     koreader = settings_file,
-    settings_backup = settings_bk,
+    backup = settings_bk,
     airplanemode = airplanemode_config,
+    airplanemode_old = airplanemode_old,
+    prev_config = prev_config,
   }
 end
 

@@ -2,7 +2,8 @@ local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
 local logger = require("logger")
 
-local airplanemode_config = DataStorage:getDataDir() .. "/settings/airplanemode.lua"
+local APMConfig = require("modules/APMConfig")
+local settings = APMConfig:init()
 
 local Utilities = {}
 
@@ -11,16 +12,16 @@ function Utilities.saveAPMplugins(self, plugin_list)
     logger.err("AIRPLANEMODE: plugin_list is not a table, cannot save")
     return
   end
-  local apm_settings = LuaSettings:open(airplanemode_config)
-  apm_settings:saveSetting("disabled_plugins", plugin_list)
-  apm_settings:flush()
-  apm_settings:close()
+  local config = LuaSettings:open(settings.airplanemode)
+  config:saveSetting("disabled_plugins", plugin_list)
+  config:flush()
+  config:close()
 end
 
 function Utilities.readAPMplugins(self)
-  local apm_settings = LuaSettings:open(airplanemode_config)
-  local disabled_plugins = apm_settings:readSetting("disabled_plugins") or {}
-  apm_settings:close()
+  local config = LuaSettings:open(settings.airplanemode)
+  local disabled_plugins = config:readSetting("disabled_plugins") or {}
+  config:close()
   return disabled_plugins
 end
 
@@ -29,9 +30,9 @@ function Utilities:readAPMsetting(self, object)
     logger.err("AIRPLANEMODE: readAPMsetting - object sent is nil, cannot read")
     return
   end
-  local apm_settings = LuaSettings:open(airplanemode_config)
-  local setting = apm_settings:readSetting(object)
-  apm_settings:close()
+  local config = LuaSettings:open(settings.airplanemode)
+  local setting = config:readSetting(object)
+  config:close()
   return setting
 end
 
@@ -44,12 +45,12 @@ function Utilities.saveAPMsetting(self, object, value)
     logger.err("AIRPLANEMODE: saveAPMsetting - value sent is nil, cannot save")
     return
   end
-  local apm_settings = LuaSettings:open(airplanemode_config)
-  if apm_settings:saveSetting(object, value) then
-    apm_settings:flush()
-    apm_settings:close()
+  local config = LuaSettings:open(settings.airplanemode)
+  if config:saveSetting(object, value) then
+    config:flush()
+    config:close()
   else
-    apm_settings:close()
+    config:close()
     return false
   end
 end
@@ -60,9 +61,9 @@ function Utilities:APMtoggle(object)
     return
   end
 
-  local apm_settings = LuaSettings:open(airplanemode_config)
-  local response = apm_settings:toggle(object)
-  apm_settings:close()
+  local config = LuaSettings:open(settings.airplanemode)
+  local response = config:toggle(object)
+  config:close()
   return response
 end
 
@@ -71,14 +72,14 @@ function Utilities:APMisTrue(object)
     logger.err("AIRPLANEMODE: APMisTrue - object sent is nil, cannot check")
     return
   end
-  local apm_settings = LuaSettings:open(airplanemode_config)
-  if apm_settings:isTrue(object) then
-    apm_settings:flush()
-    apm_settings:close()
+  local config = LuaSettings:open(settings.airplanemode)
+  if config:isTrue(object) then
+    config:flush()
+    config:close()
     return true
   else
-    apm_settings:flush()
-    apm_settings:close()
+    config:flush()
+    config:close()
     return false
   end
 end
@@ -88,14 +89,14 @@ function Utilities:APMmakeTrue(object)
     logger.err("AIRPLANEMODE: APMmakeTrue - object sent is nil, cannot make true")
     return
   end
-  local apm_settings = LuaSettings:open(airplanemode_config)
-  if apm_settings:makeTrue(object) then
-    apm_settings:flush()
-    apm_settings:close()
+  local config = LuaSettings:open(settings.airplanemode)
+  if config:makeTrue(object) then
+    config:flush()
+    config:close()
     return
   else
-    apm_settings:flush()
-    apm_settings:close()
+    config:flush()
+    config:close()
     return false
   end
 end
@@ -105,14 +106,14 @@ function Utilities:APMnilOrFalse(object)
     logger.err("AIRPLANEMODE: APMyoggle - object sent is nil, cannot toggle")
     return
   end
-  local apm_settings = LuaSettings:open(airplanemode_config)
-  if apm_settings:nilOrFalse(object) then
-    apm_settings:flush()
-    apm_settings:close()
+  local config = LuaSettings:open(settings.airplanemode)
+  if config:nilOrFalse(object) then
+    config:flush()
+    config:close()
     return
   else
-    apm_settings:flush()
-    apm_settings:close()
+    config:flush()
+    config:close()
     return false
   end
 end
@@ -122,14 +123,14 @@ function Utilities:APMnilOrTrue(object)
     logger.err("AIRPLANEMODE: APMyoggle - object sent is nil, cannot toggle")
     return
   end
-  local apm_settings = LuaSettings:open(airplanemode_config)
-  if apm_settings:nilOrTrue(object) then
-    apm_settings:flush()
-    apm_settings:close()
+  local config = LuaSettings:open(settings.airplanemode)
+  if config:nilOrTrue(object) then
+    config:flush()
+    config:close()
     return
   else
-    apm_settings:flush()
-    apm_settings:close()
+    config:flush()
+    config:close()
     return false
   end
 end

@@ -15,26 +15,22 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
 
-local H = require("utils/helpers")
-local PluginManager = require("utils/PluginManager")
-local APMConfig = require("utils/APMConfig")
-local settings = APMConfig:init()
-local meta = require("_meta")
-
+local H = require("modules/helpers")
 local U = require("modules/utilities")
 
+local PluginManager = require("modules/PluginManager")
+local APMConfig = require("modules/APMConfig")
+local settings = APMConfig:init()
+
+local meta = require("_meta")
 local icon_on = "\u{F1D8}"
 local icon_off = "\u{F1D9}"
 
-local settings_file = DataStorage:getDataDir() .. "/settings.reader.lua"
-local settings_bk = DataStorage:getDataDir() .. "/settings.reader.lua.airplane"
-local settings_bk_exists = false
-
-local airplanemode_config = DataStorage:getDataDir() .. "/settings/airplanemode.lua"
+local backup_exists = false
 
 -- establish the main settings file
 if G_reader_settings == nil then
-  G_reader_settings = LuaSettings:open(settings_file)
+  G_reader_settings = LuaSettings:open(settings.koreader)
 end
 
 local function restoreState()
@@ -76,25 +72,18 @@ local AirPlaneMode = WidgetContainer:extend({
   is_doc_only = false,
 })
 
-local function isFile(filename)
-  if filename and (lfs.attributes(filename, "mode") == "file") then
-    return true
-  end
-  return false
-end
-
 function AirPlaneMode.getStatus()
   -- test we can see the real settings file.
-  if not isFile(settings_file) then
+  if not H.isFile(settings.koreader) then
     logger.err("AIRPLANEMODE: Settings file not found! Abort!", settings_file)
     return false
   end
-  -- check if we currently have a backup of our settings running
-  settings_bk_exists = H.isFile(settings_bk)
+  -- check if we currently have a backup of our settings
+  backup_exists = H.isFile(settings.backup)
 
   -- also verify if the airplanemode flag is set. we will use this to decide if something is funky
   local airplanemode_active = G_reader_settings:readSetting("airplanemode") or false
-  if settings_bk_exists and airplanemode_active then
+  if backup_exists and airplanemode_active then
     return true
   elseif not airplanemode_active then
     return false
@@ -103,17 +92,17 @@ function AirPlaneMode.getStatus()
 end
 
 function AirPlaneMode.onDispatcherRegisterActions()
-  Dispatcher:registerAction("airplanemode_enable", { category = "none", event = "Enable", title = _("AirPlane Mode Enable"), device = true })
-  Dispatcher:registerAction("airplanemode_disable", { category = "none", event = "Disable", title = _("AirPlane Mode Disable"), device = true })
-  Dispatcher:registerAction("airplanemode_toggle", { category = "none", event = "Toggle", title = _("AirPlane Mode Toggle"), device = true, separator = true })
+  Dispatcher:registerAction("airplanemode_enable", { category = "none", event = "Enable", title = _("AirPlaneMode Enable"), device = true })
+  Dispatcher:registerAction("airplanemode_disable", { category = "none", event = "Disable", title = _("AirPlaneMode Disable"), device = true })
+  Dispatcher:registerAction("airplanemode_toggle", { category = "none", event = "Toggle", title = _("AirPlaneMode Toggle"), device = true, separator = true })
 end
 
 function AirPlaneMode:init()
   self:onDispatcherRegisterActions()
-  if isFile(DataStorage:getDataDir() .. "/settings/airplane_plugins.lua") then
+  if H.isFile(settings.prev_config) then
     self:migrateconfig()
   else
-    if not isFile(airplanemode_config) then
+    if not H.isFile(settings.airplanemode) then
       self:initSettingsFile()
     end
   end
@@ -161,8 +150,8 @@ end
 --
 function AirPlaneMode.initSettingsFile()
   -- If the file already exists, bail out early
-  if isFile(airplanemode_config) == true then
-    logger.dbg("AIRPLANEMODE: initSettingsFile - file exists, skipping: ", airplanemode_config)
+  if H.isFile(settings.airplanemode) == true then
+    logger.dbg("AIRPLANEMODE: initSettingsFile - file exists, skipping: ", settings.airplanemode)
     return
   else
     -- Only write defaults if the setting is not already present (avoid clobbering)
@@ -178,39 +167,39 @@ function AirPlaneMode.initSettingsFile()
     for __, plugin in ipairs(default_disable_list) do
       default_disable[plugin] = true
     end
-    logger.dbg("AIRPLANEMODE: Saving default settings to ", airplanemode_config, " at ", os.time(), "\nstack:\n", debug.traceback())
+    logger.dbg("AIRPLANEMODE: Saving default settings to ", settings.airplanemode, " at ", os.time(), "\nstack:\n", debug.traceback())
     U:saveAPMsetting("disabled_plugins", default_disable)
   end
 end
 
 function AirPlaneMode.dumpSettings()
   -- Short-lived verification: read on-disk file contents and log them
-  local fh = io.open(airplanemode_config, "r")
+  local fh = io.open(settings.airplanemode, "r")
   if fh then
     local contents = fh:read("*a")
     fh:close()
     logger.dbg("AIRPLANEMODE: on-disk airplanemode.lua after save:\n", contents)
   else
-    logger.err("AIRPLANEMODE: failed to open on-disk airplanemode.lua for verification: ", airplanemode_config)
+    logger.err("AIRPLANEMODE: failed to open on-disk airplanemode.lua for verification: ", settings.airplanemode)
   end
 end
 -- migrate old config to new format if necessary
 function AirPlaneMode.migrateconfig()
-  local old_config_file = DataStorage:getDataDir() .. "/settings/airplane_plugins.lua"
-  local old_config = LuaSettings:open(old_config_file)
-  local new_config = LuaSettings:open(airplanemode_config)
-  new_config:saveSetting("version", meta.version)
-  local disabled = old_config:readSetting("disabled_plugins")
+  local prev = LuaSettings:open(settings.prev_config)
+  local config = LuaSettings:open(settings.airplanemode)
+
+  config:saveSetting("version", meta.version)
+  local disabled = prev:readSetting("disabled_plugins")
   if disabled then
     if disabled["calibre"] then
       disabled["calibre"] = nil
     end
-    new_config:saveSetting("disabled_plugins", disabled)
+    config:saveSetting("disabled_plugins", disabled)
   end
-  new_config:flush()
-  old_config:close()
+  config:flush()
+  prev:close()
   -- I know, why wouldn't it be there, but caution always
-  H.removeFile(old_config_file)
+  H.removeFile(settings.prev_config)
 end
 
 -- hook for stopPlugin support
@@ -233,7 +222,7 @@ function AirPlaneMode.deletePluginSettings()
   logger.dbg("AIRPLANEMODE: deletePluginSettings called at ", os.time(), "\nstack:\n", debug.traceback())
   if G_reader_settings:readSetting("airplanemode") then
     UIManager:show(InfoMessage:new({
-      text = _("Removing AirPlane Mode while still running. Plugins and networking will not be automatically restored."),
+      text = _("Removing AirPlaneMode while still running. Plugins and networking will not be automatically restored."),
       timeout = 3,
     }))
   end
@@ -244,32 +233,23 @@ function AirPlaneMode.deletePluginSettings()
     G_reader_settings:delSetting("airplanemode_in_footer")
   end
   G_reader_settings:flush()
-  if isFile(airplanemode_config) then
-    logger.dbg("AIRPLANEMODE: deletePluginSettings removing file: ", airplanemode_config)
-    os.remove(airplanemode_config)
+  if H.isFile(settings.airplanemode) then
+    logger.dbg("AIRPLANEMODE: deletePluginSettings removing file: ", settings.airplanemode)
+    H.removeFile(settings.airplanemode)
   end
-  if isFile(airplanemode_config .. ".old") then
-    logger.dbg("AIRPLANEMODE: deletePluginSettings removing file: ", airplanemode_config .. ".old")
-    os.remove(airplanemode_config .. ".old")
+  if H.isFile(settings.airplanemode_old) then
+    logger.dbg("AIRPLANEMODE: deletePluginSettings removing file: ", settings.airplanemode_old)
+    H.removeFile(settings.airplanemode_old)
   end
 end
 
 function AirPlaneMode.backup()
-  if H.isFile(settings_file) then
-    H.removeFile(settings_bk)
-    ffiutil.copyFile(settings_file, settings_bk)
-    return isFile(settings_bk) and true or false
+  if H.isFile(settings.koreader) then
+    H.removeFile(settings.backup)
+    ffiutil.copyFile(settings.koreader, settings.backup)
+    return H.isFile(settings.backup)
   else
-    logger.err("AIRPLANEMODE: Failed to find settings file at: ", settings_file)
-    return false
-  end
-end
-
-local function stringto(v)
-  if type(v) == string and v == "true" then
-    return true
-  end
-  if type(v) == string and v == "false" then
+    logger.err("AIRPLANEMODE: Failed to find settings file at: ", settings.koreader)
     return false
   end
 end
@@ -281,12 +261,12 @@ local function stopOtherPlugins(stopp, fplugin, plugin)
     local mstatus, __ = pcall(function()
       pcall(fplugin["stopPlugin"]())
     end)
-    if stringto(mstatus) == false then
+    if H.stringto(mstatus) == false then
       -- stopPlugin failed, just do a normal stop
       local sstatus, serr = pcall(function()
         pcall(fplugin["stop"]())
       end)
-      if stringto(sstatus) == false then
+      if H.stringto(sstatus) == false then
         logger.err("AIRPLANEMODE: Failed to stop", plugin, ":", serr)
       end
     end
@@ -295,7 +275,7 @@ local function stopOtherPlugins(stopp, fplugin, plugin)
     local sstatus, serr = pcall(function()
       pcall(fplugin["stop"]())
     end)
-    if stringto(sstatus) == false then
+    if H.stringto(sstatus) == false then
       logger.err("AIRPLANEMODE: Failed to stop", plugin, ":", serr)
     end
   end
@@ -345,7 +325,7 @@ function AirPlaneMode:Enable()
                   pcall(modcheck["isRunning"]())
                 end)
                 -- if the status came back that the plugin was running
-                if stringto(status) == true then
+                if H.stringto(status) == true then
                   -- try to run stopPlugin if available since it's cleaner
                   stopOtherPlugins(stopPluginmethod, modcheck, plugin)
                 end
@@ -418,7 +398,7 @@ function AirPlaneMode:Enable()
         saveState(self.name)
       end
       if U:APMnilOrFalse("silentmode") then
-        UIManager:askForRestart(_("KOReader needs to restart to finish applying changes for AirPlane Mode."))
+        UIManager:askForRestart(_("KOReader needs to restart to finish applying changes for AirPlaneMode."))
       else
         UIManager:restartKOReader()
       end
@@ -438,9 +418,9 @@ function AirPlaneMode:Enable()
 end
 
 function AirPlaneMode:Disable()
-  local BK_Settings = LuaSettings:open(settings_bk)
+  local BK_Settings = LuaSettings:open(settings.backup)
 
-  -- disable airplane mode
+  -- disable airplanemode
   PluginManager:toggleAirPlaneMode(settings, false)
 
   -- If managing wifi, revert settingss
@@ -449,43 +429,43 @@ function AirPlaneMode:Disable()
       G_reader_settings:makeTrue("auto_restore_wifi")
     end
 
-      if BK_Settings:nilOrFalse("auto_disable_wifi") then
-          -- flip the real config
-          G_reader_settings:flipNilOrFalse("auto_disable_wifi")
-      end
+    if BK_Settings:nilOrFalse("auto_disable_wifi") then
+      -- flip the real config
+      G_reader_settings:flipNilOrFalse("auto_disable_wifi")
+    end
 
-      -- According to network manager, this setting always has a value and defaults to prompt
-      if BK_Settings:hasNot("wifi_enable_action") then
-          G_reader_settings:delSetting("wifi_enable_action")
-      else
-          local bk_wifi_enable_action_setting = BK_Settings:readSetting("wifi_enable_action") or "prompt"
-          G_reader_settings:saveSetting("wifi_enable_action", bk_wifi_enable_action_setting)
-          G_reader_settings:flush()
-      end
-
-      -- According to network manager, this setting always has a value and defaults to prompt
-      if BK_Settings:hasNot("wifi_disable_action") then
-          G_reader_settings:delSetting("wifi_disable_action")
-      else
-          local bk_wifi_disable_action_setting = BK_Settings:readSetting("wifi_disable_action") or "prompt"
-          G_reader_settings:saveSetting("wifi_disable_action", bk_wifi_disable_action_setting)
-          G_reader_settings:flush()
-      end
-
-      -- got to watch out for our emulator friends :) (ie, me, testing)
-      if Device:isEmulator() and BK_Settings:has("emulator_fake_wifi_connected") then
-          local old_emulator_fake_wifi_connected = BK_Settings:readSetting("emulator_fake_wifi_connected")
-          -- flip the real config
-          G_reader_settings:saveSetting("emulator_fake_wifi_connected", old_emulator_fake_wifi_connected)
-      else
-          G_reader_settings:delSetting("emulator_fake_wifi_connected")
-      end
+    -- According to network manager, this setting always has a value and defaults to prompt
+    if BK_Settings:hasNot("wifi_enable_action") then
+      G_reader_settings:delSetting("wifi_enable_action")
+    else
+      local bk_wifi_enable_action_setting = BK_Settings:readSetting("wifi_enable_action") or "prompt"
+      G_reader_settings:saveSetting("wifi_enable_action", bk_wifi_enable_action_setting)
       G_reader_settings:flush()
+    end
 
-      if BK_Settings:isTrue("http_proxy_enabled") then
-          -- flip the real config
-          G_reader_settings:makeTrue("http_proxy_enabled")
-      end
+    -- According to network manager, this setting always has a value and defaults to prompt
+    if BK_Settings:hasNot("wifi_disable_action") then
+      G_reader_settings:delSetting("wifi_disable_action")
+    else
+      local bk_wifi_disable_action_setting = BK_Settings:readSetting("wifi_disable_action") or "prompt"
+      G_reader_settings:saveSetting("wifi_disable_action", bk_wifi_disable_action_setting)
+      G_reader_settings:flush()
+    end
+
+    -- got to watch out for our emulator friends :) (ie, me, testing)
+    if Device:isEmulator() and BK_Settings:has("emulator_fake_wifi_connected") then
+      local old_emulator_fake_wifi_connected = BK_Settings:readSetting("emulator_fake_wifi_connected")
+      -- flip the real config
+      G_reader_settings:saveSetting("emulator_fake_wifi_connected", old_emulator_fake_wifi_connected)
+    else
+      G_reader_settings:delSetting("emulator_fake_wifi_connected")
+    end
+    G_reader_settings:flush()
+
+    if BK_Settings:isTrue("http_proxy_enabled") then
+      -- flip the real config
+      G_reader_settings:makeTrue("http_proxy_enabled")
+    end
 
     -- got to watch out for our emulator friends :) (ie, me, testing)
     if Device:isEmulator() and BK_Settings:has("emulator_fake_wifi_connected") then
@@ -530,7 +510,7 @@ function AirPlaneMode:Disable()
 
   -- loop currently disabled items
   for plugin, __ in pairs(currently_disabled) do
-    -- if airplane mode disabled it and it was disabled before, keep it disabled
+    -- if airplanemode disabled it and it was disabled before, keep it disabled
     if apm_disabled[plugin] and previously_disabled[plugin] then
       to_disable[plugin] = true
       -- if it wasn't disabled in airplanemode, keep it disabled
@@ -549,13 +529,13 @@ function AirPlaneMode:Disable()
   end
 
   G_reader_settings:flush()
-  if isFile(settings_bk) then
-    os.remove(settings_bk)
+  if H.isFile(settings.backup) then
+    H.removeFile(settings.backup)
   end
 
   PluginManager:restorePluginSettings(settings)
   -- remove the backup settings file
-  settings_bk_exists = false
+  backup_exists = false
   if string.match(self.name, "reader") then
     -- regardless of options, if we're in a document then save our position
     self.ui:saveSettings()
@@ -566,7 +546,7 @@ function AirPlaneMode:Disable()
       saveState(self.name)
     end
     if U:APMnilOrFalse("silentmode") then
-      UIManager:askForRestart(_("KOReader needs to restart to finish disabling plugins for AirPlane Mode."))
+      UIManager:askForRestart(_("KOReader needs to restart to finish disabling plugins for AirPlaneMode."))
     else
       UIManager:restartKOReader()
     end
@@ -576,7 +556,7 @@ function AirPlaneMode:Disable()
 
   UIManager:show(ConfirmBox:new({
     dismissable = false,
-    text = _("You will need to restart KOReader to finish disabling AirPlane Mode."),
+    text = _("You will need to restart KOReader to finish disabling AirPlaneMode."),
     ok_text = _("OK"),
     ok_callback = function()
       UIManager:quit()
@@ -666,32 +646,34 @@ function AirPlaneMode:getConfigMenuItems()
       end
     end,
   })
+  if Device:canRestart() then
+    table.insert(airplane_config_table, {
+      text = _("Restore session after restart"),
+      callback = function()
+        U:APMtoggle("restoreopt")
+        if U:APMisTrue("restoreopt") and self:getStatus() then
+          UIManager:show(InfoMessage:new({
+            text = _("Enabling the restore option will take affect the next time you enable AirPlaneMode."),
+            timeout = 3,
+          }))
+        end
+      end,
+      checked_func = function()
+        if U:APMisTrue("restoreopt") then
+          return true
+        else
+          return false
+        end
+      end,
+    })
+  end
+
   table.insert(airplane_config_table, {
-    text = _("Restore session after restart [EXPERIMENTAL]"),
-    callback = function()
-      U:APMtoggle("restoreopt")
-    end,
-    checked_func = function()
-      if U:APMisTrue("restoreopt") then
-        return true
-      else
-        return false
-      end
-    end,
-    enabled_func = function()
-      if Device:canRestart() then
-        return true
-      else
-        return false
-      end
-    end,
-  })
-  table.insert(airplane_config_table, {
-    text = _("Roaming Mode [EXPERIMENTAL]"),
+    text = _("Roaming Mode"),
     callback = function()
       U:APMtoggle("managewifi")
     end,
-    help_text = _("Disable managing the WiFi device when AirPlane Mode is engaged."),
+    help_text = _("AirPlaneMode will only manage settings, not the wifi device"),
     checked_func = function()
       if U:APMisTrue("managewifi") then
         return true
@@ -714,8 +696,8 @@ function AirPlaneMode:getConfigMenuItems()
 end
 
 function AirPlaneMode.PluginMenu(self, builtin, settings_handle)
-  local plugin_list = PluginChecker:getPlugins(builtin)
-  local plugin_menu = PluginChecker:menuBuilder(builtin, plugin_list)
+  local plugin_list = PluginManager:getPlugins(builtin)
+  local plugin_menu = PluginManager:menuBuilder(builtin, plugin_list)
   return plugin_menu
 end
 
@@ -724,9 +706,9 @@ function AirPlaneMode:addToMainMenu(menu_items)
   menu_items.airplanemode = {
     text_func = function()
       if airmode then
-        return T(_("%1 Airplane Mode"), icon_on)
+        return T(_("%1 AirplaneMode"), icon_on)
       else
-        return T(_("%1 Airplane Mode"), icon_off)
+        return T(_("%1 AirplaneMode"), icon_off)
       end
     end,
     help_text = T(_("A simple plugin that helps you when you're on the go.\n\n\nv.%1"), meta.version),
@@ -739,9 +721,9 @@ function AirPlaneMode:addToMainMenu(menu_items)
             U:saveAPMsetting("version", meta.version)
           end
           if airmode then
-            return T(_("%1 Disable AirPlane Mode"), icon_on)
+            return T(_("%1 Disable AirPlaneMode"), icon_on)
           else
-            return T(_("%1 Enable AirPlane Mode"), icon_off)
+            return T(_("%1 Enable AirPlaneMode"), icon_off)
           end
         end,
         separator = true,
