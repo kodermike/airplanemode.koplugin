@@ -28,29 +28,43 @@ local icon_on = "\u{F1D8}"
 local icon_off = "\u{F1D9}"
 
 local function restoreState()
-  -- grab the current startup mode
   -- we just rebooted to change apm states, now switch pref back
-  local last_start = U:readAPMsetting("restartMode", settings.airplanemode) or nil
-  -- make sure we didn't enable this while already in airplanemode
-  if last_start ~= nil and U:APMisTrue("restoreopt", settings.airplanemode) then
-    U:saveAPMsetting("start_with", last_start, settings.koreader)
-    U:delAPMsetting("restartMode", settings.airplanemode)
+  if U:APMhas("restoreopt", settings.airplanemode) and U:APMisTrue("restoreopt", settings.airplanemode) then
+    logger.dbg("AIRPLANEMODE: Restore activated")
+    local last_start = U:readAPMsetting("restart_with", settings.airplanemode) or nil
+    -- make sure we didn't enable this while already in airplanemode
+    if last_start ~= nil then
+      logger.dbg("AIRPLANEMODE: resetting the main config to use", last_start)
+      U:saveAPMsetting("start_with", last_start, settings.koreader)
+      U:delAPMsetting("restart_with", settings.airplanemode)
+    end
   end
 end
 
 local function saveState(name)
   -- grab the current startup mode
-  local cur_start = U:readAPMsetting("start_with", settings.koreader)
+  logger.dbg("AIRPLANEMODE: saving state")
+  logger.dbg("AIRPLANEMODE: Activated while in", name)
+  local cur_start = U:readAPMsetting("start_with", settings.koreader) or nil
   local ui_mode
   -- figure out where we are./
-  if string.match(name, "reader") then
-    ui_mode = "last"
-  elseif string.match(name, "filemanager") then
-    ui_mode = "filemanager"
+  if cur_start == nil then
+    cur_start = "filemanager"
   end
+  ui_mode = name:gsub("airplanemode", "")
+  if ui_mode == "reader" then
+    ui_mode = "last"
+  end
+  print("Set ui_mode to", ui_mode)
+  -- if string.match(name, "reader") then
+  --   ui_mode = "last"
+  -- elseif string.match(name, "filemanager") then
+  --   ui_mode = "filemanager"
+  -- end
   if ui_mode ~= nil then
+    logger.dbg("AIRPLANEMODE: restarting with", ui_mode, "then setting it back to", cur_start)
     -- save that state in our config
-    U:saveAPMsetting("restartMode", cur_start, settings.airplanemode)
+    U:saveAPMsetting("restart_with", cur_start, settings.airplanemode)
     -- set our new restart mode
     U:saveAPMsetting("start_with", ui_mode, settings.koreader)
   end
@@ -122,7 +136,7 @@ function AirPlaneMode:init()
       end
     end
   end
-  self.show_value_in_footer = U:readAPMsetting("airplanemode_in_footer", settings.koreader)
+  self.show_value_in_footer = U:readAPMsetting("airplanemode_in_footer", settings.airplanemode)
   if self.show_value_in_footer then
     self:addAdditionalFooterContent()
   end
@@ -178,6 +192,17 @@ function AirPlaneMode.initSettingsFile()
   end
 end
 
+function AirPlaneMode.dumpSettings()
+  -- Short-lived verification: read on-disk file contents and log them
+  local fh = io.open(settings.airplanemode, "r")
+  if fh then
+    local contents = fh:read("*a")
+    fh:close()
+    logger.dbg("AIRPLANEMODE: on-disk airplanemode.lua after save:\n", contents)
+  else
+    logger.err("AIRPLANEMODE: failed to open on-disk airplanemode.lua for verification: ", airplanemode_config)
+  end
+end
 -- migrate old config to new format if necessary
 function AirPlaneMode.migrateconfig()
   logger.info("AIRPLANEMODE: migrating config from ", settings.prev_config, " to ", settings.airplanemode)
@@ -194,10 +219,6 @@ function AirPlaneMode.migrateconfig()
 end
 
 -- hook for stopPlugin support
---[[--
-NOTE: Because of the changes AirPlaneMode makes to KOReader, it is not possible to re-enable everything if being called from outside of AirPlaneMode. This hook will disable AirPlaneMode and reset setting for disabled plugins, but cannot restart wifi or the device.
---]]
---
 function AirPlaneMode.stopPlugin()
   logger.info("AIRPLANEMODE: stopPlugin called at ", os.time())
   logger.dbg("AIRPLANEMODE: stopPlugin called at ", os.time(), "\nstack:\n", debug.traceback())
@@ -205,10 +226,6 @@ function AirPlaneMode.stopPlugin()
   P:restorePluginSettings(settings)
   -- disable airplanemode in settings
   P:toggleAirPlaneMode(settings, false)
-  UIManager:show(InfoMessage:new({
-    text = _("AirPlaneMode has been stopped. Plugins and networking will not be automatically reset until you restart KOReader."),
-    timeout = 3,
-  }))
 end
 
 -- hook for deleteplugin calls
@@ -223,8 +240,8 @@ function AirPlaneMode.deletePluginSettings()
   if U:APMhas("airplanemode", settings.airplanemode) then
     U:delAPMsetting("airplanemode", settings.airplanemode)
   end
-  if U:APMhas("airplanemode_in_footer", settings.koreader) then
-    U:delAPMsetting("airplanemode_in_footer", settings.koreader)
+  if U:APMhas("airplanemode_in_footer", settings.airplanemode) then
+    U:delAPMsetting("airplanemode_in_footer", settings.airplanemode)
   end
   if H.isFile(settings.airplanemode) then
     logger.dbg("AIRPLANEMODE: deletePluginSettings removing file: ", settings.airplanemode)
@@ -365,7 +382,10 @@ function AirPlaneMode:Enable()
     U:saveAPMsetting("plugins_disabled", disabled_plugins, settings.koreader)
 
     -- exclude anything without getNetworkInterfaceName - like android - since we can't control their wifi
-    if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator()) and U:APMnilOrFalse("managewifi", settings.airplanemode) then
+    if
+      (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator())
+      and ((U:APMhasNot("managewifi", settings.airplanemode)) or (U:APMhas("managewifi", settings.airplanemode) and U:APMnilOrFalse("managewifi", settings.airplanemode)))
+    then
       logger.dbg("AIRPLANEMODE: disabling wifi")
       A:disableWifi(settings)
     end
@@ -433,7 +453,10 @@ function AirPlaneMode:Disable()
   self:dumpSettings()
   logger.dbg("AIRPLANEMODE: re-enabled, restoring network next")
   -- If managing wifi, revert settingss
-  if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator()) and U:APMnilOrFalse("managewifi", settings.airplanemode) then
+  if
+    (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator())
+    and ((U:APMhasNot("managewifi", settings.airplanemode)) or (U:APMhas("managewifi", settings.airplanemode) and U:APMnilOrFalse("managewifi", settings.airplanemode)))
+  then
     logger.dbg("AIRPLANEMODE: re-enabling wifi")
     A:reenableWifi(settings)
   end
@@ -582,7 +605,7 @@ function AirPlaneMode:getConfigMenuItems()
     end,
     callback = function()
       self.show_value_in_footer = not self.show_value_in_footer
-      U:saveAPMsetting("airplanemode_in_footer", self.show_value_in_footer, settings.koreader)
+      U:saveAPMsetting("airplanemode_in_footer", self.show_value_in_footer, settings.airplanemode)
       if self.show_value_in_footer then
         self:addAdditionalFooterContent()
       else
@@ -620,7 +643,7 @@ function AirPlaneMode:getConfigMenuItems()
     end,
     help_text = _("AirPlaneMode will only manage settings, not the wifi device"),
     checked_func = function()
-      if U:APMisTrue("managewifi", settings.airplanemode) then
+      if U:APMhas("managewifi", settings.airplanemode) and U:APMisTrue("managewifi", settings.airplanemode) then
         return true
       else
         return false
