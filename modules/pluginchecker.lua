@@ -1,8 +1,6 @@
 --[[
 PluginChecker module for AirplaneMode
 ]]
-local DataStorage = require("datastorage")
-local LuaSettings = require("luasettings")
 local PluginLoader = require("pluginloader")
 local ffiutil = require("ffi/util")
 

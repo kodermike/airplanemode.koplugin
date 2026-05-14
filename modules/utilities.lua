@@ -7,7 +7,7 @@ local airplanemode_config = DataStorage:getDataDir() .. "/settings/airplanemode.
 local Utilities = {}
 
 function Utilities:saveAPMplugins(plugin_list)
-  if not plugin_list or not type(plugin_list) == "table" then
+  if plugin_list and type(plugin_list) ~= "table" then
     logger.err("AIRPLANEMODE: plugin_list is not a table, cannot save")
     return
   end

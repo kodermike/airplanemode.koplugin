@@ -6,7 +6,6 @@ local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local NetworkMgr = require("ui/network/manager")
-local PluginLoader = require("pluginloader")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiutil = require("ffi/util")
@@ -689,7 +688,7 @@ function AirPlaneMode:getConfigMenuItems()
       text = _("Manage Builtin Plugins"),
       help_text = _("Checked plugins will be disabled when AirPlaneMode is enabled."),
       sub_item_table_func = function()
-        return self:PluginMenu(true, apm_settings)
+        return self:PluginMenu(true)
       end,
     })
 
@@ -697,7 +696,7 @@ function AirPlaneMode:getConfigMenuItems()
       text = _("Manage User Added Plugins"),
       help_text = _("Checked plugins will be disabled when AirPlaneMode is enabled."),
       sub_item_table_func = function()
-        return self:PluginMenu(false, apm_settings)
+        return self:PluginMenu(false)
       end,
     })
   end
@@ -788,7 +787,7 @@ function AirPlaneMode:getConfigMenuItems()
   return airplane_config_table
 end
 
-function AirPlaneMode.PluginMenu(self, builtin, settings_handle)
+function AirPlaneMode:PluginMenu(builtin)
   local plugin_list = PluginChecker:getPlugins(builtin)
   local plugin_menu = PluginChecker:menuBuilder(builtin, plugin_list)
   return plugin_menu
