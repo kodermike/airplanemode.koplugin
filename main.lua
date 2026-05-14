@@ -219,13 +219,12 @@ NOTE: Because of the changes AirPlaneMode makes to KOReader, it is not possible 
 --
 function AirPlaneMode.stopPlugin()
   local BK_Settings = LuaSettings:open(settings_bk)
-
   -- disable airplane mode
   G_reader_settings:saveSetting("airplanemode", false)
   G_reader_settings:flush()
 
   -- If managing wifi, revert settingss
-  if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator()) and U:APMnilOrFalse("managewifi") then
+  if NetworkMgr:getNetworkInterfaceName() or Device:isEmulator() then
     if Device:hasWifiRestore() and BK_Settings:isTrue("auto_restore_wifi") then
       G_reader_settings:makeTrue("auto_restore_wifi")
     end
@@ -276,7 +275,6 @@ function AirPlaneMode.stopPlugin()
       NetworkMgr:enableWifi(nil, true)
     end
   end
-
   -- re-set calibre_wirless to previous setting, or delete it if it didn't exist
   if BK_Settings:isTrue("calibre_wireless") then
     G_reader_settings:makeTrue("calibre_wireless")
@@ -287,7 +285,6 @@ function AirPlaneMode.stopPlugin()
   end
 
   local apm_disabled = U:readAPMplugins()
-
   -- create a list of what is currently disabled
   local previously_disabled = BK_Settings:readSetting("plugins_disabled") or {}
   -- Build the list of plugins disabled right now
@@ -310,6 +307,7 @@ function AirPlaneMode.stopPlugin()
     G_reader_settings:delSetting("plugins_disabled")
   else
     -- Save the updated list of disabled plugins
+    G_reader_settings:delSetting("plugins_disabled")
     G_reader_settings:saveSetting("plugins_disabled", to_disable)
     G_reader_settings:flush()
   end
@@ -318,18 +316,6 @@ function AirPlaneMode.stopPlugin()
   if isFile(settings_bk) then
     os.remove(settings_bk)
   end
-
-  -- remove the backup settings file
-  settings_bk_exists = false
-  if string.match(self.name, "reader") then
-    -- regardless of options, if we're in a document then save our position
-    self.ui:saveSettings()
-  end
-
-  UIManager:show(InfoMessage:new({
-    text = _("AirPlaneMode has been stopped. Plugins and networking will not be automatically reset until you restart KOReader."),
-    timeout = 3,
-  }))
 end
 
 -- hook for deleteplugin calls
