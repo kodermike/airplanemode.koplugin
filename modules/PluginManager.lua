@@ -64,8 +64,9 @@ local function getPluginInfo(plugin)
   return t
 end
 
-function PluginManager.getPlugins(self, builtin)
-  local check_plugins = U:readAPMplugins()
+function PluginManager:getPlugins(builtin, settings)
+  logger.dbg("AIRPLANEMODE: PluginManager - getPlugins - builtin: ", builtin, " settings: ", settings.airplane_plugins, settings.airplanemode)
+  local check_plugins = U:readAPMplugins(settings.airplane_plugins, settings.airplanemode)
   local os_enabled_plugins, os_disabled_plugins = PluginLoader:loadPlugins()
   local plugin_list = {}
 
@@ -96,24 +97,21 @@ function PluginManager.getPlugins(self, builtin)
 end
 
 function PluginManager:restorePluginSettings(settings)
-  local backups = LuaSettings:open(settings.backup)
-  local koreader = LuaSettings:open(settings.koreader)
-  local config = LuaSettings:open(settings.airplanemode)
   -- restore calibrewireless seperately since it is independent of the calibre plugin
   -- re-set calibre_wirless to previous setting, or delete it if it didn't exist
-  if backups:isTrue("calibre_wireless") then
-    koreader:makeTrue("calibre_wireless")
-  elseif backups:isFalse("calibre_wireless") then
-    koreader:makeFalse("calibre_wireless")
+  if U:APMisTrue("calibre_wireless", settings.backup) then
+    U:APMmakeTrue("calibre_wireless", settings.koreader)
+  elseif U:APMisFalse("calibre_wireless", settings.backup) then
+    U:APMmakeFalse("calibre_wireless", settings.koreader)
   else
-    koreader:delSetting("calibre_wireless")
+    U:delAPMsetting("calibre_wireless", settings.koreader)
   end
   -- restore the rest of the plugins
-  local apm_disabled = config:readSetting("disabled_plugins") or {}
+  local apm_disabled = U:readAPMsetting(settings.airplane_plugins, settings.airplanemode) or {}
   -- create a list of what is currently disabled
-  local previously_disabled = backups:readSetting("plugins_disabled") or {}
+  local previously_disabled = U:readAPMsetting(settings.airplane_plugins, settings.backup) or {}
   -- Build the list of plugins disabled right now
-  local currently_disabled = koreader:readSetting("plugins_disabled") or {}
+  local currently_disabled = U:readAPMsetting(settings.koreader_plugins, settings.koreader) or {}
   local to_disable = {}
   -- loop currently disabled items
   for plugin, __ in pairs(currently_disabled) do
@@ -128,35 +126,60 @@ function PluginManager:restorePluginSettings(settings)
 
   if not next(to_disable) then
     -- We now have an empty list - the only disabled plugins were the ones added by APM
-    koreader:delSetting("plugins_disabled")
+    U:delAPMsetting("plugins_disabled", settings.koreader)
   else
     -- Save the updated list of disabled plugins
-    koreader:saveSetting("plugins_disabled", to_disable)
-    koreader:flush()
+    U:saveAPMsetting("plugins_disabled", to_disable, settings.koreader)
   end
-
-  koreader:flush()
-  koreader:close()
-  config:close()
-  backups:close()
 end
 
 function PluginManager:toggleAirPlaneMode(settings, toggle)
-  local koreader = LuaSettings:open(settings.koreader)
-  if koreader:saveSetting("airplanemode", toggle) then
-    koreader:flush()
-    koreader:close()
+  logger.dbg("AIRPLANEMODE: PluginManager - toggleAirPlaneMode request, desired state:", toggle)
+  if toggle == true then
+    if U:APMmakeTrue("airplanemode_enabled", settings.airplanemode) then
+      logger.dbg("AIRPLANEMODE: PluginManager - AirPlaneMode explicitly set to true")
+      local p = LuaSettings:open(settings.airplanemode)
+      logger.dbg("AIRPLANEMODE: PluginManager - AirPlaneMode read from settings:", p:readSetting("airplanemode_enabled"))
+      p:close()
+    else
+      logger.err("AIRPLANEMODE: PluginManager - Failed to set AirPlaneMode true")
+    end
+  elseif toggle == false then
+    -- persist explicit false so the setting survives restarts
+    if U:APMmakeFalse("airplanemode_enabled", settings.airplanemode) then
+      logger.dbg("AIRPLANEMODE: PluginManager - AirPlaneMode explicitly set to false")
+      local p = LuaSettings:open(settings.airplanemode)
+      logger.dbg("AIRPLANEMODE: PluginManager - AirPlaneMode read from settings:", p:readSetting("airplanemode_enabled"))
+      p:close()
+    else
+      logger.err("AIRPLANEMODE: PluginManager - Failed to set AirPlaneMode false")
+    end
   else
-    logger.err("AIRPLANEMODE: Failed to set AirPlaneMode:", toggle)
+    logger.err("AIRPLANEMODE: PluginManager - toggleAirPlaneMode called without explicit boolean: ", tostring(toggle))
+  end
+  return
+end
+
+function PluginManager:enableCalibre(settings)
+  -- re-set calibre_wirless to previous setting, or delete it if it didn't exist
+  if U:APMisTrue("calibre_wireless", settings.backup) then
+    logger.dbg("AIRPLANEMODE: Saving calibre_wireless setting: true")
+    U:APMmakeTrue("calibre_wireless", settings.koreader)
+  elseif U:APMisFalse("calibre_wireless", settings.backup) then
+    logger.dbg("AIRPLANEMODE: Saving calibre_wireless setting: false")
+    U:APMmakeFalse("calibre_wireless", settings.koreader)
+  else
+    logger.dbg("AIRPLANEMODE: Deleting calibre_wireless setting")
+    U:delAPMSetting("calibre_wireless", settings.koreader)
   end
 end
 
 -- Build a menu from the passed plugin list
-function PluginManager:menuBuilder(builtin, plugin_list)
+function PluginManager:menuBuilder(builtin, plugin_list, settings)
   local airplane_plugin_table = {}
   -- Since we're in AirPlaneMode, and we skip AirPlaneMode, then a list of 0 is an empty list in this context
   if builtin == false and #plugin_list == 0 then
-    logger.dbg("AIRPLANEMODE: menuBuilder plugin_list is empty")
+    logger.dbg("AIRPLANEMODE: PluginManager - menuBuilder plugin_list is empty")
     table.insert(airplane_plugin_table, {
       text = _("No user installed plugins available to manage"),
       enabled = false,
@@ -171,7 +194,7 @@ function PluginManager:menuBuilder(builtin, plugin_list)
           text = _(plugin.fullname),
           checked_func = function()
             -- Read the latest setting from disk to avoid stale in-memory cache
-            local cp = U:readAPMplugins()
+            local cp = U:readAPMplugins(settings.airplane_plugins, settings.airplanemode)
             local val = cp[plugin.name]
             return val
           end,
@@ -184,15 +207,15 @@ function PluginManager:menuBuilder(builtin, plugin_list)
           end,
           callback = function()
             -- Re-open settings on each toggle to ensure we operate on latest on-disk state
-            local cp = U:readAPMplugins()
+            local cp = U:readAPMplugins(settings.airplane_plugins, settings.airplanemode)
             if cp[plugin.name] then
               cp[plugin.name] = nil
-              logger.dbg("AIRPLANEMODE: Disabled ", plugin.name)
+              logger.dbg("AIRPLANEMODE: PluginManager - Disabled ", plugin.name)
             else
               cp[plugin.name] = true
-              logger.dbg("AIRPLANEMODE: Enabled ", plugin.name)
+              logger.dbg("AIRPLANEMODE: PluginManager - Enabled ", plugin.name)
             end
-            U:saveAPMplugins(cp)
+            U:saveAPMplugins(cp, settings.airplanemode)
             -- Broadcast a UI update so menus/checkboxes refresh
             local UIManager = require("ui/uimanager")
             local Event = require("ui/event")

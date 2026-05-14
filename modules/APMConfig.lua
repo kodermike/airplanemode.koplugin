@@ -22,6 +22,8 @@ function APMConfig:init()
     airplanemode = airplanemode_config,
     airplanemode_old = airplanemode_old,
     prev_config = prev_config,
+    koreader_plugins = "plugins_disabled",
+    airplane_plugins = "disabled_plugins",
   }
 end
 
