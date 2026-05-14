@@ -6,7 +6,6 @@ local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local NetworkMgr = require("ui/network/manager")
-local PluginLoader = require("pluginloader")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiutil = require("ffi/util")
@@ -209,6 +208,112 @@ function AirPlaneMode.migrateconfig()
   -- I know, why wouldn't it be there, but caution always
   if isFile(old_config_file) then
     os.remove(old_config_file)
+  end
+end
+
+-- hook for stopPlugin support
+--[[--
+NOTE: Because of the changes AirPlaneMode makes to KOReader, it is not possible to re-enable everything if being called from outside of AirPlaneMode. This hook will disable AirPlaneMode and reset setting for disabled plugins, but cannot restart wifi or the device.
+--]]
+--
+function AirPlaneMode.stopPlugin()
+  local BK_Settings = LuaSettings:open(settings_bk)
+  -- disable airplane mode
+  G_reader_settings:saveSetting("airplanemode", false)
+  G_reader_settings:flush()
+
+  -- If managing wifi, revert settingss
+  if NetworkMgr:getNetworkInterfaceName() or Device:isEmulator() then
+    if Device:hasWifiRestore() and BK_Settings:isTrue("auto_restore_wifi") then
+      G_reader_settings:makeTrue("auto_restore_wifi")
+    end
+
+    if BK_Settings:nilOrFalse("auto_disable_wifi") then
+      -- flip the real config
+      G_reader_settings:flipNilOrFalse("auto_disable_wifi")
+    end
+
+    -- According to network manager, this setting always has a value and defaults to prompt
+    if BK_Settings:hasNot("wifi_enable_action") then
+      G_reader_settings:delSetting("wifi_enable_action")
+    else
+      local bk_wifi_enable_action_setting = BK_Settings:readSetting("wifi_enable_action") or "prompt"
+      G_reader_settings:saveSetting("wifi_enable_action", bk_wifi_enable_action_setting)
+      G_reader_settings:flush()
+    end
+
+    -- According to network manager, this setting always has a value and defaults to prompt
+    if BK_Settings:hasNot("wifi_disable_action") then
+      G_reader_settings:delSetting("wifi_disable_action")
+    else
+      local bk_wifi_disable_action_setting = BK_Settings:readSetting("wifi_disable_action") or "prompt"
+      G_reader_settings:saveSetting("wifi_disable_action", bk_wifi_disable_action_setting)
+      G_reader_settings:flush()
+    end
+
+    -- got to watch out for our emulator friends :) (ie, me, testing)
+    if Device:isEmulator() and BK_Settings:has("emulator_fake_wifi_connected") then
+      local old_emulator_fake_wifi_connected = BK_Settings:readSetting("emulator_fake_wifi_connected")
+      -- flip the real config
+      G_reader_settings:saveSetting("emulator_fake_wifi_connected", old_emulator_fake_wifi_connected)
+    else
+      G_reader_settings:delSetting("emulator_fake_wifi_connected")
+    end
+    G_reader_settings:flush()
+
+    if BK_Settings:isTrue("http_proxy_enabled") then
+      -- flip the real config
+      G_reader_settings:makeTrue("http_proxy_enabled")
+    end
+
+    --if NetworkMgr:getWifiState() == false and BK_Settings:isTrue("wifi_was_on") then
+    if BK_Settings:hasNot("wifi_was_on") then
+      G_reader_settings:delSetting("wifi_was_on")
+    elseif BK_Settings:isTrue("wifi_was_on") then
+      G_reader_settings:makeTrue("wifi_was_on")
+      NetworkMgr:enableWifi(nil, true)
+    end
+  end
+  -- re-set calibre_wirless to previous setting, or delete it if it didn't exist
+  if BK_Settings:isTrue("calibre_wireless") then
+    G_reader_settings:makeTrue("calibre_wireless")
+  elseif BK_Settings:isFalse("calibre_wireless") then
+    G_reader_settings:makeFalse("calibre_wireless")
+  else
+    G_reader_settings:delSetting("calibre_wireless")
+  end
+
+  local apm_disabled = U:readAPMplugins()
+  -- create a list of what is currently disabled
+  local previously_disabled = BK_Settings:readSetting("plugins_disabled") or {}
+  -- Build the list of plugins disabled right now
+  local currently_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
+  local to_disable = {}
+
+  -- loop currently disabled items
+  for plugin, __ in pairs(currently_disabled) do
+    -- if airplane mode disabled it and it was disabled before, keep it disabled
+    if apm_disabled[plugin] and previously_disabled[plugin] then
+      to_disable[plugin] = true
+      -- if it wasn't disabled in airplanemode, keep it disabled
+    elseif not apm_disabled[plugin] then
+      to_disable[plugin] = true
+    end
+  end
+
+  if not next(to_disable) then
+    -- We now have an empty list - the only disabled plugins were the ones added by APM
+    G_reader_settings:delSetting("plugins_disabled")
+  else
+    -- Save the updated list of disabled plugins
+    G_reader_settings:delSetting("plugins_disabled")
+    G_reader_settings:saveSetting("plugins_disabled", to_disable)
+    G_reader_settings:flush()
+  end
+
+  G_reader_settings:flush()
+  if isFile(settings_bk) then
+    os.remove(settings_bk)
   end
 end
 
@@ -583,7 +688,7 @@ function AirPlaneMode:getConfigMenuItems()
       text = _("Manage Builtin Plugins"),
       help_text = _("Checked plugins will be disabled when AirPlaneMode is enabled."),
       sub_item_table_func = function()
-        return self:PluginMenu(true, apm_settings)
+        return self:PluginMenu(true)
       end,
     })
 
@@ -591,7 +696,7 @@ function AirPlaneMode:getConfigMenuItems()
       text = _("Manage User Added Plugins"),
       help_text = _("Checked plugins will be disabled when AirPlaneMode is enabled."),
       sub_item_table_func = function()
-        return self:PluginMenu(false, apm_settings)
+        return self:PluginMenu(false)
       end,
     })
   end
@@ -682,7 +787,7 @@ function AirPlaneMode:getConfigMenuItems()
   return airplane_config_table
 end
 
-function AirPlaneMode.PluginMenu(self, builtin, settings_handle)
+function AirPlaneMode:PluginMenu(builtin)
   local plugin_list = PluginChecker:getPlugins(builtin)
   local plugin_menu = PluginChecker:menuBuilder(builtin, plugin_list)
   return plugin_menu

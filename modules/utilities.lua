@@ -6,8 +6,8 @@ local airplanemode_config = DataStorage:getDataDir() .. "/settings/airplanemode.
 
 local Utilities = {}
 
-function Utilities.saveAPMplugins(self, plugin_list)
-  if not plugin_list or not type(plugin_list) == "table" then
+function Utilities:saveAPMplugins(plugin_list)
+  if plugin_list and type(plugin_list) ~= "table" then
     logger.err("AIRPLANEMODE: plugin_list is not a table, cannot save")
     return
   end
@@ -17,14 +17,14 @@ function Utilities.saveAPMplugins(self, plugin_list)
   apm_settings:close()
 end
 
-function Utilities.readAPMplugins(self)
+function Utilities:readAPMplugins()
   local apm_settings = LuaSettings:open(airplanemode_config)
   local disabled_plugins = apm_settings:readSetting("disabled_plugins") or {}
   apm_settings:close()
   return disabled_plugins
 end
 
-function Utilities:readAPMsetting(self, object)
+function Utilities:readAPMsetting(object)
   if not object then
     logger.err("AIRPLANEMODE: readAPMsetting - object sent is nil, cannot read")
     return
@@ -35,7 +35,7 @@ function Utilities:readAPMsetting(self, object)
   return setting
 end
 
-function Utilities.saveAPMsetting(self, object, value)
+function Utilities:saveAPMsetting(object, value)
   if not object then
     logger.err("AIRPLANEMODE: saveAPMsetting - object sent is nil, cannot save")
     return
