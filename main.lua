@@ -194,9 +194,10 @@ function AirPlaneMode.migrateconfig()
 end
 
 -- hook for stopPlugin support
---[[
-NOTE: Because of the changes AirPlaneMode make to KOReader, it is not possible to re-enable everything if being called from outside of AirPlaneMode. This hook will disable AirPlaneMode and reset setting for disabled plugins, but cannot restart wifi or the device.
-]]
+--[[--
+NOTE: Because of the changes AirPlaneMode makes to KOReader, it is not possible to re-enable everything if being called from outside of AirPlaneMode. This hook will disable AirPlaneMode and reset setting for disabled plugins, but cannot restart wifi or the device.
+--]]
+--
 function AirPlaneMode.stopPlugin()
   logger.info("AIRPLANEMODE: stopPlugin called at ", os.time())
   logger.dbg("AIRPLANEMODE: stopPlugin called at ", os.time(), "\nstack:\n", debug.traceback())
