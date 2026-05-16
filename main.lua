@@ -20,7 +20,6 @@ local settings = APMConfig:init()
 local H = require("modules/helpers")
 local U = require("modules/utilities")
 local A = require("modules/APMNetwork")
-
 local P = require("modules/PluginManager")
 
 local meta = require("_meta")
@@ -55,14 +54,7 @@ local function saveState(name)
   if ui_mode == "reader" then
     ui_mode = "last"
   end
-  print("Set ui_mode to", ui_mode)
-  -- if string.match(name, "reader") then
-  --   ui_mode = "last"
-  -- elseif string.match(name, "filemanager") then
-  --   ui_mode = "filemanager"
-  -- end
   if ui_mode ~= nil then
-    logger.dbg("AIRPLANEMODE: restarting with", ui_mode, "then setting it back to", cur_start)
     -- save that state in our config
     U:saveAPMsetting("restart_with", cur_start, settings.airplanemode)
     -- set our new restart mode
@@ -126,6 +118,26 @@ function AirPlaneMode:init()
       self:initSettingsFile()
     end
   end
+  if U:APMhas("airplanemode", settings.koreader) then
+    logger.dbg("AIRPLANEMODE: koreader config found, migrating to new layout")
+    -- move things around for the new configuration layout
+    -- in case it is running
+    if U:APMisTrue("airplanemode", settings.koreader) then
+      U:APMmakeTrue("airplanemode_enabled", settings.airplanemode)
+    elseif U:APMisFalse("airplanemode", settings.koreader) then
+      U:APMmakeFalse("airplanemode_enabled", settings.airplanemode)
+    end
+    -- if we have anything configured, update the variable name
+    U:delAPMsetting("airplanemode", settings.koreader)
+    if U:APMhas("disabled_plugins", settings.airplanemode) then
+      local disabled_plugins = U:readAPMsetting("disabled_plugins", settings.airplanemode)
+      if disabled_plugins then
+        U:saveAPMsetting(settings.koreader_plugins, disabled_plugins, settings.airplanemode)
+        U:delAPMsetting("disabled_plugins", settings.airplanemode)
+      end
+    end
+  end
+
   self.additional_footer_content_func = function()
     local item_prefix = self.ui.view.footer.settings.item_prefix
     if item_prefix == "icons" then
@@ -308,13 +320,6 @@ function AirPlaneMode:Enable()
   logger.dbg("AIRPLANEMODE: dumping settings after running backup")
   self.dumpSettings()
   if current_config then
-    -- -- mark airplane as active
-    -- logger.dbg("AIRPLANEMODE: marking airplane as active")
-    -- self.dumpSettings()
-    -- U:APMmakeTrue("airplanemode", settings.koreader)
-    -- logger.dbg("AIRPLANEMODE: after enabling")
-    -- self.dumpSettings()
-
     -- [[ disable plugins, wireless, all of it ]]
 
     -- instead of disabling the calibre plugin, just disable the wireless part -  this lets you still search calibre metadata
@@ -325,7 +330,7 @@ function AirPlaneMode:Enable()
 
     logger.dbg("AIRPLANEMODE: disabling plugins")
     logger.dbg("AIRPLANEMODE: retrieving list of plugins to disable")
-    local check_plugins = U:readAPMplugins(settings.airplane_plugins, settings.airplanemode)
+    local check_plugins = U:readAPMplugins(settings.koreader_plugins, settings.airplanemode)
     logger.dbg("AIRPLANEMODE: retrieving list of already disabled plugins")
     local disabled_plugins = U:readAPMsetting("plugins_disabled", settings.koreader) or {}
     -- a pair of loops for the logger
@@ -464,7 +469,7 @@ function AirPlaneMode:Disable()
   P:enableCalibre(settings)
 
   logger.dbg("AIRPLANEMODE: Reading APM plugins")
-  local apm_disabled = U:readAPMplugins(settings.airplane_plugins, settings.airplanemode)
+  local apm_disabled = U:readAPMplugins(settings.koreader_plugins, settings.airplanemode)
   -- create a list of what is currently disabled
   logger.dbg("AIRPLANEMODE: Reading previous plugins_disabled setting")
   local previously_disabled = U:readAPMsetting("plugins_disabled", settings.backup) or {}
@@ -707,16 +712,9 @@ function AirPlaneMode:addToMainMenu(menu_items)
         end,
       },
       {
-        text = _("Configuration Menu"),
+        text = _("Configuration"),
         sub_item_table_func = function()
-          if airmode then
-            UIManager:show(InfoMessage:new({
-              text = T(_("%1 AirPlaneMode cannot be configured while in flight."), icon_on),
-              timeout = 3,
-            }))
-          else
-            return self:getConfigMenuItems()
-          end
+          return self:getConfigMenuItems()
         end,
       },
     },

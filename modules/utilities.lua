@@ -17,7 +17,6 @@ end
 
 function Utilities:readAPMplugins(listname, settings_file)
   logger.dbg("AIRPLANEMODE: readAPMplugins - reading plugins from ", settings_file)
-  -- local config = LuaSettings:open(settings_file)
   local config = sethandler(settings_file)
   local disabled_plugins = config:readSetting(listname) or {}
   config:close()
@@ -29,7 +28,6 @@ function Utilities:saveAPMplugins(plugin_list, settings_file)
     logger.err("AIRPLANEMODE: plugin_list is not a table, cannot save")
     return false
   end
-  -- local config = LuaSettings:open(settings_file)
   local config = sethandler(settings_file)
   config:saveSetting("disabled_plugins", plugin_list)
   config:flush()
@@ -41,9 +39,9 @@ function Utilities:readAPMsetting(object, settings_file)
     logger.err("AIRPLANEMODE: readAPMsetting - object sent is nil, cannot read")
     return false
   end
-  -- local config = LuaSettings:open(settings_file)
   local config = sethandler(settings_file)
   local setting = config:readSetting(object) or nil
+  logger.dbg("AIRPLANEMODE: readAPMsetting - object: ", object, " = ", setting)
   config:close()
   return setting
 end
@@ -63,8 +61,6 @@ function Utilities:saveAPMsetting(object, value, settings_file)
   end
   logger.dbg("AIRPLANEMODE: saveAPMsetting - saving setting: ", object, " = ", value)
 
-  -- if string.match(settings_file, "settings.reader.lua$")
-  -- local config = LuaSettings:open(settings_file)
   local config = sethandler(settings_file)
   if config:saveSetting(object, value) then
     config:flush()
@@ -82,7 +78,6 @@ function Utilities:delAPMsetting(object, settings_file)
     logger.err("AIRPLANEMODE: delAPMsetting - object sent is nil, cannot delete")
     return false
   end
-  -- local config = LuaSettings:open(settings_file)
   local config = sethandler(settings_file)
   if object == "airplanemode" then
     logger.dbg("AIRPLANEMODE: delAPMsetting called for 'airplanemode' at ", os.time(), "\nstack:\n", debug.traceback())
@@ -98,7 +93,6 @@ function Utilities:APMhas(object, settings_file)
     logger.err("AIRPLANEMODE: APMhas - object sent is nil, cannot check")
     return false
   end
-  -- local config = LuaSettings:open(settings_file)
   local config = sethandler(settings_file)
   local value = config:has(object)
   config:close()
@@ -110,7 +104,6 @@ function Utilities:APMhasNot(object, settings_file)
     logger.err("AIRPLANEMODE: APMhasNot - object sent is nil, cannot check")
     return false
   end
-  -- local config = LuaSettings:open(settings_file)
   local config = sethandler(settings_file)
   local value = config:hasNot(object)
   config:close()
@@ -122,7 +115,6 @@ function Utilities:APMtoggle(object, settings_file)
     logger.err("AIRPLANEMODE: APMtoggle - object sent is nil, cannot toggle")
     return false
   end
-  -- local config = LuaSettings:open(settings_file)
   local config = sethandler(settings_file)
   local response = config:toggle(object)
   config:flush()
@@ -135,7 +127,6 @@ function Utilities:APMisTrue(object, settings_file)
     logger.err("AIRPLANEMODE: APMisTrue - object sent is nil, cannot check")
     return
   end
-  -- local config = LuaSettings:open(settings_file)
   local config = sethandler(settings_file)
   if config:isTrue(object) then
     config:flush()
@@ -153,7 +144,6 @@ function Utilities:APMisFalse(object, settings_file)
     logger.err("AIRPLANEMODE: APMisFalse - object sent is nil, cannot check")
     return
   end
-  -- local config = LuaSettings:open(settings_file)
   local config = sethandler(settings_file)
   if config:isFalse(object) then
     config:flush()
@@ -171,7 +161,6 @@ function Utilities:APMmakeTrue(object, settings_file)
     logger.err("AIRPLANEMODE: APMmakeTrue - object sent is nil, cannot make true")
     return
   end
-  -- local config = LuaSettings:open(settings_file)
   local config = sethandler(settings_file)
   if config:makeTrue(object) then
     config:flush()
@@ -189,7 +178,6 @@ function Utilities:APMmakeFalse(object, settings_file)
     logger.err("AIRPLANEMODE: APMmakeFalse - object sent is nil, cannot make false")
     return
   end
-  -- local config = LuaSettings:open(settings_file)
   local config = sethandler(settings_file)
   if config:makeFalse(object) then
     config:flush()
@@ -208,7 +196,6 @@ function Utilities:APMnilOrFalse(object, settings_file)
     return
   end
   logger.dbg("AIRPLANEMODE: UTILITIES - apmnilorfalse checking:", object)
-  -- local config = LuaSettings:open(settings_file)
   local config = sethandler(settings_file)
   if config:nilOrFalse(object) then
     logger.dbg("AIRPLANEMODE: UTILITIES - apmnilorfalse is nil or false:", object)
@@ -232,7 +219,6 @@ function Utilities:APMnilOrTrue(object, settings_file)
     return
   end
 
-  -- local config = LuaSettings:open(settings_file)
   local config = sethandler(settings_file)
   if config:nilOrTrue(object) then
     config:flush()
@@ -254,7 +240,6 @@ function Utilities:APMflipNilOrFalse(object, settings_file)
     logger.err("AIRPLANEMODE: APMflipNilOrFalse - settings_file sent is nil, cannot flip")
     return
   end
-  -- local config = LuaSettings:open(settings_file)
   local config = sethandler(settings_file)
   if config:flipNilOrFalse(object) then
     config:flush()
