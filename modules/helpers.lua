@@ -28,10 +28,10 @@ function H.removeFile(self, path)
 end
 
 function H.stringto(v)
-  if type(v) == string and v == "true" then
+  if type(v) == "string" and v == "true" then
     return true
   end
-  if type(v) == string and v == "false" then
+  if type(v) == "string" and v == "false" then
     return false
   end
   return nil

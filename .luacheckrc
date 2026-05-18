@@ -35,7 +35,8 @@ exclude_files = {
     "**/*.zip",
     "**/*.png",
     "**/*.jpg",
-    ".github/*"
+    ".github/*",
+    "tests/**",
 }
 
 ignore = {
