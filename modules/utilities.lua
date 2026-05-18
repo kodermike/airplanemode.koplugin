@@ -1,14 +1,19 @@
 local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
 local logger = require("logger")
+local ffiutil = require("ffi/util")
 
 local APMConfig = require("modules/APMConfig")
 local settings = APMConfig:init()
+local H = require("modules/helpers")
 
 local Utilities = {}
 
 local function sethandler(file)
   if string.match(file, "settings.reader.lua$") then
+    if G_reader_settings == nil then
+      G_reader_settings = LuaSettings:open(file)
+    end
     return G_reader_settings
   else
     return LuaSettings:open(file)
@@ -29,7 +34,7 @@ function Utilities:saveAPMplugins(plugin_list, settings_file)
     return false
   end
   local config = sethandler(settings_file)
-  config:saveSetting("disabled_plugins", plugin_list)
+  config:saveSetting(settings.koreader_plugins, plugin_list)
   config:flush()
   config:close()
 end
@@ -250,6 +255,69 @@ function Utilities:APMflipNilOrFalse(object, settings_file)
     config:close()
     return false
   end
+end
+
+function Utilities:backup(settings_file, backup_file)
+  logger.dbg("AIRPLANEMODE: Backup - starting")
+
+  if H.isFile(settings_file) then
+    logger.dbg("AIRPLANEMODE: Backup - backup found, copying to backup file")
+    if H.isFile(backup_file) then
+      logger.dbg("AIRPLANEMODE: Backup - removing leftover backup file")
+      H.removeFile(backup_file)
+    end
+    logger.dbg("AIRPLANEMODE: Backup - copying settings to backup file")
+    ffiutil.copyFile(settings_file, backup_file)
+    logger.dbg("AIRPLANEMODE: Backup - backup completed")
+    return H.isFile(backup_file)
+  else
+    logger.err("AIRPLANEMODE: Backup - failed to find settings file at: ", settings_file)
+    return false
+  end
+end
+
+function Utilities:getStatus()
+  -- test we can see the real settings file.
+  if not H.isFile(settings.airplanemode) then
+    logger.err("AIRPLANEMODE: Settings file not found! Abort!", settings.airplanemode)
+    return false
+  end
+  -- check if we currently have a backup of our settings
+  -- also verify if the airplanemode flag is set. we will use this to decide if something is funky
+  local airplanemode_active = self:readAPMsetting("airplanemode_enabled", settings.airplanemode) or false
+  if H.isFile(settings.backup) and airplanemode_active then
+    return true
+  elseif not airplanemode_active then
+    return false
+  end
+  return false
+end
+
+function Utilities:toggleAirPlaneMode(toggle)
+  logger.dbg("AIRPLANEMODE: Utilities - toggleAirPlaneMode request, desired state:", toggle)
+  if toggle == true then
+    if self:APMmakeTrue("airplanemode_enabled", settings.airplanemode) then
+      logger.dbg("AIRPLANEMODE: Utilities - AirPlaneMode explicitly set to true")
+      local p = LuaSettings:open(settings.airplanemode)
+      logger.dbg("AIRPLANEMODE: Utilities - AirPlaneMode read from settings:", p:readSetting("airplanemode_enabled"))
+      p:close()
+    else
+      logger.err("AIRPLANEMODE: Utilities - Failed to set AirPlaneMode true")
+    end
+  elseif toggle == false then
+    -- persist explicit false so the setting survives restarts
+    if self:APMmakeFalse("airplanemode_enabled", settings.airplanemode) then
+      logger.dbg("AIRPLANEMODE: Utilities - AirPlaneMode explicitly set to false")
+      local p = LuaSettings:open(settings.airplanemode)
+      logger.dbg("AIRPLANEMODE: Utilities - AirPlaneMode read from settings:", p:readSetting("airplanemode_enabled"))
+      p:close()
+    else
+      logger.err("AIRPLANEMODE: Utilities - Failed to set AirPlaneMode false")
+    end
+  else
+    logger.err("AIRPLANEMODE: Utilities - toggleAirPlaneMode called without explicit boolean: ", tostring(toggle))
+  end
+  return
 end
 
 return Utilities

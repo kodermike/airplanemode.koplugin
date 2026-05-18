@@ -9,7 +9,7 @@ local U = require("modules/utilities")
 
 local APMNetwork = {}
 
-function APMNetwork:reenableWifi(settings)
+function APMNetwork:reenableWifi()
   if Device:hasWifiRestore() and U:readAPMsetting("auto_restore_wifi", settings.koreader) then
     logger.dbg("AIRPLANEMODE: Reverting auto_restore_wifi to true")
     U:APMmakeTrue("auto_restore_wifi", settings.koreader)
@@ -68,7 +68,7 @@ function APMNetwork:reenableWifi(settings)
   end
 end
 
-function APMNetwork:disableWifi(settings)
+function APMNetwork:disableWifi()
   --set this regardless of original setting to ensure no resumes
   if Device:hasWifiRestore() then
     logger.dbg("AIRPLANEMODE: hasWifiRestore, flipping auto_restore_wifi")

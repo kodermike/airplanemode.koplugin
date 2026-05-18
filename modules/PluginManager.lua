@@ -11,49 +11,52 @@ local T = ffiutil.template
 local logger = require("logger")
 local _ = require("gettext")
 
+local H = require("modules/helpers")
 local U = require("modules/utilities")
 
-local BUILTIN_PLUGINS = {
-  ["archiveviewer"] = true,
-  ["autodim"] = true,
-  ["autostandby"] = true,
-  ["autosuspend"] = true,
-  ["autoturn"] = true,
-  ["autowarmth"] = true,
-  ["batterystat"] = true,
-  ["bookshortcuts"] = true,
-  ["calibre"] = true,
-  ["cloudstorage"] = true,
-  ["coverbrowser"] = true,
-  ["coverimage"] = true,
-  ["docsettingtweak"] = true,
-  ["exporter"] = true,
-  ["externalkeyboard"] = true,
-  ["gestures"] = true,
-  ["hello"] = true,
-  ["hotkeys"] = true,
-  ["httpinspector"] = true,
-  ["japanese"] = true,
-  ["keepalive"] = true,
-  ["kosync"] = true,
-  ["movetoarchive"] = true,
-  ["newsdownloader"] = true,
-  ["opds"] = true,
-  ["perceptionexpander"] = true,
-  ["profiles"] = true,
-  ["qrclipboard"] = true,
-  ["readtimer"] = true,
-  ["SSH"] = true,
-  ["statistics"] = true,
-  ["systemstat"] = true,
-  ["terminal"] = true,
-  ["texteditor"] = true,
-  ["timesync"] = true,
-  ["vocabbuilder"] = true,
-  ["wallabag"] = true,
-}
-
 local PluginManager = {}
+
+function PluginManager:plugin_list()
+  return {
+    ["archiveviewer"] = true,
+    ["autodim"] = true,
+    ["autostandby"] = true,
+    ["autosuspend"] = true,
+    ["autoturn"] = true,
+    ["autowarmth"] = true,
+    ["batterystat"] = true,
+    ["bookshortcuts"] = true,
+    ["calibre"] = true,
+    ["cloudstorage"] = true,
+    ["coverbrowser"] = true,
+    ["coverimage"] = true,
+    ["docsettingtweak"] = true,
+    ["exporter"] = true,
+    ["externalkeyboard"] = true,
+    ["gestures"] = true,
+    ["hello"] = true,
+    ["hotkeys"] = true,
+    ["httpinspector"] = true,
+    ["japanese"] = true,
+    ["keepalive"] = true,
+    ["kosync"] = true,
+    ["movetoarchive"] = true,
+    ["newsdownloader"] = true,
+    ["opds"] = true,
+    ["perceptionexpander"] = true,
+    ["profiles"] = true,
+    ["qrclipboard"] = true,
+    ["readtimer"] = true,
+    ["SSH"] = true,
+    ["statistics"] = true,
+    ["systemstat"] = true,
+    ["terminal"] = true,
+    ["texteditor"] = true,
+    ["timesync"] = true,
+    ["vocabbuilder"] = true,
+    ["wallabag"] = true,
+  }
+end
 
 -- Lifted whole from pluginloader because it was the only way to dup the function :/
 local function getPluginInfo(plugin)
@@ -64,11 +67,39 @@ local function getPluginInfo(plugin)
   return t
 end
 
+local function stopOtherPlugins(stopp, fplugin, plugin)
+  -- try to run stopPlugin if available since it's cleaner
+  logger.dbg("AIRPLANEMODE: Stopping plugin", plugin)
+  if stopp then
+    local mstatus, __ = pcall(function()
+      pcall(fplugin["stopPlugin"]())
+    end)
+    if H.stringto(mstatus) == false then
+      -- stopPlugin failed, just do a normal stop
+      local sstatus, serr = pcall(function()
+        pcall(fplugin["stop"]())
+      end)
+      if H.stringto(sstatus) == false then
+        logger.err("AIRPLANEMODE: Failed to stop", plugin, ":", serr)
+      end
+    end
+  else
+    -- no stopPlugin, fallback to regular stop
+    local sstatus, serr = pcall(function()
+      pcall(fplugin["stop"]())
+    end)
+    if H.stringto(sstatus) == false then
+      logger.err("AIRPLANEMODE: Failed to stop", plugin, ":", serr)
+    end
+  end
+end
+
 function PluginManager:getPlugins(builtin, settings)
   logger.dbg("AIRPLANEMODE: PluginManager - getPlugins - builtin: ", builtin, " settings: ", settings.koreader_plugins, settings.airplanemode)
   local check_plugins = U:readAPMplugins(settings.koreader_plugins, settings.airplanemode)
   local os_enabled_plugins, os_disabled_plugins = PluginLoader:loadPlugins()
   local plugin_list = {}
+  local BUILTIN_PLUGINS = self:plugin_list()
 
   --Loop through os plugins that are enabled and mark that
   for _, plugin in ipairs(os_enabled_plugins) do
@@ -94,6 +125,66 @@ function PluginManager:getPlugins(builtin, settings)
     return a.fullname < b.fullname
   end)
   return plugin_list
+end
+
+function PluginManager:disablePlugins(settings)
+  --[[ start ]]
+  logger.dbg("AIRPLANEMODE: retrieving list of plugins to disable")
+  local check_plugins = U:readAPMplugins(settings.koreader_plugins, settings.airplanemode)
+  logger.dbg("AIRPLANEMODE: retrieving list of already disabled plugins")
+  local disabled_plugins = U:readAPMsetting(settings.koreader_plugins, settings.koreader) or {}
+  -- a pair of loops for the logger
+  if type(check_plugins) == "string" then
+    if disabled_plugins[check_plugins] ~= true then
+      disabled_plugins[check_plugins] = true
+      logger.dbg("AIRPLANEMODE: Disabling [string]", check_plugins)
+    end
+  else
+    for plugin, _ in pairs(check_plugins) do
+      logger.dbg("AIRPLANEMODE: Disabling", plugin)
+      if disabled_plugins[plugin] ~= true then
+        logger.dbg("AIRPLANEMODE: Disabling", plugin, "was true")
+        -- Check the current plugin  for status and stop if necessary
+        local modcheck = self.ui[plugin]
+        -- if the passed name was a plugin continue
+        if modcheck and (type(modcheck) == "table") then
+          -- if the passed plugin has either a stop or stopPlugin method
+          logger.dbg("AIRPLANEMODE: checking stop method for", plugin)
+          local stopmethod = type(modcheck["stop"]) == "function"
+          local stopPluginmethod = type(modcheck["stopPlugin"]) == "function"
+          if stopmethod or stopPluginmethod then
+            -- The plugin has a stop method
+            logger.dbg("AIRPLANEMODE: stop method found for", plugin)
+
+            if type(modcheck["isRunning"]) == "function" then
+              -- The plugin has an isRunning method - use that to determine if we should try and stop it
+              logger.dbg("AIRPLANEMODE: isRunning method found for", plugin)
+              local status, __ = pcall(function()
+                pcall(modcheck["isRunning"]())
+              end)
+              -- if the status came back that the plugin was running
+              if H.stringto(status) == true then
+                -- try to run stopPlugin if available since it's cleaner
+                logger.dbg("AIRPLANEMODE: isRunning returned true, trying to stop", plugin)
+                stopOtherPlugins(stopPluginmethod, modcheck, plugin)
+              end
+            else
+              -- stop methods were found but no isRunning, so we'll just try to run stop and hope
+              logger.dbg("AIRPLANEMODE: no isRunning method found, trying to stop", plugin)
+              stopOtherPlugins(stopPluginmethod, modcheck, plugin)
+            end
+          end
+        end
+        -- After our attempts to stop, go ahead and mark the plugin disabled.
+        -- Moved to the end to avoid confusion if for some reason we crash
+        -- attempting to stop a plugin.
+        logger.dbg("AIRPLANEMODE: marking stopped:", plugin)
+        disabled_plugins[plugin] = true
+      end
+    end
+  end
+  logger.dbg("AIRPLANEMODE: Saving", disabled_plugins)
+  U:saveAPMsetting("plugins_disabled", disabled_plugins, settings.koreader)
 end
 
 function PluginManager:restorePluginSettings(settings)
@@ -126,38 +217,11 @@ function PluginManager:restorePluginSettings(settings)
 
   if not next(to_disable) then
     -- We now have an empty list - the only disabled plugins were the ones added by APM
-    U:delAPMsetting("plugins_disabled", settings.koreader)
+    U:delAPMsetting(settings.koreader_plugins, settings.koreader)
   else
     -- Save the updated list of disabled plugins
-    U:saveAPMsetting("plugins_disabled", to_disable, settings.koreader)
+    U:saveAPMsetting(settings.koreader_plugins, to_disable, settings.koreader)
   end
-end
-
-function PluginManager:toggleAirPlaneMode(settings, toggle)
-  logger.dbg("AIRPLANEMODE: PluginManager - toggleAirPlaneMode request, desired state:", toggle)
-  if toggle == true then
-    if U:APMmakeTrue("airplanemode_enabled", settings.airplanemode) then
-      logger.dbg("AIRPLANEMODE: PluginManager - AirPlaneMode explicitly set to true")
-      local p = LuaSettings:open(settings.airplanemode)
-      logger.dbg("AIRPLANEMODE: PluginManager - AirPlaneMode read from settings:", p:readSetting("airplanemode_enabled"))
-      p:close()
-    else
-      logger.err("AIRPLANEMODE: PluginManager - Failed to set AirPlaneMode true")
-    end
-  elseif toggle == false then
-    -- persist explicit false so the setting survives restarts
-    if U:APMmakeFalse("airplanemode_enabled", settings.airplanemode) then
-      logger.dbg("AIRPLANEMODE: PluginManager - AirPlaneMode explicitly set to false")
-      local p = LuaSettings:open(settings.airplanemode)
-      logger.dbg("AIRPLANEMODE: PluginManager - AirPlaneMode read from settings:", p:readSetting("airplanemode_enabled"))
-      p:close()
-    else
-      logger.err("AIRPLANEMODE: PluginManager - Failed to set AirPlaneMode false")
-    end
-  else
-    logger.err("AIRPLANEMODE: PluginManager - toggleAirPlaneMode called without explicit boolean: ", tostring(toggle))
-  end
-  return
 end
 
 function PluginManager:enableCalibre(settings)
@@ -170,63 +234,8 @@ function PluginManager:enableCalibre(settings)
     U:APMmakeFalse("calibre_wireless", settings.koreader)
   else
     logger.dbg("AIRPLANEMODE: Deleting calibre_wireless setting")
-    U:delAPMSetting("calibre_wireless", settings.koreader)
+    U:delAPMsetting("calibre_wireless", settings.koreader)
   end
-end
-
--- Build a menu from the passed plugin list
-function PluginManager:menuBuilder(builtin, plugin_list, settings)
-  local airplane_plugin_table = {}
-  -- Since we're in AirPlaneMode, and we skip AirPlaneMode, then a list of 0 is an empty list in this context
-  if builtin == false and #plugin_list == 0 then
-    logger.dbg("AIRPLANEMODE: PluginManager - menuBuilder plugin_list is empty")
-    table.insert(airplane_plugin_table, {
-      text = _("No user installed plugins available to manage"),
-      enabled = false,
-      help_text = _("The only plugin installed is AirPlaneMode - nothing to manage"),
-    })
-    return airplane_plugin_table
-  end
-  for __, plugin in ipairs(plugin_list) do
-    if (builtin == true and BUILTIN_PLUGINS[plugin.name]) or (builtin == false and not BUILTIN_PLUGINS[plugin.name]) then
-      if plugin.name ~= "airplanemode" then
-        table.insert(airplane_plugin_table, {
-          text = _(plugin.fullname),
-          checked_func = function()
-            -- Read the latest setting from disk to avoid stale in-memory cache
-            local cp = U:readAPMplugins(settings.koreader_plugins, settings.airplanemode)
-            local val = cp[plugin.name]
-            return val
-          end,
-          enabled_func = function()
-            if (plugin.enable == false) or (plugin.enable == nil) then
-              return false
-            else
-              return true
-            end
-          end,
-          callback = function()
-            -- Re-open settings on each toggle to ensure we operate on latest on-disk state
-            local cp = U:readAPMplugins(settings.koreader_plugins, settings.airplanemode)
-            if cp[plugin.name] then
-              cp[plugin.name] = nil
-              logger.dbg("AIRPLANEMODE: PluginManager - Disabled ", plugin.name)
-            else
-              cp[plugin.name] = true
-              logger.dbg("AIRPLANEMODE: PluginManager - Enabled ", plugin.name)
-            end
-            U:saveAPMplugins(cp, settings.airplanemode)
-            -- Broadcast a UI update so menus/checkboxes refresh
-            local UIManager = require("ui/uimanager")
-            local Event = require("ui/event")
-            UIManager:broadcastEvent(Event:new("UpdateMenu", true))
-          end,
-          help_text = T(_("%1\n\nThis plugin is already disabled in KOReader"), plugin.description),
-        })
-      end
-    end
-  end
-  return airplane_plugin_table
 end
 
 return PluginManager

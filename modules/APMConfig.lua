@@ -1,4 +1,5 @@
 local DataStorage = require("datastorage")
+local meta = require("_meta")
 
 local APMConfig = {
   show_info = true,
@@ -23,7 +24,10 @@ function APMConfig:init()
     airplanemode_old = airplanemode_old,
     prev_config = prev_config,
     koreader_plugins = "plugins_disabled",
-    airplane_plugins = "disabled_plugins",
+    airplane_plugins = "disabled_plugins", -- deprecated
+    icon_on = "\u{F1D8}",
+    icon_off = "\u{F1D9}",
+    version = meta.version,
   }
 end
 
