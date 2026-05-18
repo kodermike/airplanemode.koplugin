@@ -1,3 +1,6 @@
+---@class FlightMenu
+---@field show_value_in_footer boolean|nil
+
 local Device = require("device")
 local NetworkMgr = require("ui/network/manager")
 local logger = require("logger")
@@ -18,6 +21,10 @@ local InfoMessage = require("ui/widget/infomessage")
 
 local FlightMenu = {}
 
+---Initialize main menu item for AirPlaneMode
+---@param menu_items table
+---@param AirPlaneMode table
+---@return nil
 function FlightMenu:init(menu_items, AirPlaneMode)
   local airmode = U:getStatus()
   menu_items.airplanemode = {
@@ -64,6 +71,9 @@ function FlightMenu:init(menu_items, AirPlaneMode)
   }
 end
 
+---Get configuration menu items
+---@param AirPlaneMode table
+---@return table
 function FlightMenu:getConfigMenuItems(AirPlaneMode)
   local airplane_config_table = {}
   local airmode = U:getStatus()
@@ -179,7 +189,11 @@ function FlightMenu:getConfigMenuItems(AirPlaneMode)
   return airplane_config_table
 end
 
--- Build a menu from the passed plugin list
+---Build menu from plugin list
+---@param builtin boolean
+---@param plugin_list table
+---@param settings table
+---@return table
 function FlightMenu:menuBuilder(builtin, plugin_list, settings)
   local airplane_plugin_table = {}
   -- Since we're in AirPlaneMode, and we skip AirPlaneMode, then a list of 0 is an empty list in this context
@@ -235,6 +249,11 @@ function FlightMenu:menuBuilder(builtin, plugin_list, settings)
   return airplane_plugin_table
 end
 
+---Return plugin menu for builtin/user plugins
+---@param self table
+---@param builtin boolean
+---@param settings table
+---@return table
 function FlightMenu.PluginMenu(self, builtin, settings)
   logger.dbg("AIRPLANEMODE: PluginMenu - builtin: ", builtin)
   local plugin_list = P:getPlugins(builtin, settings)

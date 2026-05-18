@@ -1,3 +1,5 @@
+---@class APMNetwork
+
 local logger = require("logger")
 local Device = require("device")
 local LuaSettings = require("luasettings")
@@ -9,6 +11,8 @@ local U = require("modules/utilities")
 
 local APMNetwork = {}
 
+---Re-enable WiFi and restore related settings from backup
+---@return nil
 function APMNetwork:reenableWifi()
   if Device:hasWifiRestore() and U:readAPMsetting("auto_restore_wifi", settings.koreader) then
     logger.dbg("AIRPLANEMODE: Reverting auto_restore_wifi to true")
@@ -68,6 +72,8 @@ function APMNetwork:reenableWifi()
   end
 end
 
+---Disable WiFi and adjust related settings for airplane mode
+---@return nil
 function APMNetwork:disableWifi()
   --set this regardless of original setting to ensure no resumes
   if Device:hasWifiRestore() then

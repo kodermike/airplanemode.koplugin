@@ -1,3 +1,22 @@
+---@class SettingsConfig
+---@field koreader string
+---@field backup string
+---@field airplanemode string
+---@field airplanemode_old string
+---@field prev_config string
+---@field koreader_plugins string
+---@field airplane_plugins string
+---@field icon_on string
+---@field icon_off string
+---@field version string
+
+---@class APMConfig
+---@field show_info boolean
+---@field enabled_plugins table|nil
+---@field disabled_plugins table|nil
+---@field loaded_plugins table|nil
+---@field all_plugins table|nil
+
 local DataStorage = require("datastorage")
 local meta = require("_meta")
 
@@ -9,7 +28,8 @@ local APMConfig = {
   all_plugins = nil,
 }
 
--- return base config file locations
+---Return base config file locations
+---@return SettingsConfig
 function APMConfig:init()
   local settings_file = DataStorage:getDataDir() .. "/settings.reader.lua"
   local settings_bk = DataStorage:getDataDir() .. "/settings.reader.lua.airplane"

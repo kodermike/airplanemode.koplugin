@@ -1,6 +1,14 @@
 --[[
 PluginManager module for AirplaneMode
 ]]
+---@class PluginEntry
+---@field name string
+---@field fullname string
+---@field description string
+---@field enable boolean|nil
+
+---@class PluginManager
+
 local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
 local PluginLoader = require("pluginloader")
@@ -16,6 +24,8 @@ local U = require("modules/utilities")
 
 local PluginManager = {}
 
+---List of builtin plugins
+---@return table<string, boolean>
 function PluginManager:plugin_list()
   return {
     ["archiveviewer"] = true,
@@ -59,6 +69,8 @@ function PluginManager:plugin_list()
 end
 
 -- Lifted whole from pluginloader because it was the only way to dup the function :/
+---@param plugin table
+---@return PluginEntry
 local function getPluginInfo(plugin)
   local t = {}
   t.name = plugin.name
@@ -94,6 +106,10 @@ local function stopOtherPlugins(stopp, fplugin, plugin)
   end
 end
 
+---Get plugins (builtin or user)
+---@param builtin boolean
+---@param settings table
+---@return PluginEntry[]
 function PluginManager:getPlugins(builtin, settings)
   logger.dbg("AIRPLANEMODE: PluginManager - getPlugins - builtin: ", builtin, " settings: ", settings.koreader_plugins, settings.airplanemode)
   local check_plugins = U:readAPMplugins(settings.koreader_plugins, settings.airplanemode)
@@ -127,6 +143,9 @@ function PluginManager:getPlugins(builtin, settings)
   return plugin_list
 end
 
+---Disable plugins listed in settings
+---@param settings table
+---@return nil
 function PluginManager:disablePlugins(settings)
   --[[ start ]]
   logger.dbg("AIRPLANEMODE: retrieving list of plugins to disable")
@@ -187,6 +206,9 @@ function PluginManager:disablePlugins(settings)
   U:saveAPMsetting("plugins_disabled", disabled_plugins, settings.koreader)
 end
 
+---Restore plugin settings from backup
+---@param settings table
+---@return nil
 function PluginManager:restorePluginSettings(settings)
   -- restore calibrewireless seperately since it is independent of the calibre plugin
   -- re-set calibre_wirless to previous setting, or delete it if it didn't exist
@@ -224,6 +246,9 @@ function PluginManager:restorePluginSettings(settings)
   end
 end
 
+---Enable/restore calibre related settings
+---@param settings table
+---@return nil
 function PluginManager:enableCalibre(settings)
   -- re-set calibre_wirless to previous setting, or delete it if it didn't exist
   if U:APMisTrue("calibre_wireless", settings.backup) then

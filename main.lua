@@ -1,3 +1,10 @@
+---@class AirPlaneMode : WidgetContainer
+---@field name string
+---@field is_doc_only boolean
+---@field ui table
+---@field additional_footer_content_func function|nil
+---@field show_value_in_footer boolean|nil
+
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
@@ -12,6 +19,7 @@ local logger = require("logger")
 local _ = require("gettext")
 
 local APMConfig = require("modules/APMConfig")
+---@type SettingsConfig
 local settings = APMConfig:init()
 
 local H = require("modules/helpers")
@@ -63,6 +71,8 @@ local AirPlaneMode = WidgetContainer:extend({
   is_doc_only = false,
 })
 
+---Dump current on-disk airplanemode settings for debugging
+---@return nil
 function AirPlaneMode.dumpSettings()
   -- Short-lived verification: read on-disk file contents and log them
   local fh = io.open(settings.airplanemode, "r")
@@ -78,12 +88,16 @@ function AirPlaneMode.dumpSettings()
   return
 end
 
+---Register actions with dispatcher
+---@return nil
 function AirPlaneMode.onDispatcherRegisterActions()
   Dispatcher:registerAction("airplanemode_enable", { category = "none", event = "Enable", title = _("AirPlaneMode Enable"), device = true })
   Dispatcher:registerAction("airplanemode_disable", { category = "none", event = "Disable", title = _("AirPlaneMode Disable"), device = true })
   Dispatcher:registerAction("airplanemode_toggle", { category = "none", event = "Toggle", title = _("AirPlaneMode Toggle"), device = true, separator = true })
 end
 
+---Initialize plugin
+---@return nil
 function AirPlaneMode:init()
   logger.dbg("AIRPLANEMODE: calling airplanemode dump")
   self:dumpSettings()
@@ -119,12 +133,16 @@ end
 --[[ footer ]]
 --
 
+---Refresh status bars footer content
+---@return nil
 function AirPlaneMode:update_status_bars()
   if self.show_value_in_footer then
     UIManager:broadcastEvent(Event:new("RefreshAdditionalContent"))
   end
 end
 
+---Add additional content to reader footer
+---@return nil
 function AirPlaneMode:addAdditionalFooterContent()
   if self.ui.view then
     self.ui.view.footer:addAdditionalFooterContent(self.additional_footer_content_func)
@@ -133,6 +151,8 @@ function AirPlaneMode:addAdditionalFooterContent()
   end
 end
 
+---Remove additional footer content
+---@return nil
 function AirPlaneMode:removeAdditionalFooterContent()
   if self.ui.view then
     self.ui.view.footer:removeAdditionalFooterContent(self.additional_footer_content_func)
@@ -140,6 +160,7 @@ function AirPlaneMode:removeAdditionalFooterContent()
     UIManager:broadcastEvent(Event:new("UpdateFooter", true))
   end
 end
+
 --[[ settings ]]
 --
 function AirPlaneMode.initSettingsFile()

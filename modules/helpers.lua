@@ -1,7 +1,12 @@
+---@class H
+
 local lfs = require("libs/libkoreader-lfs")
 
 local H = {}
 
+---Check if path is a file
+---@param path string
+---@return boolean
 function H.isFile(path)
   if path and lfs.attributes(path, "mode") == "file" then
     return true
@@ -10,6 +15,9 @@ function H.isFile(path)
   end
 end
 
+---Check if path is a directory
+---@param path string
+---@return boolean
 function H.isDir(path)
   if path and lfs.attributes(path, "mode") == "directory" then
     return true
@@ -18,6 +26,11 @@ function H.isDir(path)
   end
 end
 
+---Remove file if it exists
+---This function signature intentionally matches existing usage: it may be called as `H.removeFile(path)`.
+---@param self? any
+---@param path string
+---@return boolean
 function H.removeFile(self, path)
   if H.isFile(path) then
     os.remove(path)
@@ -27,6 +40,9 @@ function H.removeFile(self, path)
   end
 end
 
+---Convert string "true"/"false" to boolean
+---@param v string
+---@return boolean|nil
 function H.stringto(v)
   if type(v) == "string" and v == "true" then
     return true
