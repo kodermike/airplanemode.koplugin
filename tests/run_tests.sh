@@ -11,9 +11,9 @@ HELPER="tests/luacov_helper.lua"
 if command -v busted >/dev/null 2>&1; then
   echo "Running tests with busted..."
   if [ -f "$HELPER" ]; then
-    busted --pattern "tests/" --verbose --helper "$HELPER"
+    busted "tests/" --verbose --helper "$HELPER"
   else
-    busted --pattern "tests/" --verbose
+    busted --verbose "tests/"
   fi
 else
   echo "busted not found. Install it with: luarocks install busted"

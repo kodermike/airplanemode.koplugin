@@ -45,4 +45,5 @@ ignore = {
     "231/__",  -- Ignore global variable '__'
     "631",     -- Ignore line length
     "dummy",   -- Ignore variables named 'dummy'
+    "---@*",      -- Ignore doc comments
 }

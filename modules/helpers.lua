@@ -28,10 +28,9 @@ end
 
 ---Remove file if it exists
 ---This function signature intentionally matches existing usage: it may be called as `H.removeFile(path)`.
----@param self? any
 ---@param path string
 ---@return boolean
-function H.removeFile(self, path)
+function H.removeFile(path)
   if H.isFile(path) then
     os.remove(path)
     return true
@@ -44,10 +43,10 @@ end
 ---@param v string
 ---@return boolean|nil
 function H.stringto(v)
-  if type(v) == "string" and v == "true" then
+  if type(v) == string and v == "true" then
     return true
   end
-  if type(v) == "string" and v == "false" then
+  if type(v) == string and v == "false" then
     return false
   end
   return nil
