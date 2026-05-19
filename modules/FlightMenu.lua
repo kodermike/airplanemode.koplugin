@@ -12,8 +12,6 @@ local _ = require("gettext")
 local APMConfig = require("modules/APMConfig")
 local settings = APMConfig:init()
 
-local F = require("modules/APMfooter")
-
 local P = require("modules/PluginManager")
 local U = require("modules/utilities")
 local UIManager = require("ui/uimanager")

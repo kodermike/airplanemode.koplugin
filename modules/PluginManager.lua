@@ -9,8 +9,6 @@ PluginManager module for AirplaneMode
 
 ---@class PluginManager
 
-local DataStorage = require("datastorage")
-local LuaSettings = require("luasettings")
 local PluginLoader = require("pluginloader")
 local ffiutil = require("ffi/util")
 

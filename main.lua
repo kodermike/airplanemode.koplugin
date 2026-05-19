@@ -9,6 +9,8 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
+local EventListener = require("ui/widget/eventlistener")
+
 local InfoMessage = require("ui/widget/infomessage")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
