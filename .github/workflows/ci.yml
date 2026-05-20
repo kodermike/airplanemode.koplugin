@@ -13,19 +13,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Lua and luarocks
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y lua5.3 luarocks
-          lua -v
-          luarocks --version
+      - name: Install leafo luarocks
+        uses: leafo/gh-actions-luarocks@v2
 
       - name: Install busted (test runner)
         run: |
-          luarocks install --local busted
-
-      - name: Add luarocks bin to PATH
-        run: echo "$HOME/.luarocks/bin" >> $GITHUB_PATH
+          luarocks install busted
 
       - name: Run tests
         run: sh tests/run_tests.sh
