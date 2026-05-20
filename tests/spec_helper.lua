@@ -255,7 +255,7 @@ local APMNetwork = {
 package.loaded["modules/APMNetwork"] = APMNetwork
 
 -- PluginManager mock
-local PluginManager = {
+local AirPlaneMode = {
   _disabled = {},
   disablePlugins = function(self, settings)
     self._disabled = true
@@ -263,7 +263,7 @@ local PluginManager = {
   enableCalibre = function() end,
   restorePluginSettings = function() end,
 }
-package.loaded["modules/PluginManager"] = PluginManager
+package.loaded["modules/PluginManager"] = AirPlaneMode
 
 -- FlightMenu mock
 package.loaded["modules/FlightMenu"] = { init = function(_, _) end }

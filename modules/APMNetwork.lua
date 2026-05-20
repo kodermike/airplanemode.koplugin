@@ -81,7 +81,9 @@ function APMNetwork:disableWifi()
     U:APMflipNilOrFalse("auto_restore_wifi", settings.koreader)
   end
 
-  if U:APMnilOrFalse("auto_disable_wifi", settings.koreader) then
+  -- https://github.com/koreader/koreader/issues/15397
+  -- Emulator can't have autodisable set to true or it crashes koreader
+  if U:APMnilOrFalse("auto_disable_wifi", settings.koreader) and not Device:isEmulator() then
     logger.dbg("AIRPLANEMODE: auto_disable_wifi is true, flipping")
     U:APMflipNilOrFalse("auto_disable_wifi", settings.koreader)
   end

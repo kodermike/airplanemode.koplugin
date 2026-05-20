@@ -1,15 +1,3 @@
----@class SettingsConfig
----@field koreader string
----@field backup string
----@field airplanemode string
----@field airplanemode_old string
----@field prev_config string
----@field koreader_plugins string
----@field airplane_plugins string
----@field icon_on string
----@field icon_off string
----@field version string
-
 ---@class Utilities
 
 local DataStorage = require("datastorage")

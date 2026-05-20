@@ -40,16 +40,18 @@ function H.removeFile(path)
 end
 
 ---Convert string "true"/"false" to boolean
----@param v string
----@return boolean|nil
-function H.stringto(v)
-  if type(v) == string and v == "true" then
-    return true
-  end
-  if type(v) == string and v == "false" then
-    return false
-  end
-  return nil
-end
+--- @ return boolean
+-- function H.stringto(v)
+--   if type(v) == "string" and v == "true" then
+--     return true
+--   end
+--   if type(v) == "string" and v == "false" then
+--     return false
+--   end
+--   if type(v) == "bolean" then
+--     return v
+--   end
+--   return false
+-- end
 
 return H

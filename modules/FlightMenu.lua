@@ -12,7 +12,7 @@ local _ = require("gettext")
 local APMConfig = require("modules/APMConfig")
 local settings = APMConfig:init()
 
-local P = require("modules/PluginManager")
+-- local P = require("modules/PluginManager")
 local U = require("modules/utilities")
 local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
@@ -25,6 +25,7 @@ local FlightMenu = {}
 ---@return nil
 function FlightMenu:init(menu_items, AirPlaneMode)
   local airmode = U:getStatus()
+  self.apm = AirPlaneMode
   menu_items.airplanemode = {
     text_func = function()
       if airmode then
@@ -52,17 +53,17 @@ function FlightMenu:init(menu_items, AirPlaneMode)
         callback = function()
           if airmode then
             --airplanemode = true
-            AirPlaneMode:Disable()
+            self.apm:Disable()
           else
             --airplanemode = false
-            AirPlaneMode:Enable()
+            self.apm:Enable()
           end
         end,
       },
       {
         text = _("Configuration"),
         sub_item_table_func = function()
-          return self:getConfigMenuItems(AirPlaneMode)
+          return self:getConfigMenuItems()
         end,
       },
     },
@@ -70,9 +71,8 @@ function FlightMenu:init(menu_items, AirPlaneMode)
 end
 
 ---Get configuration menu items
----@param AirPlaneMode table
 ---@return table
-function FlightMenu:getConfigMenuItems(AirPlaneMode)
+function FlightMenu:getConfigMenuItems()
   local airplane_config_table = {}
   local airmode = U:getStatus()
 
@@ -86,7 +86,7 @@ function FlightMenu:getConfigMenuItems(AirPlaneMode)
       text = _("Manage Builtin Plugins"),
       help_text = _("Checked plugins will be disabled when AirPlaneMode is enabled."),
       sub_item_table_func = function()
-        return self:PluginMenu(true, settings)
+        return self:PluginMenu(true)
       end,
     })
 
@@ -94,7 +94,7 @@ function FlightMenu:getConfigMenuItems(AirPlaneMode)
       text = _("Manage User Added Plugins"),
       help_text = _("Checked plugins will be disabled when AirPlaneMode is enabled."),
       sub_item_table_func = function()
-        return self:PluginMenu(false, settings)
+        return self:PluginMenu(false)
       end,
     })
   end
@@ -131,9 +131,9 @@ function FlightMenu:getConfigMenuItems(AirPlaneMode)
       self.show_value_in_footer = not self.show_value_in_footer
       U:saveAPMsetting("airplanemode_in_footer", self.show_value_in_footer, settings.airplanemode)
       if self.show_value_in_footer then
-        AirPlaneMode:addAdditionalFooterContent()
+        self.apm:addAdditionalFooterContent()
       else
-        AirPlaneMode:removeAdditionalFooterContent()
+        self.apm:removeAdditionalFooterContent()
       end
     end,
   })
@@ -190,9 +190,8 @@ end
 ---Build menu from plugin list
 ---@param builtin boolean
 ---@param plugin_list table
----@param settings table
 ---@return table
-function FlightMenu:menuBuilder(builtin, plugin_list, settings)
+function FlightMenu:menuBuilder(builtin, plugin_list)
   local airplane_plugin_table = {}
   -- Since we're in AirPlaneMode, and we skip AirPlaneMode, then a list of 0 is an empty list in this context
   if builtin == false and #plugin_list == 0 then
@@ -204,7 +203,7 @@ function FlightMenu:menuBuilder(builtin, plugin_list, settings)
     })
     return airplane_plugin_table
   end
-  local BUILTIN_PLUGINS = P:plugin_list()
+  local BUILTIN_PLUGINS = self.apm:plugin_list()
   for __, plugin in ipairs(plugin_list) do
     if (builtin == true and BUILTIN_PLUGINS[plugin.name]) or (builtin == false and not BUILTIN_PLUGINS[plugin.name]) then
       if plugin.name ~= "airplanemode" then
@@ -250,12 +249,11 @@ end
 ---Return plugin menu for builtin/user plugins
 ---@param self table
 ---@param builtin boolean
----@param settings table
 ---@return table
-function FlightMenu.PluginMenu(self, builtin, settings)
+function FlightMenu:PluginMenu(builtin)
   logger.dbg("AIRPLANEMODE: PluginMenu - builtin: ", builtin)
-  local plugin_list = P:getPlugins(builtin, settings)
-  local plugin_menu = self:menuBuilder(builtin, plugin_list, settings)
+  local plugin_list = self.apm:getPlugins(builtin, settings)
+  local plugin_menu = self:menuBuilder(builtin, plugin_list)
   return plugin_menu
 end
 

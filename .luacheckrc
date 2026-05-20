@@ -36,14 +36,14 @@ exclude_files = {
     "**/*.png",
     "**/*.jpg",
     ".github/*",
-    "tests/**",
+    "tests/*",
 }
 
 ignore = {
     "211/__*", -- Ignore unused local variables if they start with __
     "212/_",   -- Ignore unused arguments if named _
     "231/__",  -- Ignore global variable '__'
+    "231/it",  -- Ignore global variable 'it'
     "631",     -- Ignore line length
     "dummy",   -- Ignore variables named 'dummy'
-    "---@*",      -- Ignore doc comments
 }

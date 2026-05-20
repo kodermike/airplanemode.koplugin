@@ -1,3 +1,4 @@
+---@class WidgetContainer
 ---@class AirPlaneMode : WidgetContainer
 ---@field name string
 ---@field is_doc_only boolean
@@ -9,7 +10,6 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
-local EventListener = require("ui/widget/eventlistener")
 
 local InfoMessage = require("ui/widget/infomessage")
 local NetworkMgr = require("ui/network/manager")
@@ -27,7 +27,7 @@ local settings = APMConfig:init()
 local H = require("modules/helpers")
 local U = require("modules/utilities")
 local A = require("modules/APMNetwork")
-local P = require("modules/PluginManager")
+-- local P = require("modules/PluginManager")(AirPlaneMode)
 local M = require("modules/FlightMenu")
 
 local function restoreState()
@@ -72,6 +72,24 @@ local AirPlaneMode = WidgetContainer:extend({
   name = "airplanemode",
   is_doc_only = false,
 })
+
+local PluginManager = require("modules/PluginManager")
+if type(PluginManager) == "function" then
+  PluginManager(AirPlaneMode)
+elseif type(PluginManager) == "table" then
+  -- wrap functions from the mocked module so tests can replace them after requiring main
+  for k, v in pairs(PluginManager) do
+    if type(v) == "function" and AirPlaneMode[k] == nil then
+      AirPlaneMode[k] = function(...)
+        return PluginManager[k](...)
+      end
+    end
+  end
+end
+local APMfooter = require("modules/APMfooter")
+if type(APMfooter) == "function" then
+  APMfooter(AirPlaneMode)
+end
 
 ---Dump current on-disk airplanemode settings for debugging
 ---@return nil
@@ -130,37 +148,6 @@ function AirPlaneMode:init()
     self:addAdditionalFooterContent()
   end
   self.ui.menu:registerToMainMenu(self)
-end
-
---[[ footer ]]
---
-
----Refresh status bars footer content
----@return nil
-function AirPlaneMode:update_status_bars()
-  if self.show_value_in_footer then
-    UIManager:broadcastEvent(Event:new("RefreshAdditionalContent"))
-  end
-end
-
----Add additional content to reader footer
----@return nil
-function AirPlaneMode:addAdditionalFooterContent()
-  if self.ui.view then
-    self.ui.view.footer:addAdditionalFooterContent(self.additional_footer_content_func)
-    self:update_status_bars()
-    UIManager:broadcastEvent(Event:new("UpdateFooter", true))
-  end
-end
-
----Remove additional footer content
----@return nil
-function AirPlaneMode:removeAdditionalFooterContent()
-  if self.ui.view then
-    self.ui.view.footer:removeAdditionalFooterContent(self.additional_footer_content_func)
-    self:update_status_bars()
-    UIManager:broadcastEvent(Event:new("UpdateFooter", true))
-  end
 end
 
 --[[ settings ]]
@@ -229,13 +216,21 @@ function AirPlaneMode:migratesettings()
   end
 end
 -- hook for stopPlugin support
-function AirPlaneMode.stopPlugin()
+function AirPlaneMode:stopPlugin()
   logger.info("AIRPLANEMODE: stopPlugin called at ", os.time())
-  logger.dbg("AIRPLANEMODE: stopPlugin called at ", os.time(), "\nstack:\n", debug.traceback())
-  -- restore plugin settings
-  P:restorePluginSettings(settings)
-  -- disable airplanemode in settings
-  U:toggleAirPlaneMode(false)
+  self:Disable()
+
+  -- -- restore plugin settings
+  -- self:restorePluginSettings(settings)
+  -- -- disable airplanemode in settings
+  -- U:toggleAirPlaneMode(false)
+end
+-- expose non-method API (some callers invoke stopPlugin() without a self)
+local _method_stopPlugin = AirPlaneMode.stopPlugin
+if type(_method_stopPlugin) == "function" then
+  AirPlaneMode.stopPlugin = function()
+    return _method_stopPlugin(AirPlaneMode)
+  end
 end
 
 -- hook for deleteplugin calls
@@ -281,7 +276,7 @@ function AirPlaneMode:Enable()
     end
 
     logger.dbg("AIRPLANEMODE: disabling plugins")
-    P:disablePlugins(settings)
+    self:disablePlugins(settings)
     -- exclude anything without getNetworkInterfaceName - like android - since we can't control their wifi
     if
       (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator())
@@ -362,7 +357,7 @@ function AirPlaneMode:Disable()
     A:reenableWifi()
   end
 
-  P:enableCalibre(settings)
+  self:enableCalibre(settings)
 
   logger.dbg("AIRPLANEMODE: Reading APM plugins")
   local apm_disabled = U:readAPMplugins(settings.koreader_plugins, settings.airplanemode)
@@ -394,7 +389,7 @@ function AirPlaneMode:Disable()
   end
 
   logger.dbg("AIRPLANEMODE: restoring plugin settings")
-  P:restorePluginSettings(settings)
+  self:restorePluginSettings(settings)
   -- remove the backup settings file
 
   logger.dbg("AIRPLANEMODE: removing backup settings file")
