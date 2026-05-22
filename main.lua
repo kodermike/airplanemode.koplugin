@@ -6,6 +6,7 @@
 ---@field additional_footer_content_func function|nil
 ---@field show_value_in_footer boolean|nil
 
+--FIXME: test
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
@@ -15,8 +16,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local ffiutil = require("ffi/util")
-local T = ffiutil.template
 local logger = require("logger")
 local _ = require("gettext")
 

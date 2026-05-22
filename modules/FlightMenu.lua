@@ -234,7 +234,6 @@ function FlightMenu:menuBuilder(builtin, plugin_list)
             end
             U:saveAPMplugins(cp, settings.airplanemode)
             -- Broadcast a UI update so menus/checkboxes refresh
-            local UIManager = require("ui/uimanager")
             local Event = require("ui/event")
             UIManager:broadcastEvent(Event:new("UpdateMenu", true))
           end,

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+red=$(tput setaf 1)
+yellow=$(tput setaf 3)
+green=$(tput setaf 2)
+reset=$(tput sgr0)
+
+# # Confirm basic tests pass
+# TESTS="tests/run_tests.sh"
+
+# if [ ! -f "${TESTS}" ] || [ ! -x "${TESTS}" ] || [ "$($TESTS)" != "0" ]; then
+#   printf "%10s\n" "${red}Tests failed. Commit aborted.${reset}"
+#   exit 1
+# fi
+
+# luacheck -r *.lua
+if ! luacheck .; then
+  printf "%10s\n" "${red}luacheck failed. Commit aborted.${reset}"
+  exit 1
+fi

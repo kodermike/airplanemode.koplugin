@@ -1,6 +1,5 @@
 ---@class Utilities
 
-local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
 local logger = require("logger")
 local ffiutil = require("ffi/util")
@@ -39,7 +38,7 @@ end
 ---@param settings_file string
 ---@return boolean
 function Utilities:saveAPMplugins(plugin_list, settings_file)
-  if not plugin_list or not type(plugin_list) == "table" then
+  if not plugin_list or type(plugin_list) ~= "table" then
     logger.err("AIRPLANEMODE: plugin_list is not a table, cannot save")
     return false
   end

@@ -6,15 +6,28 @@ ROOT_DIR=$(cd "$(dirname "$0")/.." && pwd)
 LUA_PATH="$ROOT_DIR/?.lua;$ROOT_DIR/modules/?.lua;;"
 export LUA_PATH
 
+red=$(tput setaf 1)
+yellow=$(tput setaf 3)
+green=$(tput setaf 2)
+reset=$(tput sgr0)
+
 HELPER="tests/luacov_helper.lua"
 
 if command -v busted >/dev/null 2>&1; then
-  echo "Running tests with busted..."
+  printf "%10s\n" "${yellow}Running tests with busted...${reset}"
   if [ -f "$HELPER" ]; then
-    busted "tests/" --verbose --helper "$HELPER"
+    CMD="busted --verbose --helper ${HELPER}"
   else
-    busted --verbose "tests/"
+    CMD="busted --verbose"
   fi
+  for x in $(ls tests/*.lua); do
+    echo ""
+    printf "%10s\n" "${green}----------------------------------------------------------${reset}"
+    printf "%10s\n" "${green}${x}${reset}"
+    echo ""
+    $CMD $x
+  done
+  $CMD tests/
 else
   echo "busted not found. Install it with: luarocks install busted"
   exit 1

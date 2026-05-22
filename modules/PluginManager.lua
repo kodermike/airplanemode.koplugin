@@ -10,18 +10,12 @@ PluginManager module for AirplaneMode
 ---@class PluginManager
 
 local PluginLoader = require("pluginloader")
-local ffiutil = require("ffi/util")
 
 local U = require("modules/utilities")
-local T = ffiutil.template
 
 local logger = require("logger")
 local _ = require("gettext")
 
-local H = require("modules/helpers")
--- local U = require("modules/utilities")
-
--- local PluginManager = {}
 return function(AirPlaneMode)
   function AirPlaneMode:plugin_list()
     return {

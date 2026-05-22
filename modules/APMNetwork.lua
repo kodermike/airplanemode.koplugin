@@ -2,7 +2,6 @@
 
 local logger = require("logger")
 local Device = require("device")
-local LuaSettings = require("luasettings")
 local NetworkMgr = require("ui/network/manager")
 
 local APMConfig = require("modules/APMConfig")
@@ -50,7 +49,7 @@ function APMNetwork:reenableWifi()
     logger.dbg("AIRPLANEMODE: Saving emulator_fake_wifi_connected setting: ", U:readAPMsetting("emulator_fake_wifi_connected", settings.backup))
     local old_emulator_fake_wifi_connected = U:readAPMsetting("emulator_fake_wifi_connected", settings.backup) or nil
     -- flip the real config
-    if not old_emulator_fake_wifi_connected == nil then
+    if old_emulator_fake_wifi_connected ~= nil then
       U:saveAPMsetting("emulator_fake_wifi_connected", old_emulator_fake_wifi_connected, settings.koreader)
     end
   end

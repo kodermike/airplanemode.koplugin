@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+red=$(tput setaf 1)
+yellow=$(tput setaf 3)
+green=$(tput setaf 2)
+reset=$(tput sgr0)
+
+# # Confirm basic tests pass
+TESTS="tests/run_tests.sh"
+
+if [ ! -f "${TESTS}" ] || [ ! -x "${TESTS}" ]; then
+  printf "%10s\n" "${red}TESTS ARE MISSING.${reset}"
+  exit 1
+fi
+
+tests/run_tests.sh
