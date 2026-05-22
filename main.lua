@@ -6,7 +6,6 @@
 ---@field additional_footer_content_func function|nil
 ---@field show_value_in_footer boolean|nil
 
---FIXME: test
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
