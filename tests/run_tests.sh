@@ -18,10 +18,17 @@ cleanup() {
 }
 trap cleanup EXIT
 
-red=$(tput setaf 1)
-yellow=$(tput setaf 3)
-green=$(tput setaf 2)
-reset=$(tput sgr0)
+if [ -t 1 ]; then
+  red=$(tput setaf 1)
+  yellow=$(tput setaf 3)
+  green=$(tput setaf 2)
+  reset=$(tput sgr0)
+else
+  red=""
+  yellow=""
+  green=""
+  reset=""
+fi
 
 HELPER="tests/luacov_helper.lua"
 
