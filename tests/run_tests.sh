@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # run_tests.sh - runs the plugin test suite using busted and optionally luacov
-set -eo pipefail
+set -e
 
 ROOT_DIR=$(cd "$(dirname "$0")/.." && pwd)
 # prepend plugin paths so require can find modules
