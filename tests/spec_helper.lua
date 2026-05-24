@@ -2,7 +2,7 @@
 -- Test environment for AirPlaneMode plugin.
 -- Sets up minimal mocks for KOReader modules and utilities so tests can run without a full KOReader checkout.
 
-local plugin_root = ".."
+local plugin_root = "."
 local tmp_dir = plugin_root .. "/tests/tmp"
 -- ensure tmp dir exists
 os.execute("mkdir -p " .. tmp_dir)
@@ -13,6 +13,12 @@ package.path = package.path .. ";" .. plugin_root .. "/?.lua;" .. plugin_root ..
 -- Provide a minimal lfs attributes stub used by modules/helpers
 package.loaded["libs/libkoreader-lfs"] = {
   attributes = function(path, mode)
+    local function exists(name)
+      if type(name) ~= "string" then
+        return false
+      end
+      return os.rename(name, name) and true or false
+    end
     if not path then
       return nil
     end
@@ -25,16 +31,24 @@ package.loaded["libs/libkoreader-lfs"] = {
       else
         return { mode = "file" }
       end
-    end
-    -- if path ends with '/' treat as directory
-    if string.sub(path, -1) == "/" then
-      if mode == "mode" then
-        return "directory"
-      else
-        return { mode = "directory" }
+    else
+      if exists(path) then
+        if mode == "mode" then
+          return "directory"
+        else
+          return { mode = "directory" }
+        end
       end
+      -- if path ends with '/' treat as directory
+      if string.sub(path, -1) == "/" then
+        if mode == "mode" then
+          return "directory"
+        else
+          return { mode = "directory" }
+        end
+      end
+      return nil
     end
-    return nil
   end,
 }
 
@@ -137,7 +151,6 @@ local WidgetContainer = {
   end,
 }
 package.loaded["ui/widget/container/widgetcontainer"] = WidgetContainer
-
 -- Minimal APMConfig
 local APMConfig = {}
 function APMConfig:init()
@@ -269,11 +282,50 @@ package.loaded["modules/PluginManager"] = AirPlaneMode
 package.loaded["modules/FlightMenu"] = { init = function(_, _) end }
 
 -- expose a small helper to reset mocked state between tests
+local function keep_tmp_dir()
+  -- first check environment variable
+  local env = os.getenv("KEEP_TEST_TMP")
+  if env ~= nil then
+    env = tostring(env):lower()
+    return not (env == "" or env == "0" or env == "false" or env == "no")
+  end
+  -- then check a Lua global if set
+  if _G and _G.KEEP_TEST_TMP ~= nil then
+    local v = _G.KEEP_TEST_TMP
+    if type(v) == "boolean" then
+      return v
+    end
+    v = tostring(v):lower()
+    return not (v == "" or v == "0" or v == "false" or v == "no")
+  end
+  return false
+end
+
+local function rm_rf_inside(dir)
+  -- remove everything inside dir but keep dir itself
+  -- safe POSIX removal; redirect errors to /dev/null
+  local cmd = string.format('rm -rf "%s"/* "%s"/.[!.]* "%s"/..?* 2>/dev/null || true', dir, dir, dir)
+  os.execute(cmd)
+end
+
+local function ensure_dir(dir)
+  os.execute("mkdir -p " .. dir)
+end
+
 local M = {
   reset = function()
+    -- reset in-memory state
     Dispatcher:reset()
     storage = {}
     package.loaded["modules/utilities"] = U
+
+    -- remove tmp dir unless tests request to keep it
+    if not keep_tmp_dir() then
+      os.execute('rm -rf "' .. tmp_dir .. '" 2>/dev/null || true')
+    end
+
+    -- recreate tmp dir for next test
+    ensure_dir(tmp_dir)
   end,
   tmp_dir = tmp_dir,
   Dispatcher = Dispatcher,

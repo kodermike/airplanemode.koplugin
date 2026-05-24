@@ -1,10 +1,22 @@
 #!/usr/bin/env sh
 # run_tests.sh - runs the plugin test suite using busted and optionally luacov
-set -e
+set -eo pipefail
+
 ROOT_DIR=$(cd "$(dirname "$0")/.." && pwd)
 # prepend plugin paths so require can find modules
 LUA_PATH="$ROOT_DIR/?.lua;$ROOT_DIR/modules/?.lua;;"
 export LUA_PATH
+
+# tmp dir for tests
+TMP_DIR="$ROOT_DIR/tests/tmp"
+mkdir -p "$TMP_DIR"
+
+cleanup() {
+  if [ -z "$KEEP_TEST_TMP" ]; then
+    rm -rf "$TMP_DIR" 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT
 
 red=$(tput setaf 1)
 yellow=$(tput setaf 3)
@@ -13,6 +25,8 @@ reset=$(tput sgr0)
 
 HELPER="tests/luacov_helper.lua"
 
+VERBOSITY="$1"
+
 if command -v busted >/dev/null 2>&1; then
   printf "%10s\n" "${yellow}Running tests with busted...${reset}"
   if [ -f "$HELPER" ]; then
@@ -20,14 +34,17 @@ if command -v busted >/dev/null 2>&1; then
   else
     CMD="busted --verbose"
   fi
-  for x in $(ls tests/*.lua); do
-    echo ""
-    printf "%10s\n" "${green}----------------------------------------------------------${reset}"
-    printf "%10s\n" "${green}${x}${reset}"
-    echo ""
-    $CMD $x
-  done
-  $CMD tests/
+  if [ -z "$VERBOSITY" ]; then
+    $CMD tests/
+  else
+    for x in tests/*.lua; do
+      if [ ! -e "$x" ]; then break; fi
+      printf "%10s\n" "${green}----------------------------------------------------------${reset}"
+      printf "%10s\n" "${green}${x}${reset}"
+      $CMD $x
+      echo ""
+    done
+  fi
 else
   echo "busted not found. Install it with: luarocks install busted"
   exit 1

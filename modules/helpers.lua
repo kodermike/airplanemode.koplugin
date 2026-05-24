@@ -1,6 +1,7 @@
 ---@class H
 
-local lfs = require("libs/libkoreader-lfs")
+-- local lfs = require("libs/libkoreader-lfs")
+local lfs = require("lfs")
 
 local H = {}
 
@@ -8,22 +9,28 @@ local H = {}
 ---@param path string
 ---@return boolean
 function H.isFile(path)
-  if path and lfs.attributes(path, "mode") == "file" then
-    return true
-  else
+  if type(path) ~= "string" then
     return false
   end
+  if not H.isDir(path) then
+    return os.rename(path, path) and true or false
+    -- note that the short evaluation is to
+    -- return false instead of a possible nil
+  end
+  return false
 end
 
 ---Check if path is a directory
 ---@param path string
 ---@return boolean
 function H.isDir(path)
-  if path and lfs.attributes(path, "mode") == "directory" then
-    return true
-  else
+  if type(path) ~= "string" then
     return false
   end
+  local cd = lfs.currentdir()
+  local is = lfs.chdir(path) and true or false
+  lfs.chdir(cd)
+  return is
 end
 
 ---Remove file if it exists

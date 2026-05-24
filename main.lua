@@ -25,7 +25,6 @@ local settings = APMConfig:init()
 local H = require("modules/helpers")
 local U = require("modules/utilities")
 local A = require("modules/APMNetwork")
--- local P = require("modules/PluginManager")(AirPlaneMode)
 local M = require("modules/FlightMenu")
 
 local function restoreState()
@@ -217,11 +216,6 @@ end
 function AirPlaneMode:stopPlugin()
   logger.info("AIRPLANEMODE: stopPlugin called at ", os.time())
   self:Disable()
-
-  -- -- restore plugin settings
-  -- self:restorePluginSettings(settings)
-  -- -- disable airplanemode in settings
-  -- U:toggleAirPlaneMode(false)
 end
 -- expose non-method API (some callers invoke stopPlugin() without a self)
 local _method_stopPlugin = AirPlaneMode.stopPlugin
@@ -283,7 +277,6 @@ function AirPlaneMode:Enable()
       logger.dbg("AIRPLANEMODE: disabling wifi")
       A:disableWifi()
     end
-    ----- temp
     -- mark airplane as active
     logger.dbg("AIRPLANEMODE: marking airplane as active")
     self.dumpSettings()
@@ -317,8 +310,6 @@ function AirPlaneMode:Enable()
             UIManager:broadcastEvent(Event:new("Restart"))
           end,
         }))
-
-        -- UIManager:askForRestart(_("KOReader needs to restart to finish applying changes for AirPlaneMode."))
       else
         logger.dbg("AIRPLANEMODE: dump with silentmode")
         self.dumpSettings()
