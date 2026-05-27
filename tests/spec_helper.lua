@@ -11,46 +11,80 @@ os.execute("mkdir -p " .. tmp_dir)
 package.path = package.path .. ";" .. plugin_root .. "/?.lua;" .. plugin_root .. "/modules/?.lua;./?.lua"
 
 -- Provide a minimal lfs attributes stub used by modules/helpers
-package.loaded["libs/libkoreader-lfs"] = {
-  attributes = function(path, mode)
-    local function exists(name)
-      if type(name) ~= "string" then
-        return false
-      end
-      return os.rename(name, name) and true or false
-    end
-    if not path then
-      return nil
-    end
-    -- check for file
-    local fh = io.open(path, "r")
-    if fh then
-      fh:close()
-      if mode == "mode" then
-        return "file"
-      else
-        return { mode = "file" }
-      end
+local _lfs = {}
+_lfs._curdir = tmp_dir
+
+_lfs.attributes = function(path, mode)
+  if not path then
+    return nil
+  end
+  if type(path) ~= "string" then
+    return nil
+  end
+  -- Prefer shell checks for file/directory detection since io.open may
+  -- behave inconsistently for directories. Using 'test -d'/'test -f'
+  -- works across environments the tests run in.
+  local quote = function(s)
+    return s:gsub('"', '\\"')
+  end
+  local cmd = string.format('if [ -d "%s" ]; then echo DIR; elif [ -f "%s" ]; then echo FILE; fi', quote(path), quote(path))
+  local p = io.popen(cmd)
+  if not p then
+    return nil
+  end
+  local res = p:read("*a") or ""
+  p:close()
+  if string.find(res, "DIR") then
+    if mode == "mode" then
+      return "directory"
     else
-      if exists(path) then
-        if mode == "mode" then
-          return "directory"
-        else
-          return { mode = "directory" }
-        end
-      end
-      -- if path ends with '/' treat as directory
-      if string.sub(path, -1) == "/" then
-        if mode == "mode" then
-          return "directory"
-        else
-          return { mode = "directory" }
-        end
-      end
-      return nil
+      return { mode = "directory" }
     end
-  end,
-}
+  elseif string.find(res, "FILE") then
+    if mode == "mode" then
+      return "file"
+    else
+      return { mode = "file" }
+    end
+  end
+  -- fallback: treat paths ending with '/' as directory
+  if string.sub(path, -1) == "/" then
+    if mode == "mode" then
+      return "directory"
+    else
+      return { mode = "directory" }
+    end
+  end
+  return nil
+end
+
+_lfs.currentdir = function()
+  return _lfs._curdir
+end
+
+_lfs.chdir = function(path)
+  if type(path) ~= "string" then
+    return nil
+  end
+  -- treat '.' as success
+  if path == "." then
+    return true
+  end
+  -- if attributes says directory, accept
+  local attr = _lfs.attributes(path)
+  if attr and ((type(attr) == "string" and attr == "directory") or (type(attr) == "table" and attr.mode == "directory")) then
+    _lfs._curdir = path
+    return true
+  end
+  -- accept paths that end with '/'
+  if string.sub(path, -1) == "/" then
+    _lfs._curdir = path
+    return true
+  end
+  return false
+end
+
+package.loaded["libs/libkoreader-lfs"] = _lfs
 
 -- Simple logger mock
 local logger = {
@@ -318,6 +352,8 @@ local M = {
     Dispatcher:reset()
     storage = {}
     package.loaded["modules/utilities"] = U
+    -- restore lfs mock so tests that override it don't leak between tests
+    package.loaded["libs/libkoreader-lfs"] = _lfs
 
     -- remove tmp dir unless tests request to keep it
     if not keep_tmp_dir() then

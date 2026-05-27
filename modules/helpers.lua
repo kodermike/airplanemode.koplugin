@@ -1,7 +1,6 @@
 ---@class H
 
--- local lfs = require("libs/libkoreader-lfs")
-local lfs = require("lfs")
+local lfs = require("libs/libkoreader-lfs")
 
 local H = {}
 
@@ -27,10 +26,29 @@ function H.isDir(path)
   if type(path) ~= "string" then
     return false
   end
-  local cd = lfs.currentdir()
-  local is = lfs.chdir(path) and true or false
-  lfs.chdir(cd)
-  return is
+  -- Prefer using attributes to detect directories so tests can provide
+  -- minimal lfs mocks that only implement attributes. This avoids
+  -- relying on currentdir/chdir being present.
+  local mode = nil
+  if type(lfs.attributes) == "function" then
+    -- ask for mode first (some mocks return a string when passed "mode")
+    local ok, m = pcall(lfs.attributes, path, "mode")
+    if ok then
+      mode = m
+    else
+      -- fallback: try without "mode"
+      local ok2, t = pcall(lfs.attributes, path)
+      if ok2 and type(t) == "table" then
+        mode = t.mode
+      end
+    end
+  end
+  if mode == "directory" then
+    return true
+  elseif mode == "file" then
+    return false
+  end
+  return false
 end
 
 ---Remove file if it exists
