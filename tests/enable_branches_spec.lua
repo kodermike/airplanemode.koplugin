@@ -8,7 +8,7 @@ describe("Enable/Disable branches and edge conditions", function()
 
   it("Enable should restartKOReader when silentmode is true, otherwise show ConfirmBox", function()
     local AP = require("main")
-    local settings = require("modules/APMConfig"):init()
+    local settings = require("flight_config"):init()
 
     -- prepare instance
     local inst = AP:new({ name = "airplanemode" })
@@ -29,24 +29,24 @@ describe("Enable/Disable branches and edge conditions", function()
     end
 
     -- case 1: silentmode = true -> restartKOReader called
-    U:saveAPMsetting("silentmode", true, settings.airplanemode)
+    U:saveFlightsetting("silentmode", true, settings.airplanemode)
     -- ensure backup will succeed
-    if package.loaded["modules/helpers"].isFile(settings.backup) then
-      package.loaded["modules/helpers"].removeFile(settings.backup)
+    if package.loaded["utils/flight_helpers"].isFile(settings.backup) then
+      package.loaded["utils/flight_helpers"].removeFile(settings.backup)
     end
     inst:Enable()
     assert.is_true(restarted)
 
     -- case 2: silentmode = false -> UIManager.show called (ConfirmBox)
     restarted = false
-    U:saveAPMsetting("silentmode", false, settings.airplanemode)
+    U:saveFlightsetting("silentmode", false, settings.airplanemode)
     inst:Enable()
     assert.is_not_nil(ui.last_shown)
   end)
 
   it("managewifi setting prevents disabling wifi when explicitly true", function()
     local AP = require("main")
-    local settings = require("modules/APMConfig"):init()
+    local settings = require("flight_config"):init()
     local inst = AP:new({ name = "airplanemode" })
     inst.ui = {
       saveSettings = function() end,
@@ -55,21 +55,21 @@ describe("Enable/Disable branches and edge conditions", function()
     }
 
     -- ensure managewifi true in airplanemode -> should prevent disableWifi
-    U:saveAPMsetting("managewifi", true, settings.airplanemode)
+    U:saveFlightsetting("managewifi", true, settings.airplanemode)
     -- reset network disabled flag
-    package.loaded["modules/APMNetwork"]._disabled = false
+    package.loaded["modules/FlightNetwork"]._disabled = false
     inst:Enable()
-    assert.is_false(package.loaded["modules/APMNetwork"]._disabled)
+    assert.is_false(package.loaded["modules/FlightNetwork"]._disabled)
 
     -- now unset managewifi -> should disable wifi
-    U:delAPMsetting("managewifi", settings.airplanemode)
+    U:delFlightsetting("managewifi", settings.airplanemode)
     inst:Enable()
-    assert.is_true(package.loaded["modules/APMNetwork"]._disabled)
+    assert.is_true(package.loaded["modules/FlightNetwork"]._disabled)
   end)
 
   it("handles device cannot restart branch when disabling/enabling", function()
     local AP = require("main")
-    local settings = require("modules/APMConfig"):init()
+    local settings = require("flight_config"):init()
     -- override device to not allow restart
     package.loaded["device"] = {
       isEmulator = function()
@@ -97,8 +97,8 @@ describe("Enable/Disable branches and edge conditions", function()
     end
 
     -- ensure backup exists removal path
-    if package.loaded["modules/helpers"].isFile(settings.backup) then
-      package.loaded["modules/helpers"].removeFile(settings.backup)
+    if package.loaded["utils/flight_helpers"].isFile(settings.backup) then
+      package.loaded["utils/flight_helpers"].removeFile(settings.backup)
     end
 
     inst:Enable()
@@ -113,7 +113,7 @@ describe("Enable/Disable branches and edge conditions", function()
 
   it("does not enable airplane mode if backup fails", function()
     local AP = require("main")
-    local settings = require("modules/APMConfig"):init()
+    local settings = require("flight_config"):init()
     local inst = AP:new({ name = "airplanemode" })
     inst.ui = {
       saveSettings = function() end,
@@ -126,7 +126,7 @@ describe("Enable/Disable branches and edge conditions", function()
       return false
     end
     -- ensure airplanemode not active
-    U:delAPMsetting("airplanemode", nil)
+    U:delFlightsetting("airplanemode", nil)
     inst:Enable()
     assert.is_true(not U:getStatus())
   end)

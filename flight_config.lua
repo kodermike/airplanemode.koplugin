@@ -10,7 +10,7 @@
 ---@field icon_off string
 ---@field version string
 
----@class APMConfig
+---@class FlightConfig
 ---@field show_info boolean
 ---@field enabled_plugins table|nil
 ---@field disabled_plugins table|nil
@@ -20,7 +20,7 @@
 local DataStorage = require("datastorage")
 local meta = require("_meta")
 
-local APMConfig = {
+local FlightConfig = {
   show_info = true,
   enabled_plugins = nil,
   disabled_plugins = nil,
@@ -30,7 +30,7 @@ local APMConfig = {
 
 ---Return base config file locations
 ---@return SettingsConfig
-function APMConfig:init()
+function FlightConfig:init()
   local settings_file = DataStorage:getDataDir() .. "/settings.reader.lua"
   local settings_bk = DataStorage:getDataDir() .. "/settings.reader.lua.airplane"
   local airplanemode_config = DataStorage:getDataDir() .. "/settings/airplanemode.lua"
@@ -51,4 +51,4 @@ function APMConfig:init()
   }
 end
 
-return APMConfig
+return FlightConfig

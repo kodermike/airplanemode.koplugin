@@ -2,5 +2,5 @@ local _ = require("gettext")
 return {
   fullname = _("AirPlaneMode"),
   description = _([[This plugin adds an AirPlaneMode.]]),
-  version = "1.2.2",
+  version = "2.0.0",
 }

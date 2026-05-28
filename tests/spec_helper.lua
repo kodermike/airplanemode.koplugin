@@ -10,7 +10,7 @@ os.execute("mkdir -p " .. tmp_dir)
 -- Make sure our modules are found
 package.path = package.path .. ";" .. plugin_root .. "/?.lua;" .. plugin_root .. "/modules/?.lua;./?.lua"
 
--- Provide a minimal lfs attributes stub used by modules/helpers
+-- Provide a minimal lfs attributes stub used by utils/flight_helpers
 local _lfs = {}
 _lfs._curdir = tmp_dir
 
@@ -185,9 +185,9 @@ local WidgetContainer = {
   end,
 }
 package.loaded["ui/widget/container/widgetcontainer"] = WidgetContainer
--- Minimal APMConfig
-local APMConfig = {}
-function APMConfig:init()
+-- Minimal FlightConfig
+local FlightConfig = {}
+function FlightConfig:init()
   local s = {
     airplanemode = tmp_dir .. "/airplanemode.lua",
     airplanemode_old = tmp_dir .. "/airplanemode.lua.old",
@@ -201,7 +201,7 @@ function APMConfig:init()
   }
   return s
 end
-package.loaded["modules/APMConfig"] = APMConfig
+package.loaded["flight_config"] = FlightConfig
 
 -- helpers module
 local H = {
@@ -217,7 +217,7 @@ local H = {
     os.remove(path)
   end,
 }
-package.loaded["modules/helpers"] = H
+package.loaded["utils/flight_helpers"] = H
 
 -- Utilities module (U) - simple in-memory settings storage
 local U = {}
@@ -227,41 +227,41 @@ local function key_path(key, file)
   return (file or "memory") .. ":" .. tostring(key)
 end
 
-function U:readAPMsetting(key, file)
+function U:readFlightsetting(key, file)
   return storage[key_path(key, file)]
 end
-function U:saveAPMsetting(key, val, file)
+function U:saveFlightsetting(key, val, file)
   storage[key_path(key, file)] = val
 end
-function U:delAPMsetting(key, file)
+function U:delFlightsetting(key, file)
   storage[key_path(key, file)] = nil
 end
-function U:APMhas(key, file)
-  return U:readAPMsetting(key, file) ~= nil
+function U:Flighthas(key, file)
+  return U:readFlightsetting(key, file) ~= nil
 end
-function U:APMisTrue(key, file)
-  return U:readAPMsetting(key, file) == true
+function U:FlightisTrue(key, file)
+  return U:readFlightsetting(key, file) == true
 end
-function U:APMisFalse(key, file)
-  return U:readAPMsetting(key, file) == false
+function U:FlightisFalse(key, file)
+  return U:readFlightsetting(key, file) == false
 end
-function U:APMnilOrTrue(key, file)
-  local v = U:readAPMsetting(key, file)
+function U:FlightnilOrTrue(key, file)
+  local v = U:readFlightsetting(key, file)
   return v == nil or v == true
 end
-function U:APMnilOrFalse(key, file)
-  local v = U:readAPMsetting(key, file)
+function U:FlightnilOrFalse(key, file)
+  local v = U:readFlightsetting(key, file)
   return v == nil or v == false
 end
-function U:APMhasNot(key, file)
-  return not U:APMhas(key, file)
+function U:FlighthasNot(key, file)
+  return not U:Flighthas(key, file)
 end
 
-function U:readAPMplugins(key, file)
-  return U:readAPMsetting(key, file)
+function U:readFlightplugins(key, file)
+  return U:readFlightsetting(key, file)
 end
-function U:saveAPMplugins(tbl, file)
-  U:saveAPMsetting("plugins_disabled", tbl, file)
+function U:saveFlightplugins(tbl, file)
+  U:saveFlightsetting("plugins_disabled", tbl, file)
 end
 
 function U:backup(src, dst)
@@ -275,23 +275,23 @@ function U:backup(src, dst)
 end
 
 function U:toggleAirPlaneMode(val)
-  U:saveAPMsetting("airplanemode", val, nil)
+  U:saveFlightsetting("airplanemode", val, nil)
 end
 function U:getStatus()
-  return U:readAPMsetting("airplanemode", nil)
+  return U:readFlightsetting("airplanemode", nil)
 end
 
-function U:APMmakeTrue(key, file)
-  U:saveAPMsetting(key, true, file)
+function U:FlightmakeTrue(key, file)
+  U:saveFlightsetting(key, true, file)
 end
-function U:APMmakeFalse(key, file)
-  U:saveAPMsetting(key, false, file)
+function U:FlightmakeFalse(key, file)
+  U:saveFlightsetting(key, false, file)
 end
 
-package.loaded["modules/utilities"] = U
+package.loaded["utils/flight_utilities"] = U
 
--- APMNetwork mock
-local APMNetwork = {
+-- FlightNetwork mock
+local FlightNetwork = {
   disableWifi = function(self)
     self._disabled = true
   end,
@@ -299,7 +299,7 @@ local APMNetwork = {
     self._disabled = false
   end,
 }
-package.loaded["modules/APMNetwork"] = APMNetwork
+package.loaded["modules/FlightNetwork"] = FlightNetwork
 
 -- PluginManager mock
 local AirPlaneMode = {
@@ -310,10 +310,10 @@ local AirPlaneMode = {
   enableCalibre = function() end,
   restorePluginSettings = function() end,
 }
-package.loaded["modules/PluginManager"] = AirPlaneMode
+package.loaded["flight_plugins"] = AirPlaneMode
 
 -- FlightMenu mock
-package.loaded["modules/FlightMenu"] = { init = function(_, _) end }
+package.loaded["flight_menu"] = { init = function(_, _) end }
 
 -- expose a small helper to reset mocked state between tests
 local function keep_tmp_dir()
@@ -351,7 +351,7 @@ local M = {
     -- reset in-memory state
     Dispatcher:reset()
     storage = {}
-    package.loaded["modules/utilities"] = U
+    package.loaded["utils/flight_utilities"] = U
     -- restore lfs mock so tests that override it don't leak between tests
     package.loaded["libs/libkoreader-lfs"] = _lfs
 

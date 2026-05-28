@@ -4,9 +4,9 @@ local LuaSettings = require("luasettings")
 local logger = require("logger")
 local ffiutil = require("ffi/util")
 
-local APMConfig = require("modules/APMConfig")
-local settings = APMConfig:init()
-local H = require("modules/helpers")
+local FlightConfig = require("flight_config")
+local settings = FlightConfig:init()
+local H = require("utils/flight_helpers")
 
 local Utilities = {}
 
@@ -25,8 +25,8 @@ end
 ---@param listname string
 ---@param settings_file string
 ---@return table<string, boolean>
-function Utilities:readAPMplugins(listname, settings_file)
-  logger.dbg("AIRPLANEMODE: readAPMplugins - reading plugins from ", settings_file)
+function Utilities:readFlightplugins(listname, settings_file)
+  logger.dbg("AIRPLANEMODE: readFlightplugins - reading plugins from ", settings_file)
   local config = sethandler(settings_file)
   local disabled_plugins = config:readSetting(listname) or {}
   config:close()
@@ -37,7 +37,7 @@ end
 ---@param plugin_list table<string, boolean>
 ---@param settings_file string
 ---@return boolean
-function Utilities:saveAPMplugins(plugin_list, settings_file)
+function Utilities:saveFlightplugins(plugin_list, settings_file)
   if not plugin_list or type(plugin_list) ~= "table" then
     logger.err("AIRPLANEMODE: plugin_list is not a table, cannot save")
     return false
@@ -53,14 +53,14 @@ end
 ---@param object string
 ---@param settings_file string
 ---@return any
-function Utilities:readAPMsetting(object, settings_file)
+function Utilities:readFlightsetting(object, settings_file)
   if not object then
-    logger.err("AIRPLANEMODE: readAPMsetting - object sent is nil, cannot read")
+    logger.err("AIRPLANEMODE: readFlightsetting - object sent is nil, cannot read")
     return false
   end
   local config = sethandler(settings_file)
   local setting = config:readSetting(object) or nil
-  logger.dbg("AIRPLANEMODE: readAPMsetting - object: ", object, " = ", setting)
+  logger.dbg("AIRPLANEMODE: readFlightsetting - object: ", object, " = ", setting)
   config:close()
   return setting
 end
@@ -70,20 +70,20 @@ end
 ---@param value any
 ---@param settings_file string
 ---@return boolean
-function Utilities:saveAPMsetting(object, value, settings_file)
+function Utilities:saveFlightsetting(object, value, settings_file)
   if not object then
-    logger.err("AIRPLANEMODE: saveAPMsetting - object sent is nil, cannot save")
+    logger.err("AIRPLANEMODE: saveFlightsetting - object sent is nil, cannot save")
     return false
   else
-    logger.dbg("AIRPLANEMODE: saveAPMsetting - object: ", object)
+    logger.dbg("AIRPLANEMODE: saveFlightsetting - object: ", object)
   end
   if value == nil then
-    logger.err("AIRPLANEMODE: saveAPMsetting - value sent is nil, cannot save for object: ", object)
+    logger.err("AIRPLANEMODE: saveFlightsetting - value sent is nil, cannot save for object: ", object)
     return false
   else
-    logger.dbg("AIRPLANEMODE: saveAPMsetting - value: ", value)
+    logger.dbg("AIRPLANEMODE: saveFlightsetting - value: ", value)
   end
-  logger.dbg("AIRPLANEMODE: saveAPMsetting - saving setting: ", object, " = ", value)
+  logger.dbg("AIRPLANEMODE: saveFlightsetting - saving setting: ", object, " = ", value)
 
   local config = sethandler(settings_file)
   if config:saveSetting(object, value) then
@@ -101,14 +101,14 @@ end
 ---@param object string
 ---@param settings_file string
 ---@return boolean
-function Utilities:delAPMsetting(object, settings_file)
+function Utilities:delFlightsetting(object, settings_file)
   if not object then
-    logger.err("AIRPLANEMODE: delAPMsetting - object sent is nil, cannot delete")
+    logger.err("AIRPLANEMODE: delFlightsetting - object sent is nil, cannot delete")
     return false
   end
   local config = sethandler(settings_file)
   if object == "airplanemode" then
-    logger.dbg("AIRPLANEMODE: delAPMsetting called for 'airplanemode' at ", os.time(), "\nstack:\n", debug.traceback())
+    logger.dbg("AIRPLANEMODE: delFlightsetting called for 'airplanemode' at ", os.time(), "\nstack:\n", debug.traceback())
   end
   local response = config:delSetting(object)
   config:flush()
@@ -120,9 +120,9 @@ end
 ---@param object string
 ---@param settings_file string
 ---@return boolean
-function Utilities:APMhas(object, settings_file)
+function Utilities:Flighthas(object, settings_file)
   if not object then
-    logger.err("AIRPLANEMODE: APMhas - object sent is nil, cannot check")
+    logger.err("AIRPLANEMODE: Flighthas - object sent is nil, cannot check")
     return false
   end
   local config = sethandler(settings_file)
@@ -135,9 +135,9 @@ end
 ---@param object string
 ---@param settings_file string
 ---@return boolean
-function Utilities:APMhasNot(object, settings_file)
+function Utilities:FlighthasNot(object, settings_file)
   if not object then
-    logger.err("AIRPLANEMODE: APMhasNot - object sent is nil, cannot check")
+    logger.err("AIRPLANEMODE: FlighthasNot - object sent is nil, cannot check")
     return false
   end
   local config = sethandler(settings_file)
@@ -150,9 +150,9 @@ end
 ---@param object string
 ---@param settings_file string
 ---@return boolean
-function Utilities:APMtoggle(object, settings_file)
+function Utilities:Flighttoggle(object, settings_file)
   if not object then
-    logger.err("AIRPLANEMODE: APMtoggle - object sent is nil, cannot toggle")
+    logger.err("AIRPLANEMODE: Flighttoggle - object sent is nil, cannot toggle")
     return false
   end
   local config = sethandler(settings_file)
@@ -166,9 +166,9 @@ end
 ---@param object string
 ---@param settings_file string
 ---@return boolean
-function Utilities:APMisTrue(object, settings_file)
+function Utilities:FlightisTrue(object, settings_file)
   if not object then
-    logger.err("AIRPLANEMODE: APMisTrue - object sent is nil, cannot check")
+    logger.err("AIRPLANEMODE: FlightisTrue - object sent is nil, cannot check")
     return false
   end
   local config = sethandler(settings_file)
@@ -187,9 +187,9 @@ end
 ---@param object string
 ---@param settings_file string
 ---@return boolean
-function Utilities:APMisFalse(object, settings_file)
+function Utilities:FlightisFalse(object, settings_file)
   if not object then
-    logger.err("AIRPLANEMODE: APMisFalse - object sent is nil, cannot check")
+    logger.err("AIRPLANEMODE: FlightisFalse - object sent is nil, cannot check")
     return false
   end
   local config = sethandler(settings_file)
@@ -208,9 +208,9 @@ end
 ---@param object string
 ---@param settings_file string
 ---@return boolean
-function Utilities:APMmakeTrue(object, settings_file)
+function Utilities:FlightmakeTrue(object, settings_file)
   if not object then
-    logger.err("AIRPLANEMODE: APMmakeTrue - object sent is nil, cannot make true")
+    logger.err("AIRPLANEMODE: FlightmakeTrue - object sent is nil, cannot make true")
     return false
   end
   local config = sethandler(settings_file)
@@ -229,9 +229,9 @@ end
 ---@param object string
 ---@param settings_file string
 ---@return boolean
-function Utilities:APMmakeFalse(object, settings_file)
+function Utilities:FlightmakeFalse(object, settings_file)
   if not object then
-    logger.err("AIRPLANEMODE: APMmakeFalse - object sent is nil, cannot make false")
+    logger.err("AIRPLANEMODE: FlightmakeFalse - object sent is nil, cannot make false")
     return false
   end
   local config = sethandler(settings_file)
@@ -250,7 +250,7 @@ end
 ---@param object string
 ---@param settings_file string
 ---@return boolean
-function Utilities:APMnilOrFalse(object, settings_file)
+function Utilities:FlightnilOrFalse(object, settings_file)
   if not object then
     logger.err("AIRPLANEMODE: UTILITIES - apmnilorfalse has no object")
     return false
@@ -273,13 +273,13 @@ end
 ---@param object string
 ---@param settings_file string
 ---@return boolean
-function Utilities:APMnilOrTrue(object, settings_file)
+function Utilities:FlightnilOrTrue(object, settings_file)
   if not object then
-    logger.err("AIRPLANEMODE: APMnilOrTrue - object sent is nil, cannot toggle")
+    logger.err("AIRPLANEMODE: FlightnilOrTrue - object sent is nil, cannot toggle")
     return false
   end
   if not settings_file then
-    logger.err("AIRPLANEMODE: APMnilOrTrue - settings_file sent is nil, cannot toggle")
+    logger.err("AIRPLANEMODE: FlightnilOrTrue - settings_file sent is nil, cannot toggle")
     return false
   end
 
@@ -299,13 +299,13 @@ end
 ---@param object string
 ---@param settings_file string
 ---@return boolean
-function Utilities:APMflipNilOrFalse(object, settings_file)
+function Utilities:FlightflipNilOrFalse(object, settings_file)
   if not object then
-    logger.err("AIRPLANEMODE: APMflipNilOrFalse - object sent is nil, cannot flip")
+    logger.err("AIRPLANEMODE: FlightflipNilOrFalse - object sent is nil, cannot flip")
     return false
   end
   if not settings_file then
-    logger.err("AIRPLANEMODE: APMflipNilOrFalse - settings_file sent is nil, cannot flip")
+    logger.err("AIRPLANEMODE: FlightflipNilOrFalse - settings_file sent is nil, cannot flip")
     return false
   end
   local config = sethandler(settings_file)
@@ -353,7 +353,7 @@ function Utilities:getStatus()
   end
   -- check if we currently have a backup of our settings
   -- also verify if the airplanemode flag is set. we will use this to decide if something is funky
-  local airplanemode_active = self:readAPMsetting("airplanemode_enabled", settings.airplanemode) or false
+  local airplanemode_active = self:readFlightsetting("airplanemode_enabled", settings.airplanemode) or false
   if H.isFile(settings.backup) and airplanemode_active then
     return true
   elseif not airplanemode_active then
@@ -368,7 +368,7 @@ end
 function Utilities:toggleAirPlaneMode(toggle)
   logger.dbg("AIRPLANEMODE: Utilities - toggleAirPlaneMode request, desired state:", toggle)
   if toggle == true then
-    if self:APMmakeTrue("airplanemode_enabled", settings.airplanemode) then
+    if self:FlightmakeTrue("airplanemode_enabled", settings.airplanemode) then
       logger.dbg("AIRPLANEMODE: Utilities - AirPlaneMode explicitly set to true")
       local p = LuaSettings:open(settings.airplanemode)
       logger.dbg("AIRPLANEMODE: Utilities - AirPlaneMode read from settings:", p:readSetting("airplanemode_enabled"))
@@ -378,7 +378,7 @@ function Utilities:toggleAirPlaneMode(toggle)
     end
   elseif toggle == false then
     -- persist explicit false so the setting survives restarts
-    if self:APMmakeFalse("airplanemode_enabled", settings.airplanemode) then
+    if self:FlightmakeFalse("airplanemode_enabled", settings.airplanemode) then
       logger.dbg("AIRPLANEMODE: Utilities - AirPlaneMode explicitly set to false")
       local p = LuaSettings:open(settings.airplanemode)
       logger.dbg("AIRPLANEMODE: Utilities - AirPlaneMode read from settings:", p:readSetting("airplanemode_enabled"))

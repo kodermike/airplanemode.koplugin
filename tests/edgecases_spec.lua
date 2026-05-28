@@ -8,7 +8,7 @@ describe("Edge cases for helpers and main flows", function()
 
   it("helpers.isFile/isDir/removeFile handle nil and missing paths safely", function()
     -- load real helpers module for file checks
-    package.loaded["modules/helpers"] = nil
+    package.loaded["utils/flight_helpers"] = nil
     package.loaded["libs/libkoreader-lfs"] = {
       attributes = function(path, mode)
         if not path then
@@ -33,7 +33,7 @@ describe("Edge cases for helpers and main flows", function()
         return nil
       end,
     }
-    local H = require("modules/helpers")
+    local H = require("utils/flight_helpers")
 
     -- nil path
     assert.is_false(H.isFile(nil))
@@ -45,40 +45,40 @@ describe("Edge cases for helpers and main flows", function()
 
   it("initSettingsFile does not overwrite when settings file already exists", function()
     local AP = require("main")
-    local settings = require("modules/APMConfig"):init()
+    local settings = require("flight_config"):init()
 
     -- create a preexisting file and a preexisting version value in storage
     local fh = io.open(settings.airplanemode, "w")
     fh:write("preexisting")
     fh:close()
-    U:saveAPMsetting("version", "existing-version", settings.airplanemode)
+    U:saveFlightsetting("version", "existing-version", settings.airplanemode)
 
     -- Also set a plugins_disabled at koreader level so initSettingsFile would skip writing defaults
-    U:saveAPMplugins({ someplugin = true }, settings.koreader)
+    U:saveFlightplugins({ someplugin = true }, settings.koreader)
 
     -- Call initSettingsFile; since file exists, it should skip and preserve our version
     AP.initSettingsFile()
 
-    local ver = U:readAPMsetting("version", settings.airplanemode)
+    local ver = U:readFlightsetting("version", settings.airplanemode)
     assert.are.equal("existing-version", ver)
   end)
 
   it("deletePluginSettings is safe when no files or settings exist", function()
     local AP = require("main")
-    local settings = require("modules/APMConfig"):init()
+    local settings = require("flight_config"):init()
 
     -- Ensure no file exists and no settings present
-    if package.loaded["modules/helpers"].isFile(settings.airplanemode) then
-      package.loaded["modules/helpers"].removeFile(settings.airplanemode)
+    if package.loaded["utils/flight_helpers"].isFile(settings.airplanemode) then
+      package.loaded["utils/flight_helpers"].removeFile(settings.airplanemode)
     end
-    U:delAPMsetting("airplanemode", settings.airplanemode)
-    U:delAPMsetting("airplanemode_in_footer", settings.airplanemode)
+    U:delFlightsetting("airplanemode", settings.airplanemode)
+    U:delFlightsetting("airplanemode_in_footer", settings.airplanemode)
 
     -- Should not error
     AP.deletePluginSettings()
 
     -- Still no settings
-    assert.is_false(U:APMhas("airplanemode", settings.airplanemode))
-    assert.is_false(U:APMhas("airplanemode_in_footer", settings.airplanemode))
+    assert.is_false(U:Flighthas("airplanemode", settings.airplanemode))
+    assert.is_false(U:Flighthas("airplanemode_in_footer", settings.airplanemode))
   end)
 end)
