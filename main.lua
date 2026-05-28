@@ -144,6 +144,10 @@ function AirPlaneMode:init()
   if self.show_value_in_footer then
     self:addAdditionalFooterContent()
   end
+  local curversion = U:readAPMsetting("version", settings.airplanemode)
+  if (curversion == nil) or (curversion ~= settings.version) then
+    U:saveAPMsetting("version", settings.version, settings.airplanemode)
+  end
   self.ui.menu:registerToMainMenu(self)
 end
 

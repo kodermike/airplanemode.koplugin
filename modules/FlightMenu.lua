@@ -36,46 +36,37 @@ function FlightMenu:init(menu_items, AirPlaneMode)
     end,
     help_text = T(_("A simple plugin that helps you when you're on the go.\n\n\nv.%1"), settings.version),
     sorting_hint = "network",
-    sub_item_table = {
-      {
-        text_func = function()
-          local curversion = U:readAPMsetting("version", settings.airplanemode)
-          if (curversion == nil) or (curversion ~= settings.version) then
-            U:saveAPMsetting("version", settings.version, settings.airplanemode)
-          end
-          if airmode then
-            return T(_("%1 Disable"), settings.icon_on)
-          else
-            return T(_("%1 Enable"), settings.icon_off)
-          end
-        end,
-        separator = true,
-        callback = function()
-          if airmode then
-            --airplanemode = true
-            self.apm:Disable()
-          else
-            --airplanemode = false
-            self.apm:Enable()
-          end
-        end,
-      },
-      {
-        text = _("Configuration"),
-        sub_item_table_func = function()
-          return self:getConfigMenuItems()
-        end,
-      },
-    },
+    sub_item_table_func = function()
+      return self:getMenuItems()
+    end,
   }
 end
 
 ---Get configuration menu items
 ---@return table
-function FlightMenu:getConfigMenuItems()
+function FlightMenu:getMenuItems()
   local airplane_config_table = {}
   local airmode = U:getStatus()
 
+  table.insert(airplane_config_table, {
+    text_func = function()
+      if airmode then
+        return T(_("%1 Disable"), settings.icon_on)
+      else
+        return T(_("%1 Enable"), settings.icon_off)
+      end
+    end,
+    separator = true,
+    callback = function()
+      if airmode then
+        --airplanemode = true
+        self.apm:Disable()
+      else
+        --airplanemode = false
+        self.apm:Enable()
+      end
+    end,
+  })
   if airmode then
     table.insert(airplane_config_table, {
       text = T(_("%1  Plugin management suspended while in flight"), settings.icon_on),
@@ -83,7 +74,7 @@ function FlightMenu:getConfigMenuItems()
     })
   else
     table.insert(airplane_config_table, {
-      text = _("Manage Builtin Plugins"),
+      text = _("Builtin Plugins to Disable"),
       help_text = _("Checked plugins will be disabled when AirPlaneMode is enabled."),
       sub_item_table_func = function()
         return self:PluginMenu(true)
@@ -91,7 +82,7 @@ function FlightMenu:getConfigMenuItems()
     })
 
     table.insert(airplane_config_table, {
-      text = _("Manage User Added Plugins"),
+      text = _("User Added Plugins to Disable"),
       help_text = _("Checked plugins will be disabled when AirPlaneMode is enabled."),
       sub_item_table_func = function()
         return self:PluginMenu(false)
