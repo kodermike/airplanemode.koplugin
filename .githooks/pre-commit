@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+red=$(tput setaf 1)
+reset=$(tput sgr0)
+
+# # Confirm basic tests pass
+
+# luacheck -r *.lua
+if ! luacheck .; then
+  printf "%10s\n" "${red}luacheck failed. Commit aborted.${reset}"
+  exit 1
+fi
