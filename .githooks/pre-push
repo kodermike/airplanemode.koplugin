@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+red=$(tput setaf 1)
+yellow=$(tput setaf 3)
+green=$(tput setaf 2)
+reset=$(tput sgr0)
+
+# Catch TODO comments
+if git grep --cached -r -q 'TODO:' -- '*.lua'; then
+  printf "%10s\n" "${yellow}Your commit contains TODO comments. Resolve them before committing.${reset}"
+  exit 1
+elif git grep --cached -r -q 'FIXME:' -- '*.lua'; then
+  # Flag FIXME
+  printf "%10s\n" "${red}Your commit contains FIXME comments. Resolve them before committing.${reset}"
+  exit 1
+elif git grep --cached -r -q 'BUG:' -- '*.lua'; then
+  # Flag BUG
+  printf "%10s\n" "${red}Your commit contains BUG comments. Resolve them before committing.${reset}"
+  exit 1
+elif git grep --cached -r -q 'NOTE:' -- '*.lua'; then
+  # Flag NOTE
+  printf "%10s\n" "${yellow}Your commit contains NOTE comments. Resolve them before committing.${reset}"
+  exit 1
+elif git grep --cached -r -q 'print' -- '*.lua'; then
+  # Flag PRINT
+  printf "%10s\n" "${red}Your commit contains print comments. Resolve them before committing.${reset}"
+  exit 1
+else
+  printf "%10s\n" "${green}No print, TODO, FIXME, or BUG comments found.${reset}"
+fi
+
+# # Confirm basic tests pass
+
+if ! luacheck .; then
+  printf "%10s\n" "${red}luacheck failed. Commit aborted.${reset}"
+  exit 1
+fi

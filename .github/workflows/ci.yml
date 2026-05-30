@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install leafo lua
+        uses: leafo/gh-actions-lua@v13
+
+      - name: Install leafo luarocks
+        uses: leafo/gh-actions-luarocks@v6
+
+      - name: Install busted (test runner)
+        run: luarocks install busted
+
+      - name: Run tests
+        run: sh tests/run_tests.sh
