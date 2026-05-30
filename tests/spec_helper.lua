@@ -8,7 +8,7 @@ local tmp_dir = plugin_root .. "/tests/tmp"
 os.execute("mkdir -p " .. tmp_dir)
 
 -- Make sure our modules are found
-package.path = package.path .. ";" .. plugin_root .. "/?.lua;" .. plugin_root .. "/modules/?.lua;./?.lua"
+package.path = package.path .. ";" .. plugin_root .. "/?.lua;" .. plugin_root .. "/utils/?.lua;./?.lua"
 
 -- Provide a minimal lfs attributes stub used by utils/flight_helpers
 local _lfs = {}
@@ -299,7 +299,7 @@ local FlightNetwork = {
     self._disabled = false
   end,
 }
-package.loaded["modules/FlightNetwork"] = FlightNetwork
+package.loaded["flight_net"] = FlightNetwork
 
 -- PluginManager mock
 local AirPlaneMode = {

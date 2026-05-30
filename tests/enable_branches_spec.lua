@@ -57,14 +57,14 @@ describe("Enable/Disable branches and edge conditions", function()
     -- ensure managewifi true in airplanemode -> should prevent disableWifi
     U:saveFlightsetting("managewifi", true, settings.airplanemode)
     -- reset network disabled flag
-    package.loaded["modules/FlightNetwork"]._disabled = false
+    package.loaded["flight_net"]._disabled = false
     inst:Enable()
-    assert.is_false(package.loaded["modules/FlightNetwork"]._disabled)
+    assert.is_false(package.loaded["flight_net"]._disabled)
 
     -- now unset managewifi -> should disable wifi
     U:delFlightsetting("managewifi", settings.airplanemode)
     inst:Enable()
-    assert.is_true(package.loaded["modules/FlightNetwork"]._disabled)
+    assert.is_true(package.loaded["flight_net"]._disabled)
   end)
 
   it("handles device cannot restart branch when disabling/enabling", function()

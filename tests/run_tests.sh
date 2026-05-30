@@ -4,7 +4,7 @@ set -e
 
 ROOT_DIR=$(cd "$(dirname "$0")/.." && pwd)
 # prepend plugin paths so require can find modules
-LUA_PATH="$ROOT_DIR/?.lua;$ROOT_DIR/modules/?.lua;;"
+LUA_PATH="$ROOT_DIR/?.lua;$ROOT_DIR/utils/?.lua;;"
 export LUA_PATH
 
 # tmp dir for tests
