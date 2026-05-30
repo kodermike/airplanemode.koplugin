@@ -82,11 +82,11 @@ function FlightPlanMenu:showMenu()
           -- Disabled status row: shows "Installed: vX (release)" /
           -- "(branch: foo)". Tap is a no-op via enabled_func=false.
           text_func = function()
-            local source = U:Flighthas("Last_install_source", settings.airplanemode) and U:readFlightplugins("last_install_source", settings.airplanemode) or "release"
+            local source = U:Flighthas("Last_install_source", settings.airplanemode) and U:readFlightsetting("last_install_source", settings.airplanemode) or "release"
             if source == "release" then
               return _("Installed: v") .. settings.version .. " (release)"
             end
-            local branch = source:match("^branch:(.+)$") or source -- luacheck: ignore
+            local branch = source:match("^branch:(.+)$") or source
             return _("Installed: v") .. settings.version .. " (branch: " .. branch .. ")"
           end,
           enabled_func = function()
