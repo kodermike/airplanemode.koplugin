@@ -8,6 +8,10 @@ local U = require("utils/flight_utilities")
 
 local Updater = {}
 
+--[[
+The guts of this page were lifted from the great work @andyhazz has done with bookends and bookshelf. Any bugs were introduced by me; all code that looks good was probably theirs.
+]]
+
 -- Background check state (session-only, not persisted)
 local _cached_version = nil -- latest available version string, or nil
 local _cached_zip_url = nil -- download URL for the latest release ZIP
@@ -385,9 +389,8 @@ function Updater.install(zip_url, old_version, new_version, on_success, error_la
     -- prompt fires; runs only when unpack succeeded.
     if on_success then
       local ok_cb = pcall(on_success)
-      if not ok_cb then
+      if not ok_cb then -- luacheck: ignore
         -- Don't let a misbehaving callback abort the restart prompt.
-        logger.dbg("ok_cb failed: %s", tostring(err))
       end
     end
 

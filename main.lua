@@ -25,7 +25,7 @@ local settings = FlightConfig:init()
 local H = require("utils/flight_helpers")
 local U = require("utils/flight_utilities")
 local A = require("flight_net")
-local M = require("flight_menu")
+local M = require("display/flight_menu")
 
 local function restoreState()
   -- we just rebooted to change apm states, now switch pref back

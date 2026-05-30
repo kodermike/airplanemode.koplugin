@@ -86,7 +86,7 @@ function FlightPlanMenu:showMenu()
             if source == "release" then
               return _("Installed: v") .. settings.version .. " (release)"
             end
-            local branch = source:match("^branch:(.+)$") or source
+            local branch = source:match("^branch:(.+)$") or source -- luacheck: ignore
             return _("Installed: v") .. settings.version .. " (branch: " .. branch .. ")"
           end,
           enabled_func = function()

@@ -24,7 +24,7 @@ LUA_PATH="$ROOT_DIR/?.lua;$ROOT_DIR/utils/?.lua;;"
 if [ -n "$KOREADER_HOME" ] && [ -d "$KOREADER_HOME" ]; then
   printf "%10s\n" "${yellow}KOReader checkout found at: $KOREADER_HOME (running tests with plugin mocks)${reset}"
   # Prefer the emulator-provided luajit if present
-  EMU_GLOB="$KOREADER_HOME"/koreader-emulator-*-pc-linux-gnu-debug/koreader
+  EMU_GLOB="${KOREADER_HOME}/koreader-emulator-*-pc-linux-gnu-debug/koreader"
   for d in $EMU_GLOB; do
     if [ -d "$d" ]; then
       EMU_DIR="$d"
@@ -51,7 +51,7 @@ if [ -n "$KOREADER_HOME" ] && [ -d "$KOREADER_HOME" ]; then
     fi
   elif [ -x "/bin/luajit" ]; then
     LUAJIT_BIN=/bin/luajit
-    printf "%10s\n" "${yellow}Using system LuaJIT at: $LUAJIT_BIN${reset}"
+    printf "%10s\n" "${red}Using system LuaJIT at: $LUAJIT_BIN${reset}"
   else
     LUAJIT_BIN=""
   fi
