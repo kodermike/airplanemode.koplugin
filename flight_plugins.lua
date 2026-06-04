@@ -80,13 +80,11 @@ return function(AirPlaneMode)
       local mstatus, __ = pcall(function()
         pcall(fplugin["stopPlugin"]())
       end)
-      -- if H.stringto(mstatus) == false then
       if mstatus == "false" then
         -- stopPlugin failed, just do a normal stop
         local sstatus, serr = pcall(function()
           pcall(fplugin["stop"]())
         end)
-        -- if H.stringto(sstatus) == false then
         if sstatus == "false" then
           logger.err("AIRPLANEMODE: Failed to stop", plugin, ":", serr)
         end
@@ -96,7 +94,6 @@ return function(AirPlaneMode)
       local sstatus, serr = pcall(function()
         pcall(fplugin["stop"]())
       end)
-      -- if H.stringto(sstatus) == false then
       if sstatus == "false" then
         logger.err("AIRPLANEMODE: Failed to stop", plugin, ":", serr)
       end
@@ -179,7 +176,6 @@ return function(AirPlaneMode)
                   pcall(modcheck["isRunning"]())
                 end)
                 -- if the status came back that the plugin was running
-                -- if H.stringto(status) == true then
                 if status == "true" then
                   -- try to run stopPlugin if available since it's cleaner
                   logger.dbg("AIRPLANEMODE: isRunning returned true, trying to stop", plugin)

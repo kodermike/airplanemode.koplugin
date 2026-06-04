@@ -22,7 +22,7 @@
   - If the Calibre plugin is enabled, adjusts Calibre's wireless-only settings to off while leaving the plugin search functions enabled
 - Disabling **AirPlaneMode** will:
   - restore previous settings from the backup
-  - re-enables plugins that were disabled for **AirPlaneMode** 
+  - re-enables plugins that were disabled for **AirPlaneMode**
   - Return Wi‑Fi settings to their previous configuration
 
 - On devices where network hardware cannot be managed, Wi‑Fi actions are skipped.
@@ -59,8 +59,6 @@
 ![AirPlane Mode icon when disabled](.github/assets/disabled.jpg)
 **AirPlaneMode** registers a menu entry in the Network menu where you can:
 
-
-
 ![AirPlaneMode-menu](.github/assets/AirPlaneMode-menu.png)
 
 - Enable / Disable **AirPlaneMode**
@@ -76,8 +74,6 @@
 - If available, enable the option to only manage plugins when **AirPlaneMode** is active instead of managing Network as well.
 
 - Open the **AirPlaneMode** update manager
-
-  
 
 ## Gesture support
 
@@ -101,24 +97,19 @@ Gestures (Device -> Gestures) can be configured to call **AirPlaneMode** actions
 
 Note: **AirPlaneMode's** Plugin Manager only disables plugins inside KOReader while **AirPlaneMode** is active — it does not edit KOReader plugin settings directly.
 
-![AirPlane Mode icon when enabled](<.github/assets/enabled.jpg>)
+![AirPlane Mode icon when enabled](.github/assets/enabled.jpg)
 
 ---
 
-## 🐛 Find a bug?
+## Contributing
 
-Please open an issue in GitHub so we can start looking at what isn't working! If possible, please include your `crash.log`, how to reproduce the issue, what kind of hardware you are using, what version of KOReader you are using, as well as a detailed description of what you ran into.
-
-
-
-## 🤝 Contributing
-
-Contributions are welcome! Please open issues or PRs on the project's GitHub repository. If submitting a PR, please follow the existing code style and conventions. Please use a fork of the repository and create the PR against the `main` branch if for the current stable release, or the `features` branch if for a new feature or experimental release.
-
-
+Find a bug 🐛? Want to contribute 🤝? Please see [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
 ## 🔧 Developer Notes
 
 - **AirPlaneMode** support the `stopPlugin` dispatcher action to stop **AirPlaneMode** from another service or plugin while it is active.
 - **AirPlaneMode** also supports the `deletePluginSettings` dispatcher action to delete all AirPlaneMode settings and reset the installation to a clean slate.
 - The `features` branch is suitable for testing against nightly KOReader builds. The `main` branch is intended to work with stable releases.
+- For more detailed information on contributing, please see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+###### Updated 2026.06.04
