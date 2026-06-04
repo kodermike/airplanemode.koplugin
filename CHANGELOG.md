@@ -1,5 +1,20 @@
 # Changelog
 
+## v.1.9.9 (pre-release)
+
+### 🚀 Added
+
+- An update manager - now you can update AirPlaneMode from directly inside the plugin (#71)
+- Broke builtin and user added plugins into separate spaces (#64)
+
+### 🏠 Housekeeping
+
+* Heavy refactor, breaking the monolithic lua file into components
+* Moved all settings management that is AirPlaneMode specific to the AirPlaneMode config file
+* Added a hook for `stopPlugin` calls (#68)
+* Added a hook to delete configs when being disabled by KOReader the plugin manager (#65)
+* Improved linting and tests for pre-release checks
+
 ## v.1.2.2 🔥
 
 - More version comparison fun. Removed it. Found while testing issue #60

@@ -10,6 +10,7 @@ local Updater = require("utils/flight_plan")
 
 local FlightPlanMenu = {}
 
+--- Show the flight plan menu.
 function FlightPlanMenu:showMenu()
   local check_updates = U:readFlightsetting("check_updates", settings.airplanemode) or false
   return {

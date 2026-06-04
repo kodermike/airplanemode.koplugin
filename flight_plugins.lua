@@ -16,6 +16,8 @@ local U = require("utils/flight_utilities")
 local logger = require("logger")
 local _ = require("gettext")
 
+--- Returns the list of plugins to load.
+---@return table<string, boolean>
 return function(AirPlaneMode)
   function AirPlaneMode:plugin_list()
     return {
@@ -70,6 +72,7 @@ return function(AirPlaneMode)
     return t
   end
 
+  --- Stops all other plugins except the one being stopped.
   local function stopOtherPlugins(stopp, fplugin, plugin)
     -- try to run stopPlugin if available since it's cleaner
     logger.dbg("AIRPLANEMODE: Stopping plugin", plugin)
@@ -243,7 +246,6 @@ return function(AirPlaneMode)
 
   ---Enable/restore calibre related settings
   ---@param settings table
-  ---@return nil
   function AirPlaneMode:enableCalibre(settings)
     -- re-set calibre_wirless to previous setting, or delete it if it didn't exist
     if U:FlightisTrue("calibre_wireless", settings.backup) then
