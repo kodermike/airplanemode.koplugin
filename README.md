@@ -121,3 +121,4 @@ Contributions are welcome! Please open issues or PRs on the project's GitHub rep
 
 - **AirPlaneMode** support the `stopPlugin` dispatcher action to stop **AirPlaneMode** from another service or plugin while it is active.
 - **AirPlaneMode** also supports the `deletePluginSettings` dispatcher action to delete all AirPlaneMode settings and reset the installation to a clean slate.
+- The `features` branch is suitable for testing against nightly KOReader builds. The `main` branch is intended to work with stable releases.
