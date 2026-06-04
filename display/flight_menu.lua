@@ -12,7 +12,6 @@ local _ = require("gettext")
 local FlightConfig = require("flight_config")
 local settings = FlightConfig:init()
 
--- local P = require("flight_plugins")
 local U = require("utils/flight_utilities")
 local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
@@ -67,6 +66,7 @@ function FlightMenu:getMenuItems()
       end
     end,
   })
+  -- Plugin management
   if airmode then
     table.insert(airplane_config_table, {
       text = T(_("%1  Plugin management suspended while in flight"), settings.icon_on),
@@ -89,6 +89,7 @@ function FlightMenu:getMenuItems()
       end,
     })
   end
+  -- Silent restarts
   table.insert(airplane_config_table, {
     text = _("Silence the restart message"),
     callback = function()
@@ -109,6 +110,7 @@ function FlightMenu:getMenuItems()
       end
     end,
   })
+  -- Show AirPlaneMode in reader footer
   table.insert(airplane_config_table, {
     text = _("Show AirPlaneMode in reader footer"),
     checked_func = function()
@@ -128,6 +130,7 @@ function FlightMenu:getMenuItems()
       end
     end,
   })
+  -- Restore session after restart if available
   if Device:canRestart() then
     table.insert(airplane_config_table, {
       text = _("Restore session after restart"),
@@ -150,7 +153,7 @@ function FlightMenu:getMenuItems()
       end,
     })
   end
-
+  -- Roaming Mode
   table.insert(airplane_config_table, {
     text = _("Roaming Mode"),
     callback = function()
@@ -173,6 +176,14 @@ function FlightMenu:getMenuItems()
         end
         return false
       end
+    end,
+  })
+  -- Updater management
+  table.insert(airplane_config_table, {
+    text = _("Updater management"),
+    sub_item_table_func = function()
+      local updater_menu = require("display/flight_plan_menu")
+      return updater_menu:showMenu()
     end,
   })
   return airplane_config_table

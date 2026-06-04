@@ -64,19 +64,4 @@ function H.removeFile(path)
   end
 end
 
----Convert string "true"/"false" to boolean
---- @ return boolean
--- function H.stringto(v)
---   if type(v) == "string" and v == "true" then
---     return true
---   end
---   if type(v) == "string" and v == "false" then
---     return false
---   end
---   if type(v) == "bolean" then
---     return v
---   end
---   return false
--- end
-
 return H

@@ -2,7 +2,9 @@ local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
 
 return function(AirPlaneMode)
-  --[[ footer ]]
+  --[[
+  Extends AirPlaneMode with footer status in reader
+  ]]
   --
 
   ---Refresh status bars footer content
