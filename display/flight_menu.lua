@@ -1,7 +1,6 @@
 ---@class FlightMenu
 ---@field show_value_in_footer boolean|nil
 
-local BD = require("ui/bidi")
 local Device = require("device")
 local NetworkMgr = require("ui/network/manager")
 local logger = require("logger")
@@ -13,8 +12,9 @@ local _ = require("gettext")
 local FlightConfig = require("flight_config")
 local settings = FlightConfig:init()
 
+local FlightDetails = require("display/flight_details")
+
 local U = require("utils/flight_utilities")
-local H = require("utils/flight_helpers")
 
 local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
@@ -191,19 +191,10 @@ function FlightMenu:getMenuItems()
   })
   -- About popup
   table.insert(airplane_config_table, {
-    text = _("About"),
+    text = _("Advanced Settings"),
     keep_menu_open = true,
-    callback = function()
-      UIManager:show(InfoMessage:new({
-        text = T(
-          _("%1 AirPlaneMode %2\nKOReader %3\nRunning on %4\nFirmware: %5\n\nA plugin for quick network changes when on the go\n\nLicensed under Affero GPL v3."),
-          settings.icon_on,
-          BD.ltr(settings.version),
-          BD.ltr(H:getKOReaderVersion()),
-          BD.ltr(H:get_device_model_name()),
-          BD.ltr(H:get_device_firmware_info())
-        ),
-      }))
+    sub_item_table_func = function()
+      return FlightDetails:menu()
     end,
   })
   return airplane_config_table

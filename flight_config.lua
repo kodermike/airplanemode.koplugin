@@ -9,6 +9,8 @@
 ---@field icon_on string
 ---@field icon_off string
 ---@field version string
+---@field fullname string
+---@field description string
 
 ---@class FlightConfig
 ---@field show_info boolean
@@ -44,10 +46,12 @@ function FlightConfig:init()
     airplanemode_old = airplanemode_old,
     prev_config = prev_config,
     koreader_plugins = "plugins_disabled",
-    airplane_plugins = "disabled_plugins", -- deprecated
+    airplane_plugins = "disabled_plugins", ---@deprecated: use koreader_plugins instead
     icon_on = "\u{F1D8}",
     icon_off = "\u{F1D9}",
     version = meta.version,
+    description = meta.description,
+    fullname = meta.fullname,
   }
 end
 
