@@ -6,27 +6,18 @@ green=$(tput setaf 2)
 reset=$(tput sgr0)
 
 # Catch TODO comments
-if git grep --cached -r -q 'TODO:' -- '*.lua'; then
-  printf "%10s\n" "${yellow}Your commit contains TODO comments. Resolve them before committing.${reset}"
+export BLOCKER=0
+for keyword in print TODO FIXME FIX BUG; do
+  if git grep --cached -r -q "${keyword}:" -- "*.lua"; then
+    printf "%10s\n" "${red}${keyword}${reset} ${yellow}found in your comments. Resolve before pushing.${reset}"
+    grep -r --include="*.lua" -n "${keyword}:"
+    echo ""
+    BLOCKER=1
+  fi
+done
+
+if [ "${BLOCKER}" == 1 ]; then
   exit 1
-elif git grep --cached -r -q 'FIXME:' -- '*.lua'; then
-  # Flag FIXME
-  printf "%10s\n" "${red}Your commit contains FIXME comments. Resolve them before committing.${reset}"
-  exit 1
-elif git grep --cached -r -q 'BUG:' -- '*.lua'; then
-  # Flag BUG
-  printf "%10s\n" "${red}Your commit contains BUG comments. Resolve them before committing.${reset}"
-  exit 1
-elif git grep --cached -r -q 'NOTE:' -- '*.lua'; then
-  # Flag NOTE
-  printf "%10s\n" "${yellow}Your commit contains NOTE comments. Resolve them before committing.${reset}"
-  exit 1
-elif git grep --cached -r -q 'print' -- '*.lua'; then
-  # Flag PRINT
-  printf "%10s\n" "${red}Your commit contains print comments. Resolve them before committing.${reset}"
-  exit 1
-else
-  printf "%10s\n" "${green}No print, TODO, FIXME, or BUG comments found.${reset}"
 fi
 
 # # Confirm basic tests pass
