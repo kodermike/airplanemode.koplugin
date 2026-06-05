@@ -94,9 +94,4 @@ function H.removeFile(path)
   end
 end
 
---TODO:
--- - break out debugging!!! Then record the firmware, hardware, etc in debugging
--- - add "enable debug" somewhere useful
---FIXME: pop up window looks like shit
-
 return H

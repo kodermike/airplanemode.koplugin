@@ -12,6 +12,7 @@ local _ = require("gettext")
 local FlightConfig = require("flight_config")
 local settings = FlightConfig:init()
 local H = require("utils/flight_helpers")
+local U = require("utils/flight_utilities")
 
 local FlightDetails = {}
 
@@ -189,157 +190,52 @@ function FlightDetails.get_device_firmware_info()
   return "n/a", nil, nil
 end
 
---- Show the about dialog for the plugin.
-function FlightDetails:_about()
-  --   local Device = require("device")
-  --   local Screen = Device.screen
-  --   local Font = require("ui/font")
-  --   local Geom = require("ui/geometry")
-  --   local Size = require("ui/size")
-  --   local Blitbuffer = require("ffi/blitbuffer")
-  --   local FrameContainer = require("ui/widget/container/framecontainer")
-  --   local CenterContainer = require("ui/widget/container/centercontainer")
-  --   local MovableContainer = require("ui/widget/container/movablecontainer")
-  --   local InputContainer = require("ui/widget/container/inputcontainer")
-  --   local VerticalGroup = require("ui/widget/verticalgroup")
-  --   local VerticalSpan = require("ui/widget/verticalspan")
-  --   local TextBoxWidget = require("ui/widget/textboxwidget")
-  --   local TextWidget = require("ui/widget/textwidget")
-  --   local GestureRange = require("ui/gesturerange")
-
-  --   local sw, sh = Screen:getWidth(), Screen:getHeight()
-  --   local frame_w = math.min(math.floor(sw * 0.8), Screen:scaleBySize(420))
-  --   local FRAME_PAD = Screen:scaleBySize(24)
-  --   local content_w = frame_w - FRAME_PAD * 2
-
-  --   local column = VerticalGroup:new({ align = "center" })
-
-  --   local ver_face, ver_bold = BFont:getFace("cfont", 16)
-  --   column[#column + 1] = TextWidget:new({
-  --     text = "v" .. version,
-  --     face = ver_face,
-  --     bold = ver_bold,
-  --   })
-  --   column[#column + 1] = VerticalSpan:new({ width = Size.padding.large })
-  --   local desc_face, desc_bold = BFont:getFace("cfont", 16)
-  --   column[#column + 1] = TextBoxWidget:new({
-  --     text = description,
-  --     face = desc_face,
-  --     bold = desc_bold,
-  --     width = content_w,
-  --     alignment = "center",
-  --   })
-  --   column[#column + 1] = VerticalSpan:new({ width = Size.padding.large })
-  --   -- Tappable URL: tries Device:openLink (works on SDL / Android), then
-  --   -- falls back to copying to KOReader's internal clipboard + a brief
-  --   -- Notification. On Kindle there's no native browser so the
-  --   -- clipboard path is the user-meaningful one (paste into a Send-to-
-  --   -- Kindle-style helper, or just read the URL clearly).
-  --   local Button = require("ui/widget/button")
-  --   local function open_github()
-  --     local ok = false
-  --     if Device.openLink then
-  --       local _ok, ret = pcall(function()
-  --         return Device:openLink(GITHUB_URL)
-  --       end)
-  --       if _ok and ret then
-  --         ok = true
-  --       end
-  --     end
-  --     if not ok and Device.input and Device.input.setClipboardText then
-  --       pcall(function()
-  --         Device.input.setClipboardText(GITHUB_URL)
-  --       end)
-  --       local Notification = require("ui/widget/notification")
-  --       UIManager:show(Notification:new({
-  --         text = _("Link copied to clipboard"),
-  --       }))
-  --     end
-  --   end
-  --   column[#column + 1] = Button:new({
-  --     text = GITHUB_URL_DISPLAY,
-  --     bordersize = 0,
-  --     padding = 0,
-  --     margin = 0,
-  --     text_font_face = "cfont",
-  --     text_font_size = 14,
-  --     callback = open_github,
-  --   })
-
-  --   -- Frame styling matches the other Bookshelf modals (chip editor,
-  --   -- hero line editor): default Size.border.window thickness (thicker
-  --   -- than Size.border.thin) and Size.radius.window for rounded
-  --   -- corners. Earlier the popup used thin + square, which read as
-  --   -- subtly out-of-family next to the rest of the plugin's dialogs.
-  --   -- Per-side padding: tighter at the top because the BOOKSHELF logo's
-  --   -- bold glyphs carry their own visual mass and don't need as much
-  --   -- breathing room above them. Equal padding made the popup read as
-  --   -- top-heavy in the screenshot. Bottom keeps the full FRAME_PAD so
-  --   -- the URL has the same air the description gets.
-  --   local frame = FrameContainer:new({
-  --     radius = Size.radius.window,
-  --     padding = FRAME_PAD,
-  --     padding_top = math.floor(FRAME_PAD * 0.5),
-  --     margin = 0,
-  --     background = Blitbuffer.COLOR_WHITE,
-  --     column,
-  --   })
-
-  --   local dialog
-  --   dialog = InputContainer:new({
-  --     align = "center",
-  --     dimen = Geom:new({ x = 0, y = 0, w = sw, h = sh }),
-  --     CenterContainer:new({
-  --       dimen = Geom:new({ w = sw, h = sh }),
-  --       MovableContainer:new({ frame }),
-  --     }),
-  --   })
-  --   if Device:isTouchDevice() then
-  --     dialog.ges_events = {
-  --       TapClose = { GestureRange:new({
-  --         ges = "tap",
-  --         range = Geom:new({ x = 0, y = 0, w = sw, h = sh }),
-  --       }) },
-  --     }
-  --     dialog.onTapClose = function(self_d, _arg, ges_ev)
-  --       if not frame.dimen or ges_ev.pos:notIntersectWith(frame.dimen) then
-  --         UIManager:close(self_d)
-  --       end
-  --       return true
-  --     end
-  --   end
-  --   if Device:hasKeys() then
-  --     dialog.key_events = { Close = { { Device.input.group.Back } } }
-  --     dialog.onClose = function(self_d)
-  --       UIManager:close(self_d)
-  --       return true
-  --     end
-  --   end
-
-  --   UIManager:show(dialog)
+local function generic_entry(t)
+  local icon = U:getStatus() and settings.icon_on or settings.icon_off
+  return {
+    text = _(t),
+    keep_menu_open = true,
+    callback = function()
+      UIManager:show(InfoMessage:new({
+        text = T(_("%1  %2 v%3\n\n%4\n\nLicensed under Affero GPL v3."), icon, BD.ltr(settings.fullname), BD.ltr(settings.version), BD.ltr(settings.description)),
+      }))
+    end,
+  }
 end
 
 function FlightDetails:menu()
   local airplane_specs = {}
+  -- Generate information buttons - all use the same popup for displaying About
+  local button_list = {
+    T(_("%1: v%2"), settings.fullname, settings.version),
+    T(_("KOReader Version: %s"):format(BD.ltr(self:getKOReaderVersion()))),
+    --TODO: alt if there is no firmware info
+    T(_("Firmware: %s"):format(BD.ltr(self:get_device_firmware_info()))),
+    --TODO: Alt if there is no device model info
+    T(_("Device: %s"):format(BD.ltr(self:get_device_model_name()))),
+  }
+  for _, text in ipairs(button_list) do
+    table.insert(airplane_specs, generic_entry(text))
+  end
+
+  -- Updater management
+  --TODO: Disable if airplane mode is enabled
+  --TODO: show popup if not enabled
   table.insert(airplane_specs, {
-    text = T(_("%1: v%2"), settings.fullname, settings.version),
-    keep_menu_open = true,
-    callback = function()
-      UIManager:show(InfoMessage:new({
-        text = T(_("%1  %2 v%3\n\n%4\n\nLicensed under Affero GPL v3."), settings.icon_on, BD.ltr(settings.fullname), BD.ltr(settings.version), BD.ltr(settings.description)),
-      }))
+    text = _("Update management"),
+    sub_item_table_func = function()
+      local updater_menu = require("display/flight_plan_menu")
+      return updater_menu:showMenu()
     end,
   })
-  table.insert(airplane_specs, {
-    text = T(_("KOReader Version: %s"):format(BD.ltr(self:getKOReaderVersion()))),
-  })
-  table.insert(airplane_specs, {
-    text = T(_("Device: %s"):format(BD.ltr(self:get_device_model_name()))),
-  })
-  table.insert(airplane_specs, {
-    text = T(_("Firmware: %s"):format(BD.ltr(self:get_device_firmware_info()))),
-  })
 
+  --Debug Manager
+  --TODO: add debug menu
+  -- enable data dumps
+  -- enable debug mode
+  -- bug report?
+  -- bug report from qr code...?
+  --
   return airplane_specs
 end
 

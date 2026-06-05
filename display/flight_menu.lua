@@ -181,14 +181,6 @@ function FlightMenu:getMenuItems()
       end
     end,
   })
-  -- Updater management
-  table.insert(airplane_config_table, {
-    text = _("Updater management"),
-    sub_item_table_func = function()
-      local updater_menu = require("display/flight_plan_menu")
-      return updater_menu:showMenu()
-    end,
-  })
   -- About popup
   table.insert(airplane_config_table, {
     text = _("Advanced Settings"),
