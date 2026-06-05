@@ -566,7 +566,7 @@ if not use_koreader then
     U:saveFlightsetting("plugins_disabled", tbl, file)
   end
 
-  function U:backup(src, dst)
+  function U:backupFlight(src, dst)
     local fh = io.open(dst, "w")
     if fh then
       fh:write("backup")

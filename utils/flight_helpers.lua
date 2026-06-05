@@ -4,7 +4,10 @@ local lfs = require("libs/libkoreader-lfs")
 
 local H = {}
 
-local function first_non_empty(...)
+---first_non_empty - return the first non empty value in an array
+---@param ... any
+---@return string?
+function H.first_non_empty(...)
   for i = 1, select("#", ...) do
     local v = select(i, ...)
     if type(v) == "string" and v ~= "" then
@@ -14,7 +17,10 @@ local function first_non_empty(...)
   return nil
 end
 
-local function normalize_value(v)
+---normalize_fw_value
+---@param v any
+---@return string?
+function H.normalize_value(v)
   if type(v) == "number" then
     v = tostring(v)
   end
@@ -92,7 +98,7 @@ end
 -- - move the version stuff to utilities, leave only the helpers in helpers
 -- - break out debugging!!! Then record the firmware, hardware, etc in debugging
 -- - add "enable debug" somewhere useful
---FIX: pop up window looks like shit
+--FIXME: pop up window looks like shit
 
 ---Retrieve KOReader version
 ---@return string
