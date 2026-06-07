@@ -1,0 +1,91 @@
+---@class FlightDetails
+---@field device_model_name string
+---@field device_firmware_info string
+---@field KOReader_version string
+---@field menu table
+
+local BD = require("ui/bidi")
+local UIManager = require("ui/uimanager")
+local InfoMessage = require("ui/widget/infomessage")
+
+local ffiutil = require("ffi/util")
+local T = ffiutil.template
+local _ = require("gettext")
+
+local FlightConfig = require("flight_config")
+local settings = FlightConfig:init()
+local H = require("utils/flight_helpers")
+local U = require("utils/flight_utilities")
+local FM = require("utils/flight_mechanics")
+
+local FlightDetails = {}
+
+---Retrieve KOReader version
+---@return string
+function FlightDetails.getKOReaderVersion()
+  local ok, v_info = pcall(require, "version")
+  if ok then
+    if type(v_info) == "string" and v_info ~= "" then
+      return v_info
+    end
+    if type(v_info) == "table" then
+      local value = H.first_non_empty(v_info.version, v_info.short, v_info.git, v_info.git_rev, v_info.build, v_info.tag)
+      if value then
+        return value
+      end
+    end
+  end
+
+  local value = H.first_non_empty(rawget(_G, "KOREADER_VERSION"), rawget(_G, "KO_VERSION"), rawget(_G, "GIT_REV"))
+  return value or "unknown"
+end
+
+local function generic_entry(t)
+  local icon = U:getStatus() and settings.icon_on or settings.icon_off
+  return {
+    text = _(t),
+    keep_menu_open = true,
+    callback = function()
+      UIManager:show(InfoMessage:new({
+        text = T(_("%1  %2 v%3\n\n%4\n\nLicensed under Affero GPL v3."), icon, BD.ltr(settings.fullname), BD.ltr(settings.version), BD.ltr(settings.description)),
+      }))
+    end,
+  }
+end
+
+---FlightDetails:menu()
+---Genrates the advance details menu
+---@return table
+function FlightDetails:menu()
+  local airplane_specs = {}
+  -- Generate information buttons - all use the same popup for displaying About
+  local button_list = {
+    T(_("%1: v%2"), settings.fullname, settings.version),
+    T(_("KOReader Version: %s"):format(BD.ltr(self:getKOReaderVersion()))),
+    T(_("Device: %s"):format(BD.ltr(FM:get_device_model_name()))),
+    T(_("Firmware: %s"):format(BD.ltr(FM:get_device_firmware_info()))),
+  }
+  for _, text in ipairs(button_list) do
+    table.insert(airplane_specs, generic_entry(text))
+  end
+
+  -- Updater management
+  if U:getStatus() then
+    table.insert(airplane_specs, {
+      text = T(_("%1  Update management suspended while in flight"), settings.icon_on),
+      enabled = false,
+    })
+  else
+    table.insert(airplane_specs, {
+      text = _("Update management"),
+      sub_item_table_func = function()
+        local updater_menu = require("display/flight_plan_menu")
+        return updater_menu:showMenu()
+      end,
+    })
+  end
+
+  return airplane_specs
+end
+
+return FlightDetails

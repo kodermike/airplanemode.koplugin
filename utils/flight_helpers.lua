@@ -4,6 +4,36 @@ local lfs = require("libs/libkoreader-lfs")
 
 local H = {}
 
+---first_non_empty - return the first non empty value in an array
+---@param ... any
+---@return string?
+function H.first_non_empty(...)
+  for i = 1, select("#", ...) do
+    local v = select(i, ...)
+    if type(v) == "string" and v ~= "" then
+      return v
+    end
+  end
+  return nil
+end
+
+---normalize_fw_value
+---@param v any
+---@return string?
+function H.normalize_value(v)
+  if type(v) == "number" then
+    v = tostring(v)
+  end
+  if type(v) ~= "string" then
+    return nil
+  end
+  v = v:match("^%s*(.-)%s*$")
+  if v == "" then
+    return nil
+  end
+  return v
+end
+
 ---Check if path is a file
 ---@param path string
 ---@return boolean

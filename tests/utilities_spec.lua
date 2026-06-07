@@ -183,14 +183,14 @@ describe("utils/flight_utilities - full behavior with mocked LuaSettings", funct
       package.loaded["utils/flight_helpers"].removeFile(settings.backup)
     end
 
-    assert.is_true(Utilities:backup(settings.koreader, settings.backup))
+    assert.is_true(Utilities:backupFlight(settings.koreader, settings.backup))
     assert.is_true(package.loaded["utils/flight_helpers"].isFile(settings.backup))
 
     -- missing source
     if package.loaded["utils/flight_helpers"].isFile(settings.koreader) then
       package.loaded["utils/flight_helpers"].removeFile(settings.koreader)
     end
-    assert.is_false(Utilities:backup(settings.koreader, settings.backup))
+    assert.is_false(Utilities:backupFlight(settings.koreader, settings.backup))
   end)
 
   it("getStatus reflects backup and airplanemode_enabled", function()

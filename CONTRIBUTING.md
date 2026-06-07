@@ -6,12 +6,12 @@ Find a bug? Have a suggestion for a new feature? Notice a mistake in the documen
 
 ## Ways to contribute
 
-| Type                                     | What it involves                                             |
-| :---------------------------------------- | ------------------------------------------------------------: |
-| 🐛 [Bug report](#bug-report)             | Open an Issue describing what went wrong                     |
-| 💡 [Request a feature](#feature-request) | Open an Issue with your idea                                 |
-| 🔧 [Code](#contributing-code)                              | Fork, branch, change, and open a Pull Request                |
-| 📝 [Documentation](#documentation)                         | Documentation updates, improvements, or just typo correction |
+| Type                                  |                                             What it involves |
+| :------------------------------------ | -----------------------------------------------------------: |
+| 🐛 [Bug report](#bug-report)           |                     Open an Issue describing what went wrong |
+| 💡 [Feature request](#feature-request) |                                 Open an Issue with your idea |
+| 🔧 [Code](#contributing-code)          |                Fork, branch, change, and open a Pull Request |
+| 📝 [Documentation](#documentation)     | Documentation updates, improvements, or just typo correction |
 
 ---
 
@@ -50,10 +50,10 @@ The [KOReader emulator](https://github.com/koreader/koreader/blob/master/doc/Bui
 
 ### Making a change
 
-- **Fork** the [AirPlaneMode repository](https://github.com/kodermike/airplanemode.koplugin.git) (click the Fork button at the top right of the GitHub page)
+- **Fork** the [AirPlaneMode repository](https://github.com/kodermike/airplanemode.koplugin.git) (click the Fork button at the top right of the GitHub page). If your change is a new feature, or a bug fix for the `features` branch, be sure to uncheck the option to only copy the `main` branch.
 - Create a new branch for your change. If your change is a bug fix, use `fix/` as the prefix. Please branch off of the branch that corresponds to the version you are targeting
-	- `main` for bug fixes that apply to the stable quarterly releases of KOReader
-	- `features` for new features that are not yet ready for a stable release and work against the `nightly` release of KOReader. If it's a new feature, please checkout the `features` branch first, then branch off of it and use `feature/` as the prefix.
+	- `main` is for bug fixes that apply to the stable quarterly releases of KOReader
+	- `features` is for new features that are not yet ready for a stable release and work against the `nightly` release of KOReader. If it's a new feature, please checkout the `features` branch first, then branch off of it and use `feature/` as the prefix.
 ```
 # If submitting a bug fix for main
 git checkout -b fix/my-bug-description

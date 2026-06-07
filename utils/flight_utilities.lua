@@ -324,7 +324,7 @@ end
 ---@param settings_file string
 ---@param backup_file string
 ---@return boolean
-function Utilities:backup(settings_file, backup_file)
+function Utilities:backupFlight(settings_file, backup_file)
   logger.dbg("AIRPLANEMODE: Backup - starting")
 
   if H.isFile(settings_file) then

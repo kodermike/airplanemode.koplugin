@@ -60,7 +60,6 @@ function FlightNetwork:reenableWifi()
     U:FlightmakeTrue("http_proxy_enabled", settings.koreader)
   end
 
-  --if NetworkMgr:getWifiState() == false and backup_config:isTrue("wifi_was_on") then
   if U:FlighthasNot("wifi_was_on", settings.backup) then
     logger.dbg("AIRPLANEMODE: Deleting wifi_was_on setting")
     U:delFlightsetting("wifi_was_on", settings.koreader)

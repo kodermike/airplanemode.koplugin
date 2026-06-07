@@ -259,7 +259,7 @@ function AirPlaneMode:Enable()
 
   logger.dbg("AIRPLANEMODE: dumping settings before running backup")
   self.dumpSettings()
-  local current_config = U:backup(settings.koreader, settings.backup)
+  local current_config = U:backupFlight(settings.koreader, settings.backup)
   logger.dbg("AIRPLANEMODE: dumping settings after running backup")
   self.dumpSettings()
   if current_config then

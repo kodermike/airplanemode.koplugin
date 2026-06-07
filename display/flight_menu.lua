@@ -12,7 +12,10 @@ local _ = require("gettext")
 local FlightConfig = require("flight_config")
 local settings = FlightConfig:init()
 
+local FlightDetails = require("display/flight_details")
+
 local U = require("utils/flight_utilities")
+
 local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
 
@@ -178,12 +181,12 @@ function FlightMenu:getMenuItems()
       end
     end,
   })
-  -- Updater management
+  -- About popup
   table.insert(airplane_config_table, {
-    text = _("Updater management"),
+    text = _("Advanced Settings"),
+    keep_menu_open = true,
     sub_item_table_func = function()
-      local updater_menu = require("display/flight_plan_menu")
-      return updater_menu:showMenu()
+      return FlightDetails:menu()
     end,
   })
   return airplane_config_table
