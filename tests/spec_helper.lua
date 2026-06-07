@@ -310,7 +310,7 @@ else
 end
 
 -- If not using a real KOReader checkout, set up local mocks for required modules
-local _lfs, Dispatcher, UIManager, U, storage
+local _lfs, bidi, Dispatcher, UIManager, U, storage
 if not use_koreader then
   -- Provide a minimal lfs attributes stub used by utils/flight_helpers
   _lfs = {}
@@ -387,6 +387,13 @@ if not use_koreader then
   end
 
   package.loaded["libs/libkoreader-lfs"] = _lfs
+
+  -- Simple bidi mock
+  local bidi = {
+    ltr = function(...) end,
+    rtl = function(...) end,
+  }
+  package.loaded["ui/bidi"] = bidi
 
   -- Simple logger mock
   local logger = {

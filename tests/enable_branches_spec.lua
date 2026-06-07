@@ -122,7 +122,7 @@ describe("Enable/Disable branches and edge conditions", function()
     }
 
     -- force backup to fail
-    U.backup = function()
+    U.backupFlight = function()
       return false
     end
     -- ensure airplanemode not active
