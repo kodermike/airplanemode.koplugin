@@ -46,7 +46,7 @@ function FlightNetwork:reenableWifi()
 
   -- got to watch out for our emulator friends :) (ie, me, testing)
   if Device:isEmulator() and U:FlightHas("emulator_fake_wifi_connected", settings.backup) then
-    logger.dbg("AIRPLANEMODE: Saving emulator_fake_wifi_connected setting: ", U:readFlightsetting("emulator_fake_wifi_connected", settings.backup))
+    logger.dbg("AIRPLANEMODE: Saving emulator_fake_wifi_connected setting: ", U:readFlightSetting("emulator_fake_wifi_connected", settings.backup))
     local old_emulator_fake_wifi_connected = U:readFlightSetting("emulator_fake_wifi_connected", settings.backup) or nil
     -- flip the real config
     if old_emulator_fake_wifi_connected ~= nil then
