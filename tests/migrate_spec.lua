@@ -14,17 +14,17 @@ describe("Migration flows: migrateconfig and migratesettings", function()
     local fh = io.open(settings.prev_config, "w")
     fh:write("old")
     fh:close()
-    U:saveFlightsetting("disabled_plugins", { calibre = true, newsdownloader = true }, settings.prev_config)
+    U:saveFlightSetting("disabled_plugins", { calibre = true, newsdownloader = true }, settings.prev_config)
 
     -- run migration
     AP.migrateconfig()
 
     -- version should be set in new file
-    local ver = U:readFlightsetting("version", settings.airplanemode)
+    local ver = U:readFlightSetting("version", settings.airplanemode)
     assert.are.equal(settings.version, ver)
 
     -- plugins_disabled should have moved, and calibre removed
-    local moved = U:readFlightsetting(settings.koreader_plugins, settings.airplanemode)
+    local moved = U:readFlightSetting(settings.koreader_plugins, settings.airplanemode)
     assert.is_table(moved)
     assert.is_nil(moved["calibre"]) -- calibre should be removed
     assert.is_true(moved["newsdownloader"])
@@ -38,20 +38,20 @@ describe("Migration flows: migrateconfig and migratesettings", function()
     local settings = require("flight_config"):init()
 
     -- set old koreader settings
-    U:saveFlightsetting("airplanemode", true, settings.koreader)
-    U:saveFlightsetting("plugins_disabled", { a = true }, settings.airplanemode)
-    U:saveFlightsetting("airplanemode_in_footer", true, settings.koreader)
+    U:saveFlightSetting("airplanemode", true, settings.koreader)
+    U:saveFlightSetting("plugins_disabled", { a = true }, settings.airplanemode)
+    U:saveFlightSetting("airplanemode_in_footer", true, settings.koreader)
 
     -- call migratesettings on an instance
     local inst = AP:new({ name = "airplanemode" })
     inst:migratesettings()
 
     -- airplanemode should now be under settings.airplanemode as airplanemode_enabled
-    assert.is_true(U:FlightisTrue("airplanemode_enabled", settings.airplanemode))
+    assert.is_true(U:FlightIsTrue("airplanemode_enabled", settings.airplanemode))
     -- old koreader key should be removed
-    assert.is_false(U:Flighthas("airplanemode", settings.koreader))
+    assert.is_false(U:FlightHas("airplanemode", settings.koreader))
     -- footer moved
-    assert.is_true(U:Flighthas("airplanemode_in_footer", settings.airplanemode))
-    assert.is_false(U:Flighthas("airplanemode_in_footer", settings.koreader))
+    assert.is_true(U:FlightHas("airplanemode_in_footer", settings.airplanemode))
+    assert.is_false(U:FlightHas("airplanemode_in_footer", settings.koreader))
   end)
 end)

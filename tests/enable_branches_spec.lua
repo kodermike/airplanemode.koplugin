@@ -29,7 +29,7 @@ describe("Enable/Disable branches and edge conditions", function()
     end
 
     -- case 1: silentmode = true -> restartKOReader called
-    U:saveFlightsetting("silentmode", true, settings.airplanemode)
+    U:saveFlightSetting("silentmode", true, settings.airplanemode)
     -- ensure backup will succeed
     if package.loaded["utils/flight_helpers"].isFile(settings.backup) then
       package.loaded["utils/flight_helpers"].removeFile(settings.backup)
@@ -39,7 +39,7 @@ describe("Enable/Disable branches and edge conditions", function()
 
     -- case 2: silentmode = false -> UIManager.show called (ConfirmBox)
     restarted = false
-    U:saveFlightsetting("silentmode", false, settings.airplanemode)
+    U:saveFlightSetting("silentmode", false, settings.airplanemode)
     inst:Enable()
     assert.is_not_nil(ui.last_shown)
   end)
@@ -55,14 +55,14 @@ describe("Enable/Disable branches and edge conditions", function()
     }
 
     -- ensure managewifi true in airplanemode -> should prevent disableWifi
-    U:saveFlightsetting("managewifi", true, settings.airplanemode)
+    U:saveFlightSetting("managewifi", true, settings.airplanemode)
     -- reset network disabled flag
     package.loaded["flight_net"]._disabled = false
     inst:Enable()
     assert.is_false(package.loaded["flight_net"]._disabled)
 
     -- now unset managewifi -> should disable wifi
-    U:delFlightsetting("managewifi", settings.airplanemode)
+    U:delFlightSetting("managewifi", settings.airplanemode)
     inst:Enable()
     assert.is_true(package.loaded["flight_net"]._disabled)
   end)
@@ -126,8 +126,8 @@ describe("Enable/Disable branches and edge conditions", function()
       return false
     end
     -- ensure airplanemode not active
-    U:delFlightsetting("airplanemode", nil)
+    U:delFlightSetting("airplanemode", nil)
     inst:Enable()
-    assert.is_true(not U:getStatus())
+    assert.is_true(not U:getFlightStatus())
   end)
 end)

@@ -51,15 +51,15 @@ describe("Edge cases for helpers and main flows", function()
     local fh = io.open(settings.airplanemode, "w")
     fh:write("preexisting")
     fh:close()
-    U:saveFlightsetting("version", "existing-version", settings.airplanemode)
+    U:saveFlightSetting("version", "existing-version", settings.airplanemode)
 
     -- Also set a plugins_disabled at koreader level so initSettingsFile would skip writing defaults
-    U:saveFlightplugins({ someplugin = true }, settings.koreader)
+    U:saveFlightPlugins({ someplugin = true }, settings.koreader)
 
     -- Call initSettingsFile; since file exists, it should skip and preserve our version
     AP.initSettingsFile()
 
-    local ver = U:readFlightsetting("version", settings.airplanemode)
+    local ver = U:readFlightSetting("version", settings.airplanemode)
     assert.are.equal("existing-version", ver)
   end)
 
@@ -71,14 +71,14 @@ describe("Edge cases for helpers and main flows", function()
     if package.loaded["utils/flight_helpers"].isFile(settings.airplanemode) then
       package.loaded["utils/flight_helpers"].removeFile(settings.airplanemode)
     end
-    U:delFlightsetting("airplanemode", settings.airplanemode)
-    U:delFlightsetting("airplanemode_in_footer", settings.airplanemode)
+    U:delFlightSetting("airplanemode", settings.airplanemode)
+    U:delFlightSetting("airplanemode_in_footer", settings.airplanemode)
 
     -- Should not error
     AP.deletePluginSettings()
 
     -- Still no settings
-    assert.is_false(U:Flighthas("airplanemode", settings.airplanemode))
-    assert.is_false(U:Flighthas("airplanemode_in_footer", settings.airplanemode))
+    assert.is_false(U:FlightHas("airplanemode", settings.airplanemode))
+    assert.is_false(U:FlightHas("airplanemode_in_footer", settings.airplanemode))
   end)
 end)

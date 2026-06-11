@@ -5,30 +5,37 @@ yellow=$(tput setaf 3)
 green=$(tput setaf 2)
 reset=$(tput sgr0)
 
-# Catch TODO comments
+# Catch leftover print statemments minus our logging class, which uses print to log
 export BLOCKER=0
-if grep -r -q --include="*.lua" "print"; then
-  printf "%10s\n" "${red}print${reset} ${yellow}found in your comments. Resolve before pushing.${reset}"
-  grep -r --include="*.lua" -n "print"
-  echo ""
+echo "${yellow}Looking for lingering comment blocks${reset}"
+printf "%10s" "${yellow}Checking print: ${reset}"
+if grep -r -q --include="*.lua" --exclude="flight_maint.lua" "print"; then
+  printf "%10s\n" "${red}FAIL${reset}"
+  grep -r --include="*.lua" --exclude="flight_maint.lua" -n "print"
   BLOCKER=1
+else
+  printf "%10s\n" "${green}OK${reset}"
 fi
 
 for keyword in TODO FIXME FIX BUG; do
+  printf "%10s" "${yellow}Checking ${keyword}: ${reset}"
   if grep -r -q --include="*.lua" "${keyword}:"; then
-    printf "%10s\n" "${red}${keyword}${reset} ${yellow}found in your comments. Resolve before pushing.${reset}"
+    printf "%10s\n" "${red}FAIL${reset}"
     grep -r --include="*.lua" -n "${keyword}:"
-    echo ""
     BLOCKER=1
+  else
+    printf "%10s\n" "${green}OK${reset}"
   fi
 done
 
 if [ "${BLOCKER}" == 1 ]; then
   exit 1
 fi
+echo ""
 
 # # Confirm basic tests pass
 
+echo "${yellow}Running luacheck${reset}"
 if ! luacheck .; then
   printf "%10s\n" "${red}luacheck failed. Commit aborted.${reset}"
   exit 1

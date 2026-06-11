@@ -106,7 +106,7 @@ return function(AirPlaneMode)
   ---@return PluginEntry[]
   function AirPlaneMode:getPlugins(builtin, settings)
     logger.dbg("AIRPLANEMODE: PluginManager - getPlugins - builtin: ", builtin, " settings: ", settings.koreader_plugins, settings.airplanemode)
-    local check_plugins = U:readFlightplugins(settings.koreader_plugins, settings.airplanemode)
+    local check_plugins = U:readFlightPlugins(settings.koreader_plugins, settings.airplanemode)
     local os_enabled_plugins, os_disabled_plugins = PluginLoader:loadPlugins()
     local plugin_list = {}
     local BUILTIN_PLUGINS = self:plugin_list()
@@ -143,9 +143,9 @@ return function(AirPlaneMode)
   function AirPlaneMode:disablePlugins(settings)
     --[[ start ]]
     logger.dbg("AIRPLANEMODE: retrieving list of plugins to disable")
-    local check_plugins = U:readFlightplugins(settings.koreader_plugins, settings.airplanemode)
+    local check_plugins = U:readFlightPlugins(settings.koreader_plugins, settings.airplanemode)
     logger.dbg("AIRPLANEMODE: retrieving list of already disabled plugins")
-    local disabled_plugins = U:readFlightsetting(settings.koreader_plugins, settings.koreader) or {}
+    local disabled_plugins = U:readFlightSetting(settings.koreader_plugins, settings.koreader) or {}
     -- a pair of loops for the logger
     if type(check_plugins) == "string" then
       if disabled_plugins[check_plugins] ~= true then
@@ -197,7 +197,7 @@ return function(AirPlaneMode)
       end
     end
     logger.dbg("AIRPLANEMODE: Saving", disabled_plugins)
-    U:saveFlightsetting("plugins_disabled", disabled_plugins, settings.koreader)
+    U:saveFlightSetting("plugins_disabled", disabled_plugins, settings.koreader)
   end
 
   ---Restore plugin settings from backup
@@ -206,19 +206,19 @@ return function(AirPlaneMode)
   function AirPlaneMode:restorePluginSettings(settings)
     -- restore calibrewireless seperately since it is independent of the calibre plugin
     -- re-set calibre_wirless to previous setting, or delete it if it didn't exist
-    if U:FlightisTrue("calibre_wireless", settings.backup) then
-      U:FlightmakeTrue("calibre_wireless", settings.koreader)
-    elseif U:FlightisFalse("calibre_wireless", settings.backup) then
-      U:FlightmakeFalse("calibre_wireless", settings.koreader)
+    if U:FlightIsTrue("calibre_wireless", settings.backup) then
+      U:FlightMakeTrue("calibre_wireless", settings.koreader)
+    elseif U:FlightIsFalse("calibre_wireless", settings.backup) then
+      U:FlightMakeFalse("calibre_wireless", settings.koreader)
     else
-      U:delFlightsetting("calibre_wireless", settings.koreader)
+      U:delFlightSetting("calibre_wireless", settings.koreader)
     end
     -- restore the rest of the plugins
-    local apm_disabled = U:readFlightsetting(settings.koreader_plugins, settings.airplanemode) or {}
+    local apm_disabled = U:readFlightSetting(settings.koreader_plugins, settings.airplanemode) or {}
     -- create a list of what is currently disabled
-    local previously_disabled = U:readFlightsetting(settings.koreader_plugins, settings.backup) or {}
+    local previously_disabled = U:readFlightSetting(settings.koreader_plugins, settings.backup) or {}
     -- Build the list of plugins disabled right now
-    local currently_disabled = U:readFlightsetting(settings.koreader_plugins, settings.koreader) or {}
+    local currently_disabled = U:readFlightSetting(settings.koreader_plugins, settings.koreader) or {}
     local to_disable = {}
     -- loop currently disabled items
     for plugin, __ in pairs(currently_disabled) do
@@ -233,10 +233,10 @@ return function(AirPlaneMode)
 
     if not next(to_disable) then
       -- We now have an empty list - the only disabled plugins were the ones added by Flight
-      U:delFlightsetting(settings.koreader_plugins, settings.koreader)
+      U:delFlightSetting(settings.koreader_plugins, settings.koreader)
     else
       -- Save the updated list of disabled plugins
-      U:saveFlightsetting(settings.koreader_plugins, to_disable, settings.koreader)
+      U:saveFlightSetting(settings.koreader_plugins, to_disable, settings.koreader)
     end
   end
 
@@ -244,15 +244,15 @@ return function(AirPlaneMode)
   ---@param settings table
   function AirPlaneMode:enableCalibre(settings)
     -- re-set calibre_wirless to previous setting, or delete it if it didn't exist
-    if U:FlightisTrue("calibre_wireless", settings.backup) then
+    if U:FlightIsTrue("calibre_wireless", settings.backup) then
       logger.dbg("AIRPLANEMODE: Saving calibre_wireless setting: true")
-      U:FlightmakeTrue("calibre_wireless", settings.koreader)
-    elseif U:FlightisFalse("calibre_wireless", settings.backup) then
+      U:FlightMakeTrue("calibre_wireless", settings.koreader)
+    elseif U:FlightIsFalse("calibre_wireless", settings.backup) then
       logger.dbg("AIRPLANEMODE: Saving calibre_wireless setting: false")
-      U:FlightmakeFalse("calibre_wireless", settings.koreader)
+      U:FlightMakeFalse("calibre_wireless", settings.koreader)
     else
       logger.dbg("AIRPLANEMODE: Deleting calibre_wireless setting")
-      U:delFlightsetting("calibre_wireless", settings.koreader)
+      U:delFlightSetting("calibre_wireless", settings.koreader)
     end
   end
 end

@@ -1,4 +1,4 @@
----@class SettingsConfig
+---@class FlightConfig
 ---@field koreader string
 ---@field backup string
 ---@field airplanemode string
@@ -12,46 +12,56 @@
 ---@field fullname string
 ---@field description string
 
----@class FlightConfig
----@field show_info boolean
----@field enabled_plugins table|nil
----@field disabled_plugins table|nil
----@field loaded_plugins table|nil
----@field all_plugins table|nil
-
 local DataStorage = require("datastorage")
 local meta = require("_meta")
 
 local FlightConfig = {
-  show_info = true,
-  enabled_plugins = nil,
-  disabled_plugins = nil,
-  loaded_plugins = nil,
-  all_plugins = nil,
+  koreader = nil,
+  backup = nil,
+  airplanemode = nil,
+  airplanemode_old = nil,
+  prev_config = nil,
+  koreader_plugins = nil,
+  airplane_plugins = nil,
+  icon_on = nil,
+  icon_off = nil,
+  version = nil,
+  description = nil,
+  fullname = nil,
+  debug_is_on = nil,
+  debug_verbose = nil,
 }
 
 ---Return base config file locations
----@return SettingsConfig
+---@return FlightConfig
 function FlightConfig:init()
-  local settings_file = DataStorage:getDataDir() .. "/settings.reader.lua"
-  local settings_bk = DataStorage:getDataDir() .. "/settings.reader.lua.airplane"
-  local airplanemode_config = DataStorage:getDataDir() .. "/settings/airplanemode.lua"
-  local airplanemode_old = airplanemode_config .. ".old"
-  local prev_config = DataStorage:getDataDir() .. "/settings/airplane_plugins.lua"
+  self.koreader = DataStorage:getDataDir() .. "/settings.reader.lua"
+  self.backup = DataStorage:getDataDir() .. "/settings.reader.lua.airplane"
+  self.airplanemode = DataStorage:getDataDir() .. "/settings/airplanemode.lua"
+  self.airplanemode_old = self.airplanemode .. ".old"
+  self.prev_config = DataStorage:getDataDir() .. "/settings/airplane_plugins.lua"
+  self.koreader_plugins = "plugins_disabled"
+  ---@deprecated: use koreader_plugins instead
+  self.airplane_plugins = "disabled_plugins"
+  self.description = meta.description or "Toggleing all your networking apps at once"
+  self.fullname = meta.fullname or "AirPlaneMode"
+  self.version = meta.version or "9.9.9"
+  self.icon_on = "\u{F1D8}"
+  self.icon_off = "\u{F1D9}"
 
   return {
-    koreader = settings_file,
-    backup = settings_bk,
-    airplanemode = airplanemode_config,
-    airplanemode_old = airplanemode_old,
-    prev_config = prev_config,
-    koreader_plugins = "plugins_disabled",
-    airplane_plugins = "disabled_plugins", ---@deprecated: use koreader_plugins instead
-    icon_on = "\u{F1D8}",
-    icon_off = "\u{F1D9}",
-    version = meta.version,
-    description = meta.description,
-    fullname = meta.fullname,
+    koreader = self.koreader,
+    backup = self.backup,
+    airplanemode = self.airplanemode,
+    airplanemode_old = self.airplanemode_old,
+    prev_config = self.prev_config,
+    koreader_plugins = self.koreader_plugins,
+    airplane_plugins = self.airplane_plugins,
+    icon_on = self.icon_on,
+    icon_off = self.icon_off,
+    version = self.version,
+    description = self.description,
+    fullname = self.fullname,
   }
 end
 
