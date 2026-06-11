@@ -100,72 +100,72 @@ describe("utils/flight_utilities - full behavior with mocked LuaSettings", funct
     package.loaded["libs/libkoreader-lfs"] = package.loaded["libs/libkoreader-lfs"] or {}
   end)
 
-  it("saveFlightsetting/readFlightsetting handle nil inputs and normal flows", function()
+  it("saveFlightSetting/readFlightSetting handle nil inputs and normal flows", function()
     package.loaded["utils/flight_utilities"] = nil
     local Utilities = require("utils/flight_utilities")
     local settings = require("flight_config"):init()
 
     -- nil object
-    assert.is_false(Utilities:saveFlightsetting(nil, "v", settings.airplanemode))
+    assert.is_false(Utilities:saveFlightSetting(nil, "v", settings.airplanemode))
     -- nil value
-    assert.is_false(Utilities:saveFlightsetting("obj", nil, settings.airplanemode))
+    assert.is_false(Utilities:saveFlightSetting("obj", nil, settings.airplanemode))
 
     -- normal save
-    assert.is_true(Utilities:saveFlightsetting("mykey", "myval", settings.airplanemode))
-    assert.are.equal("myval", Utilities:readFlightsetting("mykey", settings.airplanemode))
+    assert.is_true(Utilities:saveFlightSetting("mykey", "myval", settings.airplanemode))
+    assert.are.equal("myval", Utilities:readFlightSetting("mykey", settings.airplanemode))
   end)
 
-  it("readFlightplugins/saveFlightplugins roundtrip", function()
+  it("readFlightPlugins/saveFlightPlugins roundtrip", function()
     package.loaded["utils/flight_utilities"] = nil
     local Utilities = require("utils/flight_utilities")
     local settings = require("flight_config"):init()
 
-    Utilities:saveFlightplugins({ a = true }, settings.airplanemode)
-    local got = Utilities:readFlightplugins(settings.koreader_plugins, settings.airplanemode)
+    Utilities:saveFlightPlugins({ a = true }, settings.airplanemode)
+    local got = Utilities:readFlightPlugins(settings.koreader_plugins, settings.airplanemode)
     assert.is_table(got)
     assert.is_true(got.a)
   end)
 
-  it("Flighthas/FlighthasNot/Flighttoggle and boolean helpers", function()
+  it("FlightHas/FlightHasNot/FlightToggle and boolean helpers", function()
     package.loaded["utils/flight_utilities"] = nil
     local Utilities = require("utils/flight_utilities")
     local settings = require("flight_config"):init()
 
     -- ensure starts nil
-    assert.is_false(Utilities:Flighthas("flag", settings.airplanemode))
-    assert.is_true(Utilities:FlighthasNot("flag", settings.airplanemode))
+    assert.is_false(Utilities:FlightHas("flag", settings.airplanemode))
+    assert.is_true(Utilities:FlightHasNot("flag", settings.airplanemode))
 
-    Utilities:FlightmakeTrue("flag", settings.airplanemode)
-    assert.is_true(Utilities:Flighthas("flag", settings.airplanemode))
-    assert.is_true(Utilities:FlightisTrue("flag", settings.airplanemode))
-    assert.is_false(Utilities:FlightisFalse("flag", settings.airplanemode))
+    Utilities:FlightMakeTrue("flag", settings.airplanemode)
+    assert.is_true(Utilities:FlightHas("flag", settings.airplanemode))
+    assert.is_true(Utilities:FlightIsTrue("flag", settings.airplanemode))
+    assert.is_false(Utilities:FlightIsFalse("flag", settings.airplanemode))
 
-    Utilities:FlightmakeFalse("flag", settings.airplanemode)
-    assert.is_true(Utilities:FlightisFalse("flag", settings.airplanemode))
+    Utilities:FlightMakeFalse("flag", settings.airplanemode)
+    assert.is_true(Utilities:FlightIsFalse("flag", settings.airplanemode))
 
-    Utilities:FlightmakeTrue("flag", settings.airplanemode)
-    Utilities:Flighttoggle("flag", settings.airplanemode)
+    Utilities:FlightMakeTrue("flag", settings.airplanemode)
+    Utilities:FlightToggle("flag", settings.airplanemode)
     -- toggle flips
-    assert.is_false(Utilities:FlightisTrue("flag", settings.airplanemode))
+    assert.is_false(Utilities:FlightIsTrue("flag", settings.airplanemode))
   end)
 
-  it("FlightnilOrFalse/FlightnilOrTrue/FlightflipNilOrFalse behavior", function()
+  it("FlightNilOrFalse/FlightNilOrTrue/FlightFlipNilOrFalse behavior", function()
     package.loaded["utils/flight_utilities"] = nil
     local Utilities = require("utils/flight_utilities")
     local settings = require("flight_config"):init()
 
     -- nil case
-    assert.is_true(Utilities:FlightnilOrFalse("x", settings.airplanemode))
-    assert.is_true(Utilities:FlightnilOrTrue("x", settings.airplanemode))
+    assert.is_true(Utilities:FlightNilOrFalse("x", settings.airplanemode))
+    assert.is_true(Utilities:FlightNilOrTrue("x", settings.airplanemode))
 
-    Utilities:FlightmakeFalse("x", settings.airplanemode)
-    assert.is_true(Utilities:FlightnilOrFalse("x", settings.airplanemode))
-    Utilities:FlightmakeTrue("x", settings.airplanemode)
-    assert.is_true(Utilities:FlightnilOrTrue("x", settings.airplanemode))
+    Utilities:FlightMakeFalse("x", settings.airplanemode)
+    assert.is_true(Utilities:FlightNilOrFalse("x", settings.airplanemode))
+    Utilities:FlightMakeTrue("x", settings.airplanemode)
+    assert.is_true(Utilities:FlightNilOrTrue("x", settings.airplanemode))
 
-    Utilities:FlightmakeFalse("y", settings.airplanemode)
-    Utilities:FlightflipNilOrFalse("y", settings.airplanemode)
-    assert.is_true(Utilities:FlightisTrue("y", settings.airplanemode))
+    Utilities:FlightMakeFalse("y", settings.airplanemode)
+    Utilities:FlightFlipNilOrFalse("y", settings.airplanemode)
+    assert.is_true(Utilities:FlightIsTrue("y", settings.airplanemode))
   end)
 
   it("backup copies file when present and returns false when missing", function()
@@ -193,7 +193,7 @@ describe("utils/flight_utilities - full behavior with mocked LuaSettings", funct
     assert.is_false(Utilities:backupFlight(settings.koreader, settings.backup))
   end)
 
-  it("getStatus reflects backup and airplanemode_enabled", function()
+  it("getFlightStatus reflects backup and airplanemode_enabled", function()
     package.loaded["utils/flight_utilities"] = nil
     local Utilities = require("utils/flight_utilities")
     local settings = require("flight_config"):init()
@@ -206,11 +206,11 @@ describe("utils/flight_utilities - full behavior with mocked LuaSettings", funct
     bf:write("b")
     bf:close()
 
-    Utilities:FlightmakeTrue("airplanemode_enabled", settings.airplanemode)
-    assert.is_true(Utilities:getStatus())
+    Utilities:FlightMakeTrue("airplanemode_enabled", settings.airplanemode)
+    assert.is_true(Utilities:getFlightStatus())
 
-    Utilities:FlightmakeFalse("airplanemode_enabled", settings.airplanemode)
-    assert.is_false(Utilities:getStatus())
+    Utilities:FlightMakeFalse("airplanemode_enabled", settings.airplanemode)
+    assert.is_false(Utilities:getFlightStatus())
   end)
 
   it("toggleAirPlaneMode sets the airplanemode in koreader settings", function()
@@ -219,8 +219,8 @@ describe("utils/flight_utilities - full behavior with mocked LuaSettings", funct
     local settings = require("flight_config"):init()
 
     Utilities:toggleAirPlaneMode(true)
-    assert.is_true(Utilities:FlightisTrue("airplanemode_enabled", settings.airplanemode))
+    assert.is_true(Utilities:FlightIsTrue("airplanemode_enabled", settings.airplanemode))
     Utilities:toggleAirPlaneMode(false)
-    assert.is_true(Utilities:FlightisFalse("airplanemode_enabled", settings.airplanemode))
+    assert.is_true(Utilities:FlightIsFalse("airplanemode_enabled", settings.airplanemode))
   end)
 end)

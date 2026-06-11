@@ -29,14 +29,14 @@ local M = require("display/flight_menu")
 
 local function restoreState()
   -- we just rebooted to change apm states, now switch pref back
-  if U:Flighthas("restoreopt", settings.airplanemode) and U:FlightisTrue("restoreopt", settings.airplanemode) then
+  if U:FlightHas("restoreopt", settings.airplanemode) and U:FlightIsTrue("restoreopt", settings.airplanemode) then
     logger.dbg("AIRPLANEMODE: Restore activated")
-    local last_start = U:readFlightsetting("restart_with", settings.airplanemode) or nil
+    local last_start = U:readFlightSetting("restart_with", settings.airplanemode) or nil
     -- make sure we didn't enable this while already in airplanemode
     if last_start ~= nil then
       logger.dbg("AIRPLANEMODE: resetting the main config to use", last_start)
-      U:saveFlightsetting("start_with", last_start, settings.koreader)
-      U:delFlightsetting("restart_with", settings.airplanemode)
+      U:saveFlightSetting("start_with", last_start, settings.koreader)
+      U:delFlightSetting("restart_with", settings.airplanemode)
     end
   end
 end
@@ -45,7 +45,7 @@ local function saveState(name)
   -- grab the current startup mode
   logger.dbg("AIRPLANEMODE: saving state")
   logger.dbg("AIRPLANEMODE: Activated while in", name)
-  local cur_start = U:readFlightsetting("start_with", settings.koreader) or nil
+  local cur_start = U:readFlightSetting("start_with", settings.koreader) or nil
   local ui_mode
   -- figure out where we are./
   if cur_start == nil then
@@ -57,9 +57,9 @@ local function saveState(name)
   end
   if ui_mode ~= nil then
     -- save that state in our config
-    U:saveFlightsetting("restart_with", cur_start, settings.airplanemode)
+    U:saveFlightSetting("restart_with", cur_start, settings.airplanemode)
     -- set our new restart mode
-    U:saveFlightsetting("start_with", ui_mode, settings.koreader)
+    U:saveFlightSetting("start_with", ui_mode, settings.koreader)
   end
 end
 
@@ -88,23 +88,6 @@ if type(Flightfooter) == "function" then
   Flightfooter(AirPlaneMode)
 end
 
----Dump current on-disk airplanemode settings for debugging
----@return nil
-function AirPlaneMode.dumpSettings()
-  -- Short-lived verification: read on-disk file contents and log them
-  local fh = io.open(settings.airplanemode, "r")
-  if fh then
-    local contents = fh:read("*a")
-    fh:close()
-    logger.dbg("AIRPLANEMODE: on-disk airplanemode.lua after save:\n", contents)
-  else
-    logger.err("AIRPLANEMODE: failed to open on-disk airplanemode.lua for verification: ", settings.airplanemode)
-  end
-  local check_state = U:readFlightsetting("airplanemode", settings.koreader) or false
-  logger.dbg("AIRPLANEMODE: check state after dumpSettings: ", check_state)
-  return
-end
-
 ---Register actions with dispatcher
 ---@return nil
 function AirPlaneMode.onDispatcherRegisterActions()
@@ -116,8 +99,6 @@ end
 ---Initialize plugin
 ---@return nil
 function AirPlaneMode:init()
-  logger.dbg("AIRPLANEMODE: calling airplanemode dump")
-  self:dumpSettings()
   self:onDispatcherRegisterActions()
   if H.isFile(settings.prev_config) then
     self:migrateconfig()
@@ -126,7 +107,7 @@ function AirPlaneMode:init()
       self:initSettingsFile()
     end
   end
-  if U:Flighthas("airplanemode", settings.koreader) then
+  if U:FlightHas("airplanemode", settings.koreader) then
     self:migratesettings()
   end
   self.additional_footer_content_func = function()
@@ -140,13 +121,13 @@ function AirPlaneMode:init()
     end
   end
 
-  self.show_value_in_footer = U:readFlightsetting("airplanemode_in_footer", settings.airplanemode)
+  self.show_value_in_footer = U:readFlightSetting("airplanemode_in_footer", settings.airplanemode)
   if self.show_value_in_footer then
     self:addAdditionalFooterContent()
   end
-  local curversion = U:readFlightsetting("version", settings.airplanemode)
+  local curversion = U:readFlightSetting("version", settings.airplanemode)
   if (curversion == nil) or (curversion ~= settings.version) then
-    U:saveFlightsetting("version", settings.version, settings.airplanemode)
+    U:saveFlightSetting("version", settings.version, settings.airplanemode)
   end
   self.ui.menu:registerToMainMenu(self)
 end
@@ -160,33 +141,33 @@ function AirPlaneMode.initSettingsFile()
     return
   else
     -- Only write defaults if the setting is not already present (avoid clobbering)
-    local cur_disabled = U:readFlightplugins(settings.koreader_plugins, settings.koreader)
+    local cur_disabled = U:readFlightPlugins(settings.koreader_plugins, settings.koreader)
     if cur_disabled ~= nil then
       logger.dbg("AIRPLANEMODE: initSettingsFile - disabled_plugins already present, skipping. traceback:\n", debug.traceback())
       return
     end
 
-    U:saveFlightsetting("version", settings.version, settings.airplanemode)
+    U:saveFlightSetting("version", settings.version, settings.airplanemode)
     local default_disable = {}
     local default_disable_list = { "newsdownloader", "wallabag", "kosync", "opds", "SSH", "timesync", "httpinspector" }
     for __, plugin in ipairs(default_disable_list) do
       default_disable[plugin] = true
     end
     logger.dbg("AIRPLANEMODE: Saving default settings to ", settings.airplanemode, " at ", os.time(), "\nstack:\n", debug.traceback())
-    U:saveFlightplugins(default_disable, settings.airplanemode)
+    U:saveFlightPlugins(default_disable, settings.airplanemode)
   end
 end
 
 -- migrate old config to new format if necessary
 function AirPlaneMode.migrateconfig()
   logger.info("AIRPLANEMODE: migrating config from ", settings.prev_config, " to ", settings.airplanemode)
-  U:saveFlightsetting("version", settings.version, settings.airplanemode)
-  local disabled = U:readFlightsetting("disabled_plugins", settings.prev_config)
+  U:saveFlightSetting("version", settings.version, settings.airplanemode)
+  local disabled = U:readFlightSetting("disabled_plugins", settings.prev_config)
   if disabled then
     if disabled["calibre"] then
       disabled["calibre"] = nil
     end
-    U:saveFlightsetting(settings.koreader_plugins, disabled, settings.airplanemode)
+    U:saveFlightSetting(settings.koreader_plugins, disabled, settings.airplanemode)
   end
   -- I know, why wouldn't it be there, but caution always
   H.removeFile(settings.prev_config)
@@ -196,24 +177,24 @@ function AirPlaneMode:migratesettings()
   logger.dbg("AIRPLANEMODE: koreader config found, migrating to new layout")
   -- move things around for the new configuration layout
   -- in case it is running
-  if U:FlightisTrue("airplanemode", settings.koreader) then
-    U:FlightmakeTrue("airplanemode_enabled", settings.airplanemode)
-  elseif U:FlightisFalse("airplanemode", settings.koreader) then
-    U:FlightmakeFalse("airplanemode_enabled", settings.airplanemode)
+  if U:FlightIsTrue("airplanemode", settings.koreader) then
+    U:FlightMakeTrue("airplanemode_enabled", settings.airplanemode)
+  elseif U:FlightIsFalse("airplanemode", settings.koreader) then
+    U:FlightMakeFalse("airplanemode_enabled", settings.airplanemode)
   end
   -- if we have anything configured to disable, update the variable name
-  U:delFlightsetting("airplanemode", settings.koreader)
-  if U:Flighthas(settings.koreader_plugins, settings.airplanemode) then
-    local disabled_plugins = U:readFlightsetting(settings.koreader_plugins, settings.airplanemode)
+  U:delFlightSetting("airplanemode", settings.koreader)
+  if U:FlightHas(settings.koreader_plugins, settings.airplanemode) then
+    local disabled_plugins = U:readFlightSetting(settings.koreader_plugins, settings.airplanemode)
     if disabled_plugins then
-      U:saveFlightsetting(settings.koreader_plugins, disabled_plugins, settings.airplanemode)
-      U:delFlightsetting(settings.koreader_plugins, settings.airplanemode)
+      U:saveFlightSetting(settings.koreader_plugins, disabled_plugins, settings.airplanemode)
+      U:delFlightSetting(settings.koreader_plugins, settings.airplanemode)
     end
   end
   -- move footer toggle
-  if U:Flighthas("airplanemode_in_footer", settings.koreader) then
-    U:saveFlightsetting("airplanemode_in_footer", U:readFlightsetting("airplanemode_in_footer", settings.koreader), settings.airplanemode)
-    U:delFlightsetting("airplanemode_in_footer", settings.koreader)
+  if U:FlightHas("airplanemode_in_footer", settings.koreader) then
+    U:saveFlightSetting("airplanemode_in_footer", U:readFlightSetting("airplanemode_in_footer", settings.koreader), settings.airplanemode)
+    U:delFlightSetting("airplanemode_in_footer", settings.koreader)
   end
 end
 -- hook for stopPlugin support
@@ -232,17 +213,17 @@ end
 -- hook for deleteplugin calls
 function AirPlaneMode.deletePluginSettings()
   logger.dbg("AIRPLANEMODE: deletePluginSettings called at ", os.time(), "\nstack:\n", debug.traceback())
-  if U:readFlightsetting("airplanemode", settings.airplanemode) then
+  if U:readFlightSetting("airplanemode", settings.airplanemode) then
     UIManager:show(InfoMessage:new({
       text = _("Removing AirPlaneMode while still running. Plugins and networking will not be automatically restored."),
       timeout = 3,
     }))
   end
-  if U:Flighthas("airplanemode", settings.airplanemode) then
-    U:delFlightsetting("airplanemode", settings.airplanemode)
+  if U:FlightHas("airplanemode", settings.airplanemode) then
+    U:delFlightSetting("airplanemode", settings.airplanemode)
   end
-  if U:Flighthas("airplanemode_in_footer", settings.airplanemode) then
-    U:delFlightsetting("airplanemode_in_footer", settings.airplanemode)
+  if U:FlightHas("airplanemode_in_footer", settings.airplanemode) then
+    U:delFlightSetting("airplanemode_in_footer", settings.airplanemode)
   end
   if H.isFile(settings.airplanemode) then
     logger.dbg("AIRPLANEMODE: deletePluginSettings removing file: ", settings.airplanemode)
@@ -257,18 +238,15 @@ end
 function AirPlaneMode:Enable()
   logger.dbg("AIRPLANEMODE: enabling")
 
-  logger.dbg("AIRPLANEMODE: dumping settings before running backup")
-  self.dumpSettings()
   local current_config = U:backupFlight(settings.koreader, settings.backup)
-  logger.dbg("AIRPLANEMODE: dumping settings after running backup")
-  self.dumpSettings()
+
   if current_config then
     -- [[ disable plugins, wireless, all of it ]]
 
     -- instead of disabling the calibre plugin, just disable the wireless part -  this lets you still search calibre metadata
     logger.dbg("AIRPLANEMODE: disabling calibre wireless")
-    if U:FlightnilOrTrue("calibre_wireless", settings.koreader) then
-      U:FlightmakeFalse("calibre_wireless", settings.koreader)
+    if U:FlightNilOrTrue("calibre_wireless", settings.koreader) then
+      U:FlightMakeFalse("calibre_wireless", settings.koreader)
     end
 
     logger.dbg("AIRPLANEMODE: disabling plugins")
@@ -276,17 +254,13 @@ function AirPlaneMode:Enable()
     -- exclude anything without getNetworkInterfaceName - like android - since we can't control their wifi
     if
       (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator())
-      and ((U:FlighthasNot("managewifi", settings.airplanemode)) or (U:Flighthas("managewifi", settings.airplanemode) and U:FlightnilOrFalse("managewifi", settings.airplanemode)))
+      and ((U:FlightHasNot("managewifi", settings.airplanemode)) or (U:FlightHas("managewifi", settings.airplanemode) and U:FlightNilOrFalse("managewifi", settings.airplanemode)))
     then
       logger.dbg("AIRPLANEMODE: disabling wifi")
       A:disableWifi()
     end
     -- mark airplane as active
-    logger.dbg("AIRPLANEMODE: marking airplane as active")
-    self.dumpSettings()
     U:toggleAirPlaneMode(true)
-    logger.dbg("AIRPLANEMODE: after enabling")
-    self.dumpSettings()
     -- Only attempt to save reading state if we are in the reader
     if string.match(self.name, "reader") then
       logger.dbg("AIRPLANEMODE: saving settings for reader")
@@ -295,17 +269,11 @@ function AirPlaneMode:Enable()
 
     if Device:canRestart() then
       logger.dbg("AIRPLANEMODE: can restart, saving state and restarting")
-      logger.dbg("AIRPLANEMODE: dump just before restart")
-      self.dumpSettings()
-      if U:FlightisTrue("restoreopt", settings.airplanemode) then
+      if U:FlightIsTrue("restoreopt", settings.airplanemode) then
         logger.dbg("AIRPLANEMODE: restoreopt is true, saving state of", self.name)
         saveState(self.name)
       end
-      logger.dbg("AIRPLANEMODE: dump just after restoreopt")
-      self.dumpSettings()
-      if U:FlightnilOrFalse("silentmode", settings.airplanemode) then
-        logger.dbg("AIRPLANEMODE: dump without silentmode")
-        self.dumpSettings()
+      if U:FlightNilOrFalse("silentmode", settings.airplanemode) then
         UIManager:show(ConfirmBox:new({
           text = _("KOReader needs to restart to finish applying changes for AirPlaneMode."),
           ok_text = _("OK"),
@@ -315,8 +283,6 @@ function AirPlaneMode:Enable()
           end,
         }))
       else
-        logger.dbg("AIRPLANEMODE: dump with silentmode")
-        self.dumpSettings()
         UIManager:restartKOReader()
       end
     else
@@ -339,12 +305,11 @@ function AirPlaneMode:Disable()
   -- disable airplanemode
 
   U:toggleAirPlaneMode(false)
-  self:dumpSettings()
   logger.dbg("AIRPLANEMODE: re-enabled, restoring network next")
   -- If managing wifi, revert settingss
   if
     (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator())
-    and ((U:FlighthasNot("managewifi", settings.airplanemode)) or (U:Flighthas("managewifi", settings.airplanemode) and U:FlightnilOrFalse("managewifi", settings.airplanemode)))
+    and ((U:FlightHasNot("managewifi", settings.airplanemode)) or (U:FlightHas("managewifi", settings.airplanemode) and U:FlightNilOrFalse("managewifi", settings.airplanemode)))
   then
     logger.dbg("AIRPLANEMODE: re-enabling wifi")
     A:reenableWifi()
@@ -353,13 +318,13 @@ function AirPlaneMode:Disable()
   self:enableCalibre(settings)
 
   logger.dbg("AIRPLANEMODE: Reading Flight plugins")
-  local apm_disabled = U:readFlightplugins(settings.koreader_plugins, settings.airplanemode)
+  local apm_disabled = U:readFlightPlugins(settings.koreader_plugins, settings.airplanemode)
   -- create a list of what is currently disabled
   logger.dbg("AIRPLANEMODE: Reading previous plugins_disabled setting")
-  local previously_disabled = U:readFlightsetting(settings.koreader_plugins, settings.backup) or {}
+  local previously_disabled = U:readFlightSetting(settings.koreader_plugins, settings.backup) or {}
   -- Build the list of plugins disabled right now
   logger.dbg("AIRPLANEMODE: Reading current plugins_disabled setting")
-  local currently_disabled = U:readFlightsetting(settings.koreader_plugins, settings.koreader) or {}
+  local currently_disabled = U:readFlightSetting(settings.koreader_plugins, settings.koreader) or {}
   local to_disable = {}
 
   -- loop currently disabled items
@@ -374,11 +339,11 @@ function AirPlaneMode:Disable()
   if not next(to_disable) then
     -- We still have an empty list - the only disabled plugins were the ones added by Flight
     logger.dbg("AIRPLANEMODE: no plugins to re-disable")
-    U:delFlightsetting("plugins_disabled", settings.koreader)
+    U:delFlightSetting("plugins_disabled", settings.koreader)
   else
     -- Save the updated list of disabled plugins
     logger.dbg("AIRPLANEMODE: saving updated plugins_disabled setting")
-    U:saveFlightsetting(settings.koreader_plugins, to_disable, settings.koreader)
+    U:saveFlightSetting(settings.koreader_plugins, to_disable, settings.koreader)
   end
 
   logger.dbg("AIRPLANEMODE: restoring plugin settings")
@@ -390,7 +355,6 @@ function AirPlaneMode:Disable()
     H.removeFile(settings.backup)
   end
 
-  self:dumpSettings()
   if string.match(self.name, "reader") then
     -- regardless of options, if we're in a document then save our position
     logger.dbg("AIRPLANEMODE - saving settings for reader")
@@ -399,11 +363,11 @@ function AirPlaneMode:Disable()
   UIManager:unschedule(self.update_status_bars, self)
   if Device:canRestart() then
     logger.dbg("AIRPLANEMODE: device can restart, checking restart options and restarting")
-    if U:FlightisTrue("restoreopt", settings.airplanemode) then
+    if U:FlightIsTrue("restoreopt", settings.airplanemode) then
       logger.dbg("AIRPLANEMODE: saving state name")
       saveState(self.name)
     end
-    if U:FlightnilOrFalse("silentmode", settings.airplanemode) then
+    if U:FlightNilOrFalse("silentmode", settings.airplanemode) then
       UIManager:askForRestart(_("KOReader needs to restart to finish disabling plugins for AirPlaneMode."))
     else
       UIManager:restartKOReader()
@@ -430,7 +394,7 @@ function AirPlaneMode:onDisable()
 end
 
 function AirPlaneMode:onToggle()
-  if self:getStatus() then
+  if self:getFlightStatus() then
     self:Disable()
   else
     self:Enable()

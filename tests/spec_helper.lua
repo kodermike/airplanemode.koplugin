@@ -507,6 +507,7 @@ if not use_koreader then
       version = "0.0-test",
       icon_on = "[ON]",
       icon_off = "[OFF]",
+      fullname = "TestingMode",
     }
     return s
   end
@@ -536,41 +537,41 @@ if not use_koreader then
     return (file or "memory") .. ":" .. tostring(key)
   end
 
-  function U:readFlightsetting(key, file)
+  function U:readFlightSetting(key, file)
     return storage[key_path(key, file)]
   end
-  function U:saveFlightsetting(key, val, file)
+  function U:saveFlightSetting(key, val, file)
     storage[key_path(key, file)] = val
   end
-  function U:delFlightsetting(key, file)
+  function U:delFlightSetting(key, file)
     storage[key_path(key, file)] = nil
   end
-  function U:Flighthas(key, file)
-    return U:readFlightsetting(key, file) ~= nil
+  function U:FlightHas(key, file)
+    return U:readFlightSetting(key, file) ~= nil
   end
-  function U:FlightisTrue(key, file)
-    return U:readFlightsetting(key, file) == true
+  function U:FlightIsTrue(key, file)
+    return U:readFlightSetting(key, file) == true
   end
-  function U:FlightisFalse(key, file)
-    return U:readFlightsetting(key, file) == false
+  function U:FlightIsFalse(key, file)
+    return U:readFlightSetting(key, file) == false
   end
-  function U:FlightnilOrTrue(key, file)
-    local v = U:readFlightsetting(key, file)
+  function U:FlightNilOrTrue(key, file)
+    local v = U:readFlightSetting(key, file)
     return v == nil or v == true
   end
-  function U:FlightnilOrFalse(key, file)
-    local v = U:readFlightsetting(key, file)
+  function U:FlightNilOrFalse(key, file)
+    local v = U:readFlightSetting(key, file)
     return v == nil or v == false
   end
-  function U:FlighthasNot(key, file)
-    return not U:Flighthas(key, file)
+  function U:FlightHasNot(key, file)
+    return not U:FlightHas(key, file)
   end
 
-  function U:readFlightplugins(key, file)
-    return U:readFlightsetting(key, file)
+  function U:readFlightPlugins(key, file)
+    return U:readFlightSetting(key, file)
   end
-  function U:saveFlightplugins(tbl, file)
-    U:saveFlightsetting("plugins_disabled", tbl, file)
+  function U:saveFlightPlugins(tbl, file)
+    U:saveFlightSetting("plugins_disabled", tbl, file)
   end
 
   function U:backupFlight(src, dst)
@@ -584,17 +585,17 @@ if not use_koreader then
   end
 
   function U:toggleAirPlaneMode(val)
-    U:saveFlightsetting("airplanemode", val, nil)
+    U:saveFlightSetting("airplanemode", val, nil)
   end
-  function U:getStatus()
-    return U:readFlightsetting("airplanemode", nil)
+  function U:getFlightStatus()
+    return U:readFlightSetting("airplanemode", nil)
   end
 
-  function U:FlightmakeTrue(key, file)
-    U:saveFlightsetting(key, true, file)
+  function U:FlightMakeTrue(key, file)
+    U:saveFlightSetting(key, true, file)
   end
-  function U:FlightmakeFalse(key, file)
-    U:saveFlightsetting(key, false, file)
+  function U:FlightMakeFalse(key, file)
+    U:saveFlightSetting(key, false, file)
   end
 
   package.loaded["utils/flight_utilities"] = U

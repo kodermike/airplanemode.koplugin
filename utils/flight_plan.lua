@@ -487,16 +487,16 @@ end
 
 --- Check for updates and show a message if a new version is available.
 function FlightPlan:checkForUpdates()
-  if U:Flighthas("dev_branch", settings.airplanemode) and U:readFlightsetting("dev_branch", settings.airplanemode) ~= "" then
-    local branch = U:readFlightsetting("dev_branch", settings.airplanemode)
+  if U:FlightHas("dev_branch", settings.airplanemode) and U:readFlightSetting("dev_branch", settings.airplanemode) ~= "" then
+    local branch = U:readFlightSetting("dev_branch", settings.airplanemode)
     FlightPlan.installBranch(branch, function()
       local last_install_source = "branch:" .. branch
-      U:saveFlightsetting("last_install_source", last_install_source, settings.airplanemode)
+      U:saveFlightSetting("last_install_source", last_install_source, settings.airplanemode)
     end)
   else
     FlightPlan.check(function()
       local last_install_source = "release"
-      U:saveFlightsetting("last_install_source", last_install_source, settings.airplanemode)
+      U:saveFlightSetting("last_install_source", last_install_source, settings.airplanemode)
     end)
   end
 end
@@ -508,10 +508,10 @@ function FlightPlan:resetToStableRelease()
     ok_text = _("Reset"),
     ok_callback = function()
       self.dev_branch = ""
-      U:saveFlightsetting("dev_branch", "", settings.airplanemode)
+      U:saveFlightSetting("dev_branch", "", settings.airplanemode)
       FlightPlan.installLatestStable(function()
         self.last_install_source = "release"
-        U:saveFlightsetting("last_install_source", "release", settings.airplanemode)
+        U:saveFlightSetting("last_install_source", "release", settings.airplanemode)
         UIManager:close(self)
       end)
     end,
@@ -543,7 +543,7 @@ function FlightPlan:editDevBranch(touchmenu_instance)
             local raw = dlg:getInputText() or ""
             local trimmed = raw:gsub("^%s+", ""):gsub("%s+$", "")
             self.dev_branch = trimmed
-            U:saveFlightsetting("dev_branch", trimmed, settings.airplanemode)
+            U:saveFlightSetting("dev_branch", trimmed, settings.airplanemode)
             UIManager:close(dlg)
             if touchmenu_instance and touchmenu_instance.updateItems then
               touchmenu_instance:updateItems()

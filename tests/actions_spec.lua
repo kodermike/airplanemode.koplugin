@@ -19,13 +19,13 @@ describe("AirPlaneMode actions - stop, delete, enable/disable", function()
 
     -- set airplanemode to true in the in-memory utilities
     U:toggleAirPlaneMode(true)
-    assert.is_true(U:getStatus())
+    assert.is_true(U:getFlightStatus())
 
     -- call stopPlugin
     AP.stopPlugin()
 
     assert.is_true(restored)
-    assert.is_false(U:getStatus())
+    assert.is_false(U:getFlightStatus())
   end)
 
   it("deletePluginSettings should remove files and settings", function()
@@ -38,8 +38,8 @@ describe("AirPlaneMode actions - stop, delete, enable/disable", function()
     fh:close()
 
     -- set settings in storage to simulate running state
-    U:saveFlightsetting("airplanemode", true, settings.airplanemode)
-    U:saveFlightsetting("airplanemode_in_footer", true, settings.airplanemode)
+    U:saveFlightSetting("airplanemode", true, settings.airplanemode)
+    U:saveFlightSetting("airplanemode_in_footer", true, settings.airplanemode)
 
     assert.is_true(package.loaded["utils/flight_helpers"].isFile(settings.airplanemode))
 
@@ -48,8 +48,8 @@ describe("AirPlaneMode actions - stop, delete, enable/disable", function()
     -- file should be removed
     assert.is_false(package.loaded["utils/flight_helpers"].isFile(settings.airplanemode))
     -- settings should be deleted
-    assert.is_false(U:Flighthas("airplanemode", settings.airplanemode))
-    assert.is_false(U:Flighthas("airplanemode_in_footer", settings.airplanemode))
+    assert.is_false(U:FlightHas("airplanemode", settings.airplanemode))
+    assert.is_false(U:FlightHas("airplanemode_in_footer", settings.airplanemode))
   end)
 
   it("Enable should set airplanemode and create a backup; Disable should clear it and remove backup", function()
@@ -65,7 +65,7 @@ describe("AirPlaneMode actions - stop, delete, enable/disable", function()
     }
 
     -- ensure clean start
-    U:delFlightsetting("airplanemode", nil)
+    U:delFlightSetting("airplanemode", nil)
     if package.loaded["utils/flight_helpers"].isFile(settings.backup) then
       package.loaded["utils/flight_helpers"].removeFile(settings.backup)
     end
@@ -73,13 +73,13 @@ describe("AirPlaneMode actions - stop, delete, enable/disable", function()
     -- call Enable
     inst:Enable()
     -- airplane mode should be active
-    assert.is_true(U:getStatus())
+    assert.is_true(U:getFlightStatus())
     -- backup file should exist
     assert.is_true(package.loaded["utils/flight_helpers"].isFile(settings.backup))
 
     -- call Disable
     inst:Disable()
-    assert.is_false(U:getStatus())
+    assert.is_false(U:getFlightStatus())
     -- backup file should be removed
     assert.is_false(package.loaded["utils/flight_helpers"].isFile(settings.backup))
   end)

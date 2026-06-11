@@ -57,10 +57,12 @@ function FlightMechanics.get_device_firmware_info()
     return "n/a", nil, nil
   end
 
+  ---@package
   local function normalize_fw_value(v)
     return H.normalize_value(v)
   end
 
+  ---@package
   local function read_first_line(path)
     local f = io.open(path, "r")
     if not f then

@@ -12,7 +12,7 @@ local FlightPlanMenu = {}
 
 --- Show the flight plan menu.
 function FlightPlanMenu:showMenu()
-  local check_updates = U:readFlightsetting("check_updates", settings.airplanemode) or false
+  local check_updates = U:readFlightSetting("check_updates", settings.airplanemode) or false
   return {
     {
       text = _("Notify on wake when update available"),
@@ -21,13 +21,13 @@ function FlightPlanMenu:showMenu()
       end,
       callback = function()
         check_updates = not check_updates
-        U:saveFlightsetting("check_updates", check_updates, settings.airplanemode)
+        U:saveFlightSetting("check_updates", check_updates, settings.airplanemode)
       end,
     },
     {
       text_func = function()
         local available = Updater.getAvailableUpdate()
-        local source = U:readFlightsetting("last_install_source", settings.airplanemode) or "release"
+        local source = U:readFlightSetting("last_install_source", settings.airplanemode) or "release"
         local source_suffix = ""
         if source ~= "release" then
           local branch = source:match("^branch:(.+)$") or source
@@ -48,7 +48,7 @@ function FlightPlanMenu:showMenu()
       sub_item_table = {
         {
           text_func = function()
-            local b = U:readFlightsetting("dev_branch", settings.airplanemode) or ""
+            local b = U:readFlightSetting("dev_branch", settings.airplanemode) or ""
             if b == "" then
               return _("Development branch")
             end
@@ -61,7 +61,7 @@ function FlightPlanMenu:showMenu()
         },
         {
           text_func = function()
-            local b = U:readFlightsetting("dev_branch", settings.airplanemode) or ""
+            local b = U:readFlightSetting("dev_branch", settings.airplanemode) or ""
             if b == "" then
               return _("Check for updates")
             end
@@ -83,7 +83,7 @@ function FlightPlanMenu:showMenu()
           -- Disabled status row: shows "Installed: vX (release)" /
           -- "(branch: foo)". Tap is a no-op via enabled_func=false.
           text_func = function()
-            local source = U:Flighthas("Last_install_source", settings.airplanemode) and U:readFlightsetting("last_install_source", settings.airplanemode) or "release"
+            local source = U:FlightHas("Last_install_source", settings.airplanemode) and U:readFlightSetting("last_install_source", settings.airplanemode) or "release"
             if source == "release" then
               return _("Installed: v") .. settings.version .. " (release)"
             end

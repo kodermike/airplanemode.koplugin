@@ -41,7 +41,7 @@ function FlightDetails.getKOReaderVersion()
 end
 
 local function generic_entry(t)
-  local icon = U:getStatus() and settings.icon_on or settings.icon_off
+  local icon = U:getFlightStatus() and settings.icon_on or settings.icon_off
   return {
     text = _(t),
     keep_menu_open = true,
@@ -70,7 +70,7 @@ function FlightDetails:menu()
   end
 
   -- Updater management
-  if U:getStatus() then
+  if U:getFlightStatus() then
     table.insert(airplane_specs, {
       text = T(_("%1  Update management suspended while in flight"), settings.icon_on),
       enabled = false,

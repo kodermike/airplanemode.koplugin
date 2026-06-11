@@ -29,11 +29,11 @@ describe("AirPlaneMode plugin - basic specs", function()
     AP.initSettingsFile()
 
     -- check that version was saved into utils storage under the airplanemode file
-    local ver = U:readFlightsetting("version", settings_path)
+    local ver = U:readFlightSetting("version", settings_path)
     assert.are.equal("0.0-test", ver)
 
     -- check plugins_disabled saved
-    local plugins = U:readFlightsetting("plugins_disabled", settings_path)
+    local plugins = U:readFlightSetting("plugins_disabled", settings_path)
     assert.is_table(plugins)
     assert.is_true(plugins["newsdownloader"]) -- default list contains newsdownloader
   end)
