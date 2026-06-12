@@ -27,7 +27,9 @@ end
 ---@return table<string, boolean>
 function Utilities:readFlightPlugins(listname, settings_file)
   settings_file = settings_file or settings.airplanemode
-  logger.dbg("AIRPLANEMODE: readFlightplugins - reading plugins from ", settings_file)
+  if settings.debug_is_on then
+    logger.dbg("AIRPLANEMODE: readFlightplugins - reading plugins from ", settings_file)
+  end
   local config = sethandler(settings_file)
   local disabled_plugins = config:readSetting(listname) or {}
   config:close()
@@ -63,7 +65,9 @@ function Utilities:readFlightSetting(object, settings_file)
   end
   local config = sethandler(settings_file)
   local setting = config:readSetting(object) or nil
-  logger.dbg("AIRPLANEMODE: readFlightSetting - object: ", object, " = ", setting)
+  if settings.debug_is_on then
+    logger.dbg("AIRPLANEMODE: readFlightSetting - object: ", object, " = ", setting)
+  end
   config:close()
   return setting
 end
@@ -79,15 +83,21 @@ function Utilities:saveFlightSetting(object, value, settings_file)
     logger.err("AIRPLANEMODE: saveFlightsetting - object sent is nil, cannot save")
     return false
   else
-    logger.dbg("AIRPLANEMODE: saveFlightsetting - object: ", object)
+    if settings.debug_is_on then
+      logger.dbg("AIRPLANEMODE: saveFlightsetting - object: ", object)
+    end
   end
   if value == nil then
     logger.err("AIRPLANEMODE: saveFlightsetting - value sent is nil, cannot save for object: ", object)
     return false
   else
-    logger.dbg("AIRPLANEMODE: saveFlightsetting - value: ", value)
+    if settings.debug_is_on then
+      logger.dbg("AIRPLANEMODE: saveFlightsetting - value: ", value)
+    end
   end
-  logger.dbg("AIRPLANEMODE: saveFlightsetting - saving setting: ", object, " = ", value)
+  if settings.debug_is_on then
+    logger.dbg("AIRPLANEMODE: saveFlightsetting - saving setting: ", object, " = ", value)
+  end
 
   local config = sethandler(settings_file)
   if config:saveSetting(object, value) then
@@ -113,7 +123,9 @@ function Utilities:delFlightSetting(object, settings_file)
   end
   local config = sethandler(settings_file)
   if object == "airplanemode" then
-    logger.dbg("AIRPLANEMODE: delFlightsetting called for 'airplanemode' at ", os.time(), "\nstack:\n", debug.traceback())
+    if settings.debug_is_on then
+      logger.dbg("AIRPLANEMODE: delFlightsetting called for 'airplanemode' at ", os.time(), "\nstack:\n", debug.traceback())
+    end
   end
   local response = config:delSetting(object)
   config:flush()

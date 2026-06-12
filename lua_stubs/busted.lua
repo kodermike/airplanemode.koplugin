@@ -15,6 +15,20 @@ function spy(...)
 end
 
 -- Minimal 'assert' table with commonly used helpers in specs
+---@class BustedAssert
+---@field is_table fun(v: any)
+---@field is_true fun(v: any)
+---@field is_false fun(v: any)
+---@field is_not_nil fun(v: any)
+---@field is_string fun(v: any)
+---@field is_not_equal fun(a: any, b: any)
+---@field are BustedAssertAre
+---
+---@class BustedAssertAre
+---@field equal fun(a: any, b: any)
+---@field same fun(a: any, b: any)
+
+---@type BustedAssert|fun(...: any)
 assert = assert or {}
 assert.is_table = function(v) end
 assert.is_true = function(v) end

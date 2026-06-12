@@ -9,8 +9,9 @@
 ---@field icon_on string
 ---@field icon_off string
 ---@field version string
----@field fullname string
 ---@field description string
+---@field fullname string
+---@field debug_is_on boolean
 
 local DataStorage = require("datastorage")
 local meta = require("_meta")
@@ -29,7 +30,6 @@ local FlightConfig = {
   description = nil,
   fullname = nil,
   debug_is_on = nil,
-  debug_verbose = nil,
 }
 
 ---Return base config file locations
@@ -49,6 +49,24 @@ function FlightConfig:init()
   self.icon_on = "\u{F1D8}"
   self.icon_off = "\u{F1D9}"
 
+  -- Read optional debug flag from the AirPlaneMode settings file if present
+  -- Can't use existing config handler because it would create a depenency loop
+  self.debug_is_on = false
+  local ok, LuaSettings = pcall(require, "luasettings")
+  if ok and LuaSettings then
+    local status, cfg = pcall(function()
+      return LuaSettings:open(self.airplanemode)
+    end)
+    if status and cfg then
+      if cfg:has("debug_is_on") then
+        self.debug_is_on = cfg:readSetting("debug_is_on")
+      else
+        self.debug_is_on = false
+      end
+      cfg:close()
+    end
+  end
+
   return {
     koreader = self.koreader,
     backup = self.backup,
@@ -62,6 +80,7 @@ function FlightConfig:init()
     version = self.version,
     description = self.description,
     fullname = self.fullname,
+    debug_is_on = self.debug_is_on,
   }
 end
 

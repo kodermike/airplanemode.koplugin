@@ -74,7 +74,11 @@ return function(AirPlaneMode)
   --- Stops all other plugins except the one being stopped.
   local function stopOtherPlugins(stopp, fplugin, plugin)
     -- try to run stopPlugin if available since it's cleaner
-    logger.dbg("AIRPLANEMODE: Stopping plugin", plugin)
+    local FlightConfig = require("flight_config")
+    local settings = FlightConfig:init()
+    if settings.debug_is_on then
+      logger.dbg("AIRPLANEMODE: Stopping plugin", plugin)
+    end
     if stopp then
       local mstatus, __ = pcall(function()
         pcall(fplugin["stopPlugin"])
@@ -104,7 +108,9 @@ return function(AirPlaneMode)
   ---@param settings FlightConfig
   ---@return PluginEntry[]
   function AirPlaneMode:getPlugins(builtin, settings)
-    logger.dbg("AIRPLANEMODE: PluginManager - getPlugins - builtin: ", builtin, " settings: ", settings.koreader_plugins, settings.airplanemode)
+    if settings.debug_is_on then
+      logger.dbg("AIRPLANEMODE: PluginManager - getPlugins - builtin: ", builtin, " settings: ", settings.koreader_plugins, settings.airplanemode)
+    end
     local check_plugins = U:readFlightPlugins(settings.koreader_plugins, settings.airplanemode)
     local os_enabled_plugins, os_disabled_plugins = PluginLoader:loadPlugins()
     local plugin_list = {}
@@ -141,48 +147,68 @@ return function(AirPlaneMode)
   ---@return nil
   function AirPlaneMode:disablePlugins(settings)
     --[[ start ]]
-    logger.dbg("AIRPLANEMODE: retrieving list of plugins to disable")
+    if settings.debug_is_on then
+      logger.dbg("AIRPLANEMODE: retrieving list of plugins to disable")
+    end
     local check_plugins = U:readFlightPlugins(settings.koreader_plugins, settings.airplanemode)
-    logger.dbg("AIRPLANEMODE: retrieving list of already disabled plugins")
+    if settings.debug_is_on then
+      logger.dbg("AIRPLANEMODE: retrieving list of already disabled plugins")
+    end
     local disabled_plugins = U:readFlightSetting(settings.koreader_plugins, settings.koreader) or {}
     -- a pair of loops for the logger
     if type(check_plugins) == "string" then
       if disabled_plugins[check_plugins] ~= true then
         disabled_plugins[check_plugins] = true
-        logger.dbg("AIRPLANEMODE: Disabling [string]", check_plugins)
+        if settings.debug_is_on then
+          logger.dbg("AIRPLANEMODE: Disabling [string]", check_plugins)
+        end
       end
     else
       for plugin, _ in pairs(check_plugins) do
-        logger.dbg("AIRPLANEMODE: Disabling", plugin)
+        if settings.debug_is_on then
+          logger.dbg("AIRPLANEMODE: Disabling", plugin)
+        end
         if disabled_plugins[plugin] ~= true then
-          logger.dbg("AIRPLANEMODE: Disabling", plugin, "was true")
+          if settings.debug_is_on then
+            logger.dbg("AIRPLANEMODE: Disabling", plugin, "was true")
+          end
           -- Check the current plugin  for status and stop if necessary
           local modcheck = self.ui[plugin]
           -- if the passed name was a plugin continue
           if modcheck and (type(modcheck) == "table") then
             -- if the passed plugin has either a stop or stopPlugin method
-            logger.dbg("AIRPLANEMODE: checking stop method for", plugin)
+            if settings.debug_is_on then
+              logger.dbg("AIRPLANEMODE: checking stop method for", plugin)
+            end
             local stopmethod = type(modcheck["stop"]) == "function"
             local stopPluginmethod = type(modcheck["stopPlugin"]) == "function"
             if stopmethod or stopPluginmethod then
               -- The plugin has a stop method
-              logger.dbg("AIRPLANEMODE: stop method found for", plugin)
+              if settings.debug_is_on then
+                logger.dbg("AIRPLANEMODE: stop method found for", plugin)
+              end
 
               if type(modcheck["isRunning"]) == "function" then
                 -- The plugin has an isRunning method - use that to determine if we should try and stop it
-                logger.dbg("AIRPLANEMODE: isRunning method found for", plugin)
+                if settings.debug_is_on then
+                  logger.dbg("AIRPLANEMODE: isRunning method found for", plugin)
+                end
                 local status, __ = pcall(function()
                   pcall(modcheck["isRunning"]())
                 end)
                 -- if the status came back that the plugin was running
                 if status == "true" then
                   -- try to run stopPlugin if available since it's cleaner
-                  logger.dbg("AIRPLANEMODE: isRunning returned true, trying to stop", plugin)
+                  if settings.debug_is_on then
+                    logger.dbg("AIRPLANEMODE: isRunning returned true, trying to stop", plugin)
+                  end
                   stopOtherPlugins(stopPluginmethod, modcheck, plugin)
                 end
               else
                 -- stop methods were found but no isRunning, so we'll just try to run stop and hope
-                logger.dbg("AIRPLANEMODE: no isRunning method found, trying to stop", plugin)
+                if settings.debug_is_on then
+                  logger.dbg("AIRPLANEMODE: no isRunning method found, trying to stop", plugin)
+                end
                 stopOtherPlugins(stopPluginmethod, modcheck, plugin)
               end
             end
@@ -190,12 +216,16 @@ return function(AirPlaneMode)
           -- After our attempts to stop, go ahead and mark the plugin disabled.
           -- Moved to the end to avoid confusion if for some reason we crash
           -- attempting to stop a plugin.
-          logger.dbg("AIRPLANEMODE: marking stopped:", plugin)
+          if settings.debug_is_on then
+            logger.dbg("AIRPLANEMODE: marking stopped:", plugin)
+          end
           disabled_plugins[plugin] = true
         end
       end
     end
-    logger.dbg("AIRPLANEMODE: Saving", disabled_plugins)
+    if settings.debug_is_on then
+      logger.dbg("AIRPLANEMODE: Saving", disabled_plugins)
+    end
     U:saveFlightSetting("plugins_disabled", disabled_plugins, settings.koreader)
   end
 
@@ -244,15 +274,21 @@ return function(AirPlaneMode)
   function AirPlaneMode:enableCalibre(settings)
     -- re-set calibre_wirless to previous setting, or delete it if it didn't exist
     if U:FlightIsTrue("calibre_wireless", settings.backup) then
-      logger.dbg("AIRPLANEMODE: Saving calibre_wireless setting: true")
+      if settings.debug_is_on then
+        logger.dbg("AIRPLANEMODE: Saving calibre_wireless setting: true")
+      end
       U:FlightMakeTrue("calibre_wireless", settings.koreader)
       return
     elseif U:FlightIsFalse("calibre_wireless", settings.backup) then
-      logger.dbg("AIRPLANEMODE: Saving calibre_wireless setting: false")
+      if settings.debug_is_on then
+        logger.dbg("AIRPLANEMODE: Saving calibre_wireless setting: false")
+      end
       U:FlightMakeFalse("calibre_wireless", settings.koreader)
       return
     else
-      logger.dbg("AIRPLANEMODE: Deleting calibre_wireless setting")
+      if settings.debug_is_on then
+        logger.dbg("AIRPLANEMODE: Deleting calibre_wireless setting")
+      end
       U:delFlightSetting("calibre_wireless", settings.koreader)
       return
     end

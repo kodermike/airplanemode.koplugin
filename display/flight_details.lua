@@ -85,6 +85,25 @@ function FlightDetails:menu()
     })
   end
 
+  -- Add debug logging enabled/disabled
+  table.insert(airplane_specs, {
+    text = _("Debug logging"),
+    callback = function()
+      if U:FlightHas("debug_is_on") and U:FlightIsTrue("debug_is_on") then
+        U:FlightMakeFalse("debug_is_on")
+      else
+        U:FlightMakeTrue("debug_is_on")
+      end
+    end,
+    checked_func = function()
+      if U:FlightHas("debug_is_on") and U:FlightIsTrue("debug_is_on") then
+        return true
+      else
+        return false
+      end
+    end,
+  })
+
   return airplane_specs
 end
 
