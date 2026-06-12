@@ -17,7 +17,6 @@ local logger = require("logger")
 local _ = require("gettext")
 
 --- Returns the list of plugins to load.
----@return table<string, boolean>
 return function(AirPlaneMode)
   function AirPlaneMode:plugin_list()
     return {
@@ -62,7 +61,7 @@ return function(AirPlaneMode)
   end
 
   -- Lifted whole from pluginloader because it was the only way to dup the function :/
-  ---@param plugin table
+  ---@param plugin table{name: string, fullname?: string, description?: string}
   ---@return PluginEntry
   local function getPluginInfo(plugin)
     local t = {}
@@ -78,12 +77,12 @@ return function(AirPlaneMode)
     logger.dbg("AIRPLANEMODE: Stopping plugin", plugin)
     if stopp then
       local mstatus, __ = pcall(function()
-        pcall(fplugin["stopPlugin"]())
+        pcall(fplugin["stopPlugin"])
       end)
       if mstatus == "false" then
         -- stopPlugin failed, just do a normal stop
         local sstatus, serr = pcall(function()
-          pcall(fplugin["stop"]())
+          pcall(fplugin["stop"])
         end)
         if sstatus == "false" then
           logger.err("AIRPLANEMODE: Failed to stop", plugin, ":", serr)
@@ -92,7 +91,7 @@ return function(AirPlaneMode)
     else
       -- no stopPlugin, fallback to regular stop
       local sstatus, serr = pcall(function()
-        pcall(fplugin["stop"]())
+        pcall(fplugin["stop"])
       end)
       if sstatus == "false" then
         logger.err("AIRPLANEMODE: Failed to stop", plugin, ":", serr)
@@ -102,7 +101,7 @@ return function(AirPlaneMode)
 
   ---Get plugins (builtin or user)
   ---@param builtin boolean
-  ---@param settings table
+  ---@param settings FlightConfig
   ---@return PluginEntry[]
   function AirPlaneMode:getPlugins(builtin, settings)
     logger.dbg("AIRPLANEMODE: PluginManager - getPlugins - builtin: ", builtin, " settings: ", settings.koreader_plugins, settings.airplanemode)
@@ -247,13 +246,15 @@ return function(AirPlaneMode)
     if U:FlightIsTrue("calibre_wireless", settings.backup) then
       logger.dbg("AIRPLANEMODE: Saving calibre_wireless setting: true")
       U:FlightMakeTrue("calibre_wireless", settings.koreader)
+      return
     elseif U:FlightIsFalse("calibre_wireless", settings.backup) then
       logger.dbg("AIRPLANEMODE: Saving calibre_wireless setting: false")
       U:FlightMakeFalse("calibre_wireless", settings.koreader)
+      return
     else
       logger.dbg("AIRPLANEMODE: Deleting calibre_wireless setting")
       U:delFlightSetting("calibre_wireless", settings.koreader)
+      return
     end
   end
 end
--- return PluginManager

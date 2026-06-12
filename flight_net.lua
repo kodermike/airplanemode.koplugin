@@ -1,4 +1,6 @@
 ---@class FlightNetwork
+---@field reenableWifi fun(self): nil
+---@field disableWifi fun(self): nil
 
 local logger = require("logger")
 local Device = require("device")

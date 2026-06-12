@@ -1,5 +1,7 @@
 ---@class FlightMenu
 ---@field show_value_in_footer boolean|nil
+---@field apm any
+---@field menuBuilder fun(self, builtin: boolean, plugin_list: table): table
 
 local Device = require("device")
 local NetworkMgr = require("ui/network/manager")
@@ -86,13 +88,13 @@ function FlightMenu:getMenuItems()
 
     local user_list = self:PluginMenu(false)
     if #user_list > 0 then
-    table.insert(airplane_config_table, {
-      text = _("User Added Plugins to Disable"),
-      help_text = _("Checked plugins will be disabled when AirPlaneMode is enabled."),
-      sub_item_table_func = function()
+      table.insert(airplane_config_table, {
+        text = _("User Added Plugins to Disable"),
+        help_text = _("Checked plugins will be disabled when AirPlaneMode is enabled."),
+        sub_item_table_func = function()
           return user_list
-      end,
-    })
+        end,
+      })
     end
   end
   -- Silent restarts
@@ -254,7 +256,7 @@ function FlightMenu:menuBuilder(builtin, plugin_list)
 end
 
 ---Return plugin menu for builtin/user plugins
----@param self table
+---@param self FlightMenu
 ---@param builtin boolean
 ---@return table
 function FlightMenu:PluginMenu(builtin)

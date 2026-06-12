@@ -41,7 +41,7 @@ function FlightConfig:init()
   self.airplanemode_old = self.airplanemode .. ".old"
   self.prev_config = DataStorage:getDataDir() .. "/settings/airplane_plugins.lua"
   self.koreader_plugins = "plugins_disabled"
-  ---@deprecated: use koreader_plugins instead
+  ---@deprecated Use koreader_plugins instead
   self.airplane_plugins = "disabled_plugins"
   self.description = meta.description or "Toggleing all your networking apps at once"
   self.fullname = meta.fullname or "AirPlaneMode"

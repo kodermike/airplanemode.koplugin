@@ -217,7 +217,6 @@ end
 ---Make a setting true
 ---@param object string
 ---@param settings_file? string
----@return boolean
 function Utilities:FlightMakeTrue(object, settings_file)
   settings_file = settings_file or settings.airplanemode
   if not object then
@@ -240,7 +239,6 @@ end
 ---Make a setting false
 ---@param object string
 ---@param settings_file? string
----@return boolean
 function Utilities:FlightMakeFalse(object, settings_file)
   settings_file = settings_file or settings.airplanemode
   if not object then
@@ -339,9 +337,9 @@ end
 ---Backup settings file
 ---@param settings_file? string
 ---@param backup_file? string
----@return boolean
 function Utilities:backupFlight(settings_file, backup_file)
   settings_file = settings_file or settings.airplanemode
+  backup_file = backup_file or settings.backup
   logger.dbg("AIRPLANEMODE: Backup - starting")
 
   if H.isFile(settings_file) then

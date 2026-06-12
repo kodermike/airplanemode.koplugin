@@ -24,7 +24,6 @@ local _check_in_flight = false
 local CHECK_INTERVAL = 3600 -- 1 hour
 
 local FlightConfig = require("flight_config")
----@type SettingsConfig
 local settings = FlightConfig:init()
 
 local function parseVersion(v)
@@ -140,15 +139,14 @@ function FlightPlan.offerReleasesPage(message)
 end
 
 --- Return the available update version and zip URL, or nil if none/not checked.
+---@return string?, string?
 function FlightPlan.getAvailableUpdate()
   return _cached_version, _cached_zip_url
 end
 
 --- Fire a silent background update check if the cache is stale (>1h or never checked).
----@param on_update_found? function(version): optional callback when a new version is discovered
---[[
 -- Results available via getAvailableUpdate().
--- ]]
+---@param on_update_found? fun(version: string)
 function FlightPlan.checkBackground(on_update_found)
   if _check_in_flight then
     return
@@ -204,7 +202,7 @@ function FlightPlan.checkBackground(on_update_found)
 end
 
 --- Check for updates and show a message if a new version is available.
----@param on_success? function: optional callback when the check is complete
+---@param on_success? fun()
 function FlightPlan.check(on_success)
   local NetworkMgr = require("ui/network/manager")
   NetworkMgr:runWhenOnline(function()
@@ -322,8 +320,8 @@ end
 ---@param zip_url string
 ---@param old_version string
 ---@param new_version string
----@param on_success? function: optional callback when the installation is complete
----@param error_label? string: optional label for the error message
+---@param on_success? fun()
+---@param error_label? string
 function FlightPlan.install(zip_url, old_version, new_version, on_success, error_label)
   local DataStorage = require("datastorage")
   local lfs = require("libs/libkoreader-lfs")
@@ -430,11 +428,9 @@ function FlightPlan.install(zip_url, old_version, new_version, on_success, error
 end
 
 --- Install from a GitHub branch's archive zip.
----@param branch string: branch name (e.g. "feature/v5.2-test")
----@param on_success function or nil: fired after successful unpack
---[[
+---@param branch string
+---@param on_success? fun()
 -- Same install pipeline as the release path; just composes a different URL.
---]]
 function FlightPlan.installBranch(branch, on_success)
   local NetworkMgr = require("ui/network/manager")
   NetworkMgr:runWhenOnline(function()
@@ -445,12 +441,10 @@ function FlightPlan.installBranch(branch, on_success)
 end
 
 --- Install the latest stable (non-prerelease) release, regardless of installed version.
----@param on_success function or nil: fired after successful unpack
---[[
+---@param on_success? fun()
 -- Used by the "Reset to latest stable release" entry: even when on a branch whose
 -- _meta.lua reports a higher version than the current release, we still want to
 -- pull the release zip and re-stamp last_install_source = "release".
---]]
 function FlightPlan.installLatestStable(on_success)
   local NetworkMgr = require("ui/network/manager")
   NetworkMgr:runWhenOnline(function()
@@ -519,7 +513,7 @@ function FlightPlan:resetToStableRelease()
 end
 
 --- Open a single-line dialog to set / change / clear the dev branch.
----@param touchmenu_instance table or nil: the touchmenu instance that triggered this edit
+---@param touchmenu_instance? table
 function FlightPlan:editDevBranch(touchmenu_instance)
   local InputDialog = require("ui/widget/inputdialog")
   local dlg

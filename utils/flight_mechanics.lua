@@ -1,6 +1,6 @@
 ---@class FlightMechanics
----@field get_device_model_name string
----@field get_device_firmware_info string
+---@field get_device_model_name fun(): string
+---@field get_device_firmware_info fun(): string
 
 local Device = require("device")
 local H = require("utils/flight_helpers")
@@ -42,7 +42,7 @@ function FlightMechanics.get_device_model_name()
   if Device and Device.isSonyPRSTUX() then
     dev = "SonyPRSTUX"
   end
-  if Device.model and (dev ~= Device.moedel) then
+  if Device.model and (dev ~= Device.model) then
     local dm = dev .. Device.model
     return dm
   else
@@ -54,15 +54,15 @@ end
 ---@return string
 function FlightMechanics.get_device_firmware_info()
   if not Device then
-    return "n/a", nil, nil
+    return "n/a"
   end
 
-  ---@package
+  ---@private
   local function normalize_fw_value(v)
     return H.normalize_value(v)
   end
 
-  ---@package
+  ---@private
   local function read_first_line(path)
     local f = io.open(path, "r")
     if not f then
@@ -90,7 +90,7 @@ function FlightMechanics.get_device_firmware_info()
       local ok, value = pcall(get_fw)
       value = ok and normalize_fw_value(value) or nil
       if value then
-        return value, "Device FW", "Device FW"
+        return value
       end
     end
   end
@@ -108,18 +108,18 @@ function FlightMechanics.get_device_firmware_info()
   )
   value = normalize_fw_value(value)
   if value then
-    return value, "Device FW", "Device FW"
+    return value
   end
 
   -- Kindle-specific files
   if Device.isKindle and Device:isKindle() then
     value = read_first_line("/etc/prettyversion.txt")
     if value then
-      return value, "prettyversion", "prettyversion"
+      return value
     end
     value = read_first_line("/etc/version.txt")
     if value then
-      return value, "version", "version"
+      return value
     end
   end
 
@@ -130,12 +130,12 @@ function FlightMechanics.get_device_firmware_info()
       value = raw:match("([^,]+)$") or raw
       value = normalize_fw_value(value)
       if value then
-        return value, "version", "version"
+        return value
       end
     end
   end
 
-  return "n/a", nil, nil
+  return "n/a"
 end
 
 return FlightMechanics

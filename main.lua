@@ -3,8 +3,14 @@
 ---@field name string
 ---@field is_doc_only boolean
 ---@field ui table
----@field additional_footer_content_func function|nil
+---@field additional_footer_content_func fun(): (string|nil)
 ---@field show_value_in_footer boolean|nil
+---@field Enable fun(self): nil
+---@field Disable fun(self): nil
+---@field init fun(self): nil
+---@field onEnable fun(self): nil
+---@field onDisable fun(self): nil
+---@field getPlugins fun(self, builtin: boolean, settings: table): table
 
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -19,7 +25,6 @@ local logger = require("logger")
 local _ = require("gettext")
 
 local FlightConfig = require("flight_config")
----@type SettingsConfig
 local settings = FlightConfig:init()
 
 local H = require("utils/flight_helpers")
@@ -113,7 +118,7 @@ function AirPlaneMode:init()
   self.additional_footer_content_func = function()
     local item_prefix = self.ui.view.footer.settings.item_prefix
     if item_prefix == "icons" then
-      if U:getStatus() then
+      if U:getFlightStatus() then
         return settings.icon_on
       else
         return settings.icon_off
@@ -394,7 +399,7 @@ function AirPlaneMode:onDisable()
 end
 
 function AirPlaneMode:onToggle()
-  if self:getFlightStatus() then
+  if U:getFlightStatus() then
     self:Disable()
   else
     self:Enable()
