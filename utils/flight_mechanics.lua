@@ -42,9 +42,8 @@ function FlightMechanics.get_device_model_name()
   if Device and Device.isSonyPRSTUX() then
     dev = "SonyPRSTUX"
   end
-  if Device.model and (dev ~= Device.model) then
-    local dm = dev .. Device.model
-    return dm
+  if Device.model and (Device.model:lower():find(dev:lower())) then
+    return Device.model
   else
     return dev
   end
