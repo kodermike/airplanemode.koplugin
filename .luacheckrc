@@ -8,6 +8,17 @@ globals = {
     "G_defaults",
     "table.pack",
     "table.unpack",
+    "is_table",
+    -- busted test globals
+    "describe",
+    "it",
+    "setup",
+    "teardown",
+    "before_each",
+    "after_each",
+    "pending",
+    "spy",
+    "assert",
 }
 
 read_globals = {
@@ -36,7 +47,7 @@ exclude_files = {
     "**/*.png",
     "**/*.jpg",
     ".github/*",
-    "tests/*",
+    "tests/**",
 }
 
 ignore = {

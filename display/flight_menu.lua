@@ -1,5 +1,7 @@
 ---@class FlightMenu
 ---@field show_value_in_footer boolean|nil
+---@field apm any
+---@field menuBuilder fun(self, builtin: boolean, plugin_list: table): table
 
 local Device = require("device")
 local NetworkMgr = require("ui/network/manager")
@@ -86,13 +88,13 @@ function FlightMenu:getMenuItems()
 
     local user_list = self:PluginMenu(false)
     if #user_list > 0 then
-    table.insert(airplane_config_table, {
-      text = _("User Added Plugins to Disable"),
-      help_text = _("Checked plugins will be disabled when AirPlaneMode is enabled."),
-      sub_item_table_func = function()
+      table.insert(airplane_config_table, {
+        text = _("User Added Plugins to Disable"),
+        help_text = _("Checked plugins will be disabled when AirPlaneMode is enabled."),
+        sub_item_table_func = function()
           return user_list
-      end,
-    })
+        end,
+      })
     end
   end
   -- Silent restarts
@@ -203,7 +205,9 @@ function FlightMenu:menuBuilder(builtin, plugin_list)
   local airplane_plugin_table = {}
   -- Since we're in AirPlaneMode, and we skip AirPlaneMode, then a list of 0 is an empty list in this context
   if builtin == false and #plugin_list == 0 then
-    logger.dbg("AIRPLANEMODE: PluginManager - menuBuilder plugin_list is empty")
+    if settings.debug_is_on then
+      logger.dbg("AIRPLANEMODE: PluginManager - menuBuilder plugin_list is empty")
+    end
     table.insert(airplane_plugin_table, {
       text = _("No user installed plugins available to manage"),
       enabled = false,
@@ -235,10 +239,14 @@ function FlightMenu:menuBuilder(builtin, plugin_list)
             local cp = U:readFlightPlugins(settings.koreader_plugins, settings.airplanemode)
             if cp[plugin.name] then
               cp[plugin.name] = nil
-              logger.dbg("AIRPLANEMODE: PluginManager - Disabled ", plugin.name)
+              if settings.debug_is_on then
+                logger.dbg("AIRPLANEMODE: PluginManager - Disabled ", plugin.name)
+              end
             else
               cp[plugin.name] = true
-              logger.dbg("AIRPLANEMODE: PluginManager - Enabled ", plugin.name)
+              if settings.debug_is_on then
+                logger.dbg("AIRPLANEMODE: PluginManager - Enabled ", plugin.name)
+              end
             end
             U:saveFlightPlugins(cp, settings.airplanemode)
             -- Broadcast a UI update so menus/checkboxes refresh
@@ -254,11 +262,13 @@ function FlightMenu:menuBuilder(builtin, plugin_list)
 end
 
 ---Return plugin menu for builtin/user plugins
----@param self table
+---@param self FlightMenu
 ---@param builtin boolean
 ---@return table
 function FlightMenu:PluginMenu(builtin)
-  logger.dbg("AIRPLANEMODE: PluginMenu - builtin: ", builtin)
+  if settings.debug_is_on then
+    logger.dbg("AIRPLANEMODE: PluginMenu - builtin: ", builtin)
+  end
   local plugin_list = self.apm:getPlugins(builtin, settings)
   local plugin_menu = self:menuBuilder(builtin, plugin_list)
   return plugin_menu

@@ -1,6 +1,7 @@
 local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
 
+---@param AirPlaneMode table
 return function(AirPlaneMode)
   --[[
   Extends AirPlaneMode with footer status in reader
