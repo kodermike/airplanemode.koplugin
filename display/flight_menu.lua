@@ -5,7 +5,7 @@
 
 local Device = require("device")
 local NetworkMgr = require("ui/network/manager")
-local logger = require("logger")
+local logger = require("utils/flight_log")
 
 local ffiutil = require("ffi/util")
 local T = ffiutil.template
@@ -101,10 +101,10 @@ function FlightMenu:getMenuItems()
   table.insert(airplane_config_table, {
     text = _("Silence the restart message"),
     callback = function()
-      U:FlightToggle("silentmode", settings.airplanemode)
+      U:FlightToggle("silentmode")
     end,
     checked_func = function()
-      if U:FlightIsTrue("silentmode", settings.airplanemode) then
+      if U:FlightIsTrue("silentmode") then
         return true
       else
         return false
@@ -122,7 +122,7 @@ function FlightMenu:getMenuItems()
   table.insert(airplane_config_table, {
     text = _("Show AirPlaneMode in reader footer"),
     checked_func = function()
-      if U:FlightIsTrue("airplanemode_in_footer", settings.airplanemode) then
+      if U:FlightIsTrue("airplanemode_in_footer") then
         return true
       else
         return false
@@ -130,7 +130,7 @@ function FlightMenu:getMenuItems()
     end,
     callback = function()
       self.show_value_in_footer = not self.show_value_in_footer
-      U:saveFlightSetting("airplanemode_in_footer", self.show_value_in_footer, settings.airplanemode)
+      U:saveFlightSetting("airplanemode_in_footer", self.show_value_in_footer)
       if self.show_value_in_footer then
         self.apm:addAdditionalFooterContent()
       else
@@ -149,11 +149,11 @@ function FlightMenu:getMenuItems()
             timeout = 3,
           }))
         else
-          U:FlightToggle("restoreopt", settings.airplanemode)
+          U:FlightToggle("restoreopt")
         end
       end,
       checked_func = function()
-        if U:FlightIsTrue("restoreopt", settings.airplanemode) then
+        if U:FlightIsTrue("restoreopt") then
           return true
         else
           return false
@@ -165,11 +165,11 @@ function FlightMenu:getMenuItems()
   table.insert(airplane_config_table, {
     text = _("Roaming Mode"),
     callback = function()
-      U:FlightToggle("managewifi", settings.airplanemode)
+      U:FlightToggle("managewifi")
     end,
     help_text = _("AirPlaneMode will only manage settings, not the wifi device"),
     checked_func = function()
-      if U:FlightHas("managewifi", settings.airplanemode) and U:FlightIsTrue("managewifi", settings.airplanemode) then
+      if U:FlightHas("managewifi") and U:FlightIsTrue("managewifi") then
         return true
       else
         return false
@@ -179,8 +179,8 @@ function FlightMenu:getMenuItems()
       if NetworkMgr:getNetworkInterfaceName() or Device:isEmulator() then
         return true
       else
-        if not U:FlightIsTrue("managewifi", settings.airplanemode) then
-          U:FlightMakeTrue("managewifi", settings.airplanemode)
+        if not U:FlightIsTrue("managewifi") then
+          U:FlightMakeTrue("managewifi")
         end
         return false
       end
@@ -206,7 +206,8 @@ function FlightMenu:menuBuilder(builtin, plugin_list)
   -- Since we're in AirPlaneMode, and we skip AirPlaneMode, then a list of 0 is an empty list in this context
   if builtin == false and #plugin_list == 0 then
     if settings.debug_is_on then
-      logger.dbg("AIRPLANEMODE: PluginManager - menuBuilder plugin_list is empty")
+      local funcname = debug.getinfo(1, "n").name
+      logger.dbg(funcname, "PluginManager - menuBuilder plugin_list is empty")
     end
     table.insert(airplane_plugin_table, {
       text = _("No user installed plugins available to manage"),
@@ -223,7 +224,7 @@ function FlightMenu:menuBuilder(builtin, plugin_list)
           text = _(plugin.fullname),
           checked_func = function()
             -- Read the latest setting from disk to avoid stale in-memory cache
-            local cp = U:readFlightPlugins(settings.koreader_plugins, settings.airplanemode)
+            local cp = U:readFlightPlugins(settings.koreader_plugins)
             local val = cp[plugin.name]
             return val
           end,
@@ -236,19 +237,21 @@ function FlightMenu:menuBuilder(builtin, plugin_list)
           end,
           callback = function()
             -- Re-open settings on each toggle to ensure we operate on latest on-disk state
-            local cp = U:readFlightPlugins(settings.koreader_plugins, settings.airplanemode)
+            local cp = U:readFlightPlugins(settings.koreader_plugins)
             if cp[plugin.name] then
               cp[plugin.name] = nil
               if settings.debug_is_on then
-                logger.dbg("AIRPLANEMODE: PluginManager - Disabled ", plugin.name)
+                local funcname = debug.getinfo(1, "n").name
+                logger.dbg(funcname, "PluginManager - Disabled ", plugin.name)
               end
             else
               cp[plugin.name] = true
               if settings.debug_is_on then
-                logger.dbg("AIRPLANEMODE: PluginManager - Enabled ", plugin.name)
+                local funcname = debug.getinfo(1, "n").name
+                logger.dbg(funcname, "PluginManager - Enabled ", plugin.name)
               end
             end
-            U:saveFlightPlugins(cp, settings.airplanemode)
+            U:saveFlightPlugins(cp)
             -- Broadcast a UI update so menus/checkboxes refresh
             local Event = require("ui/event")
             UIManager:broadcastEvent(Event:new("UpdateMenu", true))
@@ -267,7 +270,8 @@ end
 ---@return table
 function FlightMenu:PluginMenu(builtin)
   if settings.debug_is_on then
-    logger.dbg("AIRPLANEMODE: PluginMenu - builtin: ", builtin)
+    local funcname = debug.getinfo(1, "n").name
+    logger.dbg(funcname, "PluginMenu - builtin: ", builtin)
   end
   local plugin_list = self.apm:getPlugins(builtin, settings)
   local plugin_menu = self:menuBuilder(builtin, plugin_list)
