@@ -158,7 +158,11 @@ function Utilities:FlightHas(object, settings_file)
   local config = sethandler(settings_file)
   local value = config:has(object)
   config:close()
-  return value
+  if value == nil then
+    return false
+  else
+    return value
+  end
 end
 
 ---Check if a setting does not exist

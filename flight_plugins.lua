@@ -74,7 +74,7 @@ return function(AirPlaneMode)
   end
 
   --- Stops all other plugins except the one being stopped.
-  ---@param stopPluginMethod function
+  ---@param stopPluginMethod boolean
   ---@param modcheck table
   ---@param plugin string
   ---@return nil

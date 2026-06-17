@@ -29,7 +29,7 @@ describe("Enable/Disable branches and edge conditions", function()
     end
 
     -- case 1: silentmode = true -> restartKOReader called
-    U:saveFlightSetting("silentmode", true, settings.airplanemode)
+    U:saveFlightSetting("silentmode", true)
     -- ensure backup will succeed
     if package.loaded["utils/flight_helpers"].isFile(settings.backup) then
       package.loaded["utils/flight_helpers"].removeFile(settings.backup)
@@ -39,9 +39,9 @@ describe("Enable/Disable branches and edge conditions", function()
 
     -- case 2: silentmode = false -> UIManager.show called (ConfirmBox)
     restarted = false
-    U:saveFlightSetting("silentmode", false, settings.airplanemode)
+    U:saveFlightSetting("silentmode", false)
     inst:Enable()
-    assert.is_not_nil(ui.last_shown)
+    assert(ui.last_shown)
   end)
 
   it("managewifi setting prevents disabling wifi when explicitly true", function()
@@ -55,14 +55,14 @@ describe("Enable/Disable branches and edge conditions", function()
     }
 
     -- ensure managewifi true in airplanemode -> should prevent disableWifi
-    U:saveFlightSetting("managewifi", true, settings.airplanemode)
+    U:saveFlightSetting("managewifi", true)
     -- reset network disabled flag
     package.loaded["flight_net"]._disabled = false
     inst:Enable()
     assert.is_false(package.loaded["flight_net"]._disabled)
 
     -- now unset managewifi -> should disable wifi
-    U:delFlightSetting("managewifi", settings.airplanemode)
+    U:delFlightSetting("managewifi")
     inst:Enable()
     assert.is_true(package.loaded["flight_net"]._disabled)
   end)
@@ -103,12 +103,12 @@ describe("Enable/Disable branches and edge conditions", function()
 
     inst:Enable()
     -- since device cannot restart, should have shown a ConfirmBox/InfoMessage
-    assert.is_not_nil(ui.last_shown)
+    assert(ui.last_shown)
 
     -- and Disable should similarly show a confirm
     ui.last_shown = nil
     inst:Disable()
-    assert.is_not_nil(ui.last_shown)
+    assert(ui.last_shown)
   end)
 
   it("does not enable airplane mode if backup fails", function()
@@ -122,6 +122,7 @@ describe("Enable/Disable branches and edge conditions", function()
     }
 
     -- force backup to fail
+    ---@diagnostic disable-next-line
     U.backupFlight = function()
       return false
     end

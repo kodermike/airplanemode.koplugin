@@ -18,7 +18,7 @@ describe("flight_plugins:disablePlugins - stopping plugins and saving disabled l
 
     local settings = require("flight_config"):init()
     -- set check_plugins to include p1
-    U:saveFlightPlugins({ p1 = true }, settings.airplanemode)
+    U:saveFlightPlugins({ p1 = true })
     U:saveFlightSetting("plugins_disabled", {}, settings.koreader)
 
     -- prepare dummy AirPlaneMode and a plugin module in ui

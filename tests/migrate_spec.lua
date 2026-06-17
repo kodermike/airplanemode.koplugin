@@ -12,6 +12,7 @@ describe("Migration flows: migrateconfig and migratesettings", function()
 
     -- create a prev_config file and populate previous disabled_plugins
     local fh = io.open(settings.prev_config, "w")
+    assert(fh)
     fh:write("old")
     fh:close()
     U:saveFlightSetting("disabled_plugins", { calibre = true, newsdownloader = true }, settings.prev_config)

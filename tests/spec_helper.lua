@@ -187,6 +187,13 @@ if use_koreader then
     end,
   })
 
+  -- ensure ffi/serpent is present
+  ensure_mock("ffi/serpent", {
+    new = function(tbl)
+      return tbl
+    end,
+  })
+
   -- Stub common FFI/native modules that are not needed by the plugin tests
   local ffi_stubs = {
     "ffi/mupdf",
@@ -480,6 +487,13 @@ if not use_koreader then
     end,
   }
 
+  -- ffi serpent template stub
+  package.loaded["ffi/serpent"] = {
+    template = function(tbl)
+      return tbl
+    end,
+  }
+
   -- Minimal WidgetContainer base so :extend works
   local WidgetContainer = {
     extend = function(self, t)
@@ -533,17 +547,34 @@ if not use_koreader then
   U = {}
   storage = {}
 
+  -- Match production Utilities behaviour: default the settings file to FlightConfig:init().airplanemode
+  local function default_settings_file(file)
+    if file ~= nil then
+      return file
+    end
+    local FlightConfig = package.loaded["flight_config"] or require("flight_config")
+    local ok, cfg = pcall(FlightConfig.init, FlightConfig)
+    if ok and type(cfg) == "table" and cfg.airplanemode then
+      return cfg.airplanemode
+    end
+    return "memory"
+  end
+
   local function key_path(key, file)
-    return (file or "memory") .. ":" .. tostring(key)
+    local f = default_settings_file(file)
+    return f .. ":" .. tostring(key)
   end
 
   function U:readFlightSetting(key, file)
+    file = default_settings_file(file)
     return storage[key_path(key, file)]
   end
   function U:saveFlightSetting(key, val, file)
+    file = default_settings_file(file)
     storage[key_path(key, file)] = val
   end
   function U:delFlightSetting(key, file)
+    file = default_settings_file(file)
     storage[key_path(key, file)] = nil
   end
   function U:FlightHas(key, file)
@@ -567,10 +598,25 @@ if not use_koreader then
     return not U:FlightHas(key, file)
   end
 
+  -- Match production Utilities behaviour: default the settings file to FlightConfig:init().airplanemode
+  local function default_settings_file(file)
+    if file ~= nil then
+      return file
+    end
+    local FlightConfig = package.loaded["flight_config"] or require("flight_config")
+    local ok, cfg = pcall(FlightConfig.init, FlightConfig)
+    if ok and type(cfg) == "table" and cfg.airplanemode then
+      return cfg.airplanemode
+    end
+    return "memory"
+  end
+
   function U:readFlightPlugins(key, file)
+    file = default_settings_file(file)
     return U:readFlightSetting(key, file)
   end
   function U:saveFlightPlugins(tbl, file)
+    file = default_settings_file(file)
     U:saveFlightSetting("plugins_disabled", tbl, file)
   end
 
@@ -636,12 +682,13 @@ local function keep_tmp_dir()
   end
   -- then check a Lua global if set
   if _G and _G.KEEP_TEST_TMP ~= nil then
-    local v = _G.KEEP_TEST_TMP
-    if type(v) == "boolean" then
-      return v
+    local gv = _G.KEEP_TEST_TMP
+    if type(gv) == "boolean" then
+      return gv
     end
-    v = tostring(v):lower()
-    return not (v == "" or v == "0" or v == "false" or v == "no")
+    local s = tostring(gv)
+    s = s:lower()
+    return not (s == "" or s == "0" or s == "false" or s == "no")
   end
   return false
 end
