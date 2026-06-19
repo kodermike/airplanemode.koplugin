@@ -69,52 +69,75 @@ function FlightDetails:menu()
     table.insert(airplane_specs, generic_entry(text))
   end
 
-  -- Updater management
-  if U:getFlightStatus() then
-    table.insert(airplane_specs, {
-      text = T(_("%1  Update management suspended while in flight"), settings.icon_on),
-      enabled = false,
-    })
-  else
-    table.insert(airplane_specs, {
-      text = _("Update management"),
-      sub_item_table_func = function()
-        local updater_menu = require("display/flight_plan_menu")
-        return updater_menu:showMenu()
-      end,
-    })
-  end
-
-  -- Add debug logging enabled/disabled
+  -- Dev mode toggle for showing in-progress features
   table.insert(airplane_specs, {
-    text = _("Debug logging"),
+    text = _("Developer Mode"),
     callback = function()
-      if U:FlightHas("debug_is_on") and U:FlightIsTrue("debug_is_on") then
-        U:FlightMakeFalse("debug_is_on")
-        settings.debug_is_on = false
-        local logger = require("logger")
-        local LvDEBUG = logger.LvDEBUG
-        if LvDEBUG == "dbg" then
-          logger:setLevel(logger.levels.info)
-        end
+      if U:FlightHas("dev_mode") and U:FlightIsTrue("dev_mode") then
+        U:FlightMakeFalse("dev_mode")
       else
-        U:FlightMakeTrue("debug_is_on")
-        settings.debug_is_on = true
-        local logger = require("logger")
-        local LvDEBUG = logger.LvDEBUG
-        if LvDEBUG ~= "dbg" then
-          logger:setLevel(logger.levels.dbg)
-        end
+        U:FlightMakeTrue("dev_mode")
       end
     end,
     checked_func = function()
-      if U:FlightHas("debug_is_on") and U:FlightIsTrue("debug_is_on") then
-        return true
+      if U:FlightHas("dev_mode") then
+        return settings.dev_mode
       else
         return false
       end
     end,
   })
+
+  if settings.dev_mode then
+    -- Updater management
+    if U:getFlightStatus() then
+      table.insert(airplane_specs, {
+        text = T(_("%1  Update management suspended while in flight"), settings.icon_on),
+        enabled = false,
+      })
+    else
+      table.insert(airplane_specs, {
+        text = _("Update management"),
+        sub_item_table_func = function()
+          local updater_menu = require("display/flight_plan_menu")
+          return updater_menu:showMenu()
+        end,
+      })
+    end
+  end
+
+  -- Add debug logging enabled/disabled
+  if settings.dev_mode then
+    table.insert(airplane_specs, {
+      text = _("Debug logging"),
+      callback = function()
+        if U:FlightHas("debug_is_on") and U:FlightIsTrue("debug_is_on") then
+          U:FlightMakeFalse("debug_is_on")
+          settings.debug_is_on = false
+          local logger = require("logger")
+          local LvDEBUG = logger.LvDEBUG
+          if LvDEBUG == "dbg" then
+            logger:setLevel(logger.levels.info)
+          end
+        else
+          U:FlightMakeTrue("debug_is_on")
+          settings.debug_is_on = true
+          local logger = require("logger")
+          local LvDEBUG = logger.LvDEBUG
+          if LvDEBUG ~= "dbg" then
+            logger:setLevel(logger.levels.dbg)
+          end
+        end
+      end,
+      checked_func = function()
+        if U:FlightHas("debug_is_on") and U:FlightIsTrue("debug_is_on") then
+          return true
+        else
+          return false
+        end
+      end,
+    })
+  end
 
   return airplane_specs
 end
