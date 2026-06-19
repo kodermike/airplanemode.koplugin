@@ -29,7 +29,7 @@ describe("AirPlaneMode instance init and toggle behavior", function()
 
     -- version should be saved
     local ver = U:readFlightSetting("version", settings.airplanemode)
-    assert.is_not_nil(ver)
+    assert(ver)
 
     -- cleanup
     U:delFlightSetting("version", settings.airplanemode)

@@ -1,6 +1,7 @@
 -- Busted / busted assertion stubs for LSP
 -- This file provides noop definitions for busted globals so the language server
 -- doesn't emit undefined-field / undefined-global diagnostics while editing tests.
+---@diagnostic disable
 
 -- Test declaration helpers
 function describe(...) end
@@ -22,20 +23,37 @@ end
 ---@field is_not_nil fun(v: any)
 ---@field is_string fun(v: any)
 ---@field is_not_equal fun(a: any, b: any)
+---@field is_equal fun(a: any, b: any)
+---@field is_truthy fun(v: any)
 ---@field are BustedAssertAre
 ---
 ---@class BustedAssertAre
 ---@field equal fun(a: any, b: any)
 ---@field same fun(a: any, b: any)
 
----@type BustedAssert|fun(...: any)
+---@class assert
+---@field is_table fun(v: any)
+---@field is_true fun(v: any)
+---@field is_false fun(v: any)
+---@field is_not_nil fun(v: any)
+---@field is_string fun(v: any)
+---@field is_not_equal fun(a: any, b: any)
+---@field is_equal fun(a: any, b: any)
+---@field is_truthy fun(v: any)
+---@field are BustedAssertAre
+
+---@type assert
 assert = assert or {}
 assert.is_table = function(v) end
 assert.is_true = function(v) end
 assert.is_false = function(v) end
 assert.is_not_nil = function(v) end
+assert.is_nil = function(v) end
 assert.is_string = function(v) end
 assert.is_not_equal = function(a, b) end
+-- Common aliases used in specs
+assert.is_equal = function(a, b) end
+assert.is_truthy = function(v) end
 
 assert.are = assert.are or {}
 assert.are.equal = function(a, b) end

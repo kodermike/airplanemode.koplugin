@@ -43,6 +43,7 @@ describe("utils/flight_helpers - helper functionality", function()
     -- local H = require("utils/flight_helpers")
     local tmp_file = tst_dir .. "/" .. randomString(10)
     local f, err = io.open(tmp_file, "w")
+    assert(f)
     f:write("test")
     f:close()
 

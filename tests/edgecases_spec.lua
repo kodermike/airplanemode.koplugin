@@ -36,9 +36,12 @@ describe("Edge cases for helpers and main flows", function()
     local H = require("utils/flight_helpers")
 
     -- nil path
+    ---@diagnostic disable-next-line: param-type-mismatch
     assert.is_false(H.isFile(nil))
+    ---@diagnostic disable-next-line: param-type-mismatch
     assert.is_false(H.isDir(nil))
     -- remove nonexistent file should return false
+    ---@diagnostic disable-next-line: param-type-mismatch
     assert.is_false(H.removeFile(nil))
     assert.is_false(H.removeFile("/tmp/file-that-does-not-exist-12345"))
   end)
@@ -49,6 +52,7 @@ describe("Edge cases for helpers and main flows", function()
 
     -- create a preexisting file and a preexisting version value in storage
     local fh = io.open(settings.airplanemode, "w")
+    assert(fh)
     fh:write("preexisting")
     fh:close()
     U:saveFlightSetting("version", "existing-version", settings.airplanemode)

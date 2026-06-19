@@ -65,9 +65,9 @@ mkdir -p "$TMP_DIR"
 
 cleanup() {
   # if [ -z "$KEEP_TEST_TMP" ]; then
-    if [ -d "$TMP_DIR" ]; then
-      rm -rf "$TMP_DIR" 2>/dev/null || true
-    fi
+  if [ -d "$TMP_DIR" ]; then
+    rm -rf "$TMP_DIR" 2>/dev/null || true
+  fi
   # fi
 }
 trap cleanup EXIT

@@ -21,20 +21,22 @@ describe("display/flight_plan_menu - updater menu and toggles", function()
     local settings = require("flight_config"):init()
 
     -- ensure check_updates default false
-    U:delFlightSetting("check_updates", settings.airplanemode)
+    U:delFlightSetting("check_updates")
 
     local menu = FPM:showMenu()
     assert.is_table(menu)
+    assert(menu)
     local first = menu[1]
-    assert.is_function(first.checked_func)
+    assert(type(first.checked_func) == "function")
     assert.is_false(first.checked_func())
 
     -- invoke callback to toggle and ensure saved
     first.callback()
-    assert.is_true(U:FlightHas("check_updates", settings.airplanemode))
+    assert.is_true(U:FlightHas("check_updates"))
 
     -- test text_func for available update = nil (installed version)
     local second = menu[2]
+    assert(second)
     local txt = second.text_func()
     assert.is_string(txt)
 

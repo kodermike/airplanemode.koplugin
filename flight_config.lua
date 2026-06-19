@@ -33,7 +33,7 @@ local FlightConfig = {
 }
 
 ---Return base config file locations
----@return FlightConfig
+---@return FlightConfig table
 function FlightConfig:init()
   self.koreader = DataStorage:getDataDir() .. "/settings.reader.lua"
   self.backup = DataStorage:getDataDir() .. "/settings.reader.lua.airplane"

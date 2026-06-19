@@ -91,6 +91,8 @@ describe("utils/flight_utilities - full behavior with mocked LuaSettings", funct
       if not outf then
         return false
       end
+      -- ensure LSP knows we checked for nil
+      assert(outf)
       outf:write(data)
       outf:close()
       return true
@@ -106,8 +108,10 @@ describe("utils/flight_utilities - full behavior with mocked LuaSettings", funct
     local settings = require("flight_config"):init()
 
     -- nil object
+    ---@diagnostic disable-next-line: param-type-mismatch
     assert.is_false(Utilities:saveFlightSetting(nil, "v", settings.airplanemode))
     -- nil value
+    ---@diagnostic disable-next-line: param-type-mismatch
     assert.is_false(Utilities:saveFlightSetting("obj", nil, settings.airplanemode))
 
     -- normal save
@@ -175,6 +179,7 @@ describe("utils/flight_utilities - full behavior with mocked LuaSettings", funct
 
     -- ensure source exists
     local fh = io.open(settings.koreader, "w")
+    assert(fh)
     fh:write("content")
     fh:close()
 
@@ -200,9 +205,11 @@ describe("utils/flight_utilities - full behavior with mocked LuaSettings", funct
 
     -- create settings file and backup
     local fh = io.open(settings.airplanemode, "w")
+    assert(fh)
     fh:write("x")
     fh:close()
     local bf = io.open(settings.backup, "w")
+    assert(bf)
     bf:write("b")
     bf:close()
 

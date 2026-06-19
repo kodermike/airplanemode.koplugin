@@ -84,21 +84,21 @@ describe("display/flight_menu deep branches", function()
 
     -- test the footer toggle item: find it and call callback to toggle
     local footer_item = find_item_by_text(items, "Show AirPlaneMode in reader footer")
-    assert.is_table(footer_item)
+    assert(footer_item)
     -- initial show_value_in_footer may be nil; set to false
     FM.show_value_in_footer = false
     U:delFlightSetting("airplanemode_in_footer", settings.airplanemode)
 
     -- call callback to toggle on
     footer_item.callback()
-    assert.is_true(U:FlightIsTrue("airplanemode_in_footer", settings.airplanemode))
+    assert.is_true(U:FlightIsTrue("airplanemode_in_footer"))
     assert.is_true(FM.show_value_in_footer)
     -- ensure apm:addAdditionalFooterContent was called (our apm writes to helper.UIManager)
     assert.is_true(helper.UIManager.footer_added)
 
     -- call callback again to toggle off
     footer_item.callback()
-    assert.is_false(U:FlightIsTrue("airplanemode_in_footer", settings.airplanemode))
+    assert.is_false(U:FlightIsTrue("airplanemode_in_footer"))
     assert.is_false(FM.show_value_in_footer)
   end)
 
@@ -112,7 +112,7 @@ describe("display/flight_menu deep branches", function()
     }
 
     -- ensure saved plugins_disabled state marks p2 as true
-    U:saveFlightPlugins({ p2 = true }, settings.airplanemode)
+    U:saveFlightPlugins({ p2 = true })
 
     -- apm plugin_list (builtin) should include p2 to allow builtin=true matching
     local apm = {
@@ -127,7 +127,7 @@ describe("display/flight_menu deep branches", function()
     assert.is_true(#table_entries >= 1)
 
     local entry = table_entries[1]
-    assert.is_function(entry.checked_func)
+    assert(type(entry.checked_func) == "function")
     assert.is_true(entry.checked_func())
 
     -- set a deterministic ui/event factory so broadcastEvent receives a predictable table
@@ -142,11 +142,10 @@ describe("display/flight_menu deep branches", function()
 
     -- call callback to toggle (should unset p2)
     entry.callback()
-    local cp = U:readFlightPlugins(settings.koreader_plugins, settings.airplanemode)
+    local cp = U:readFlightPlugins(settings.koreader_plugins)
     assert.is_true(type(cp) == "table")
     assert.is_true(not cp["p2"])
-    assert.is_not_nil(UIManager.last_broadcast)
-    assert.are.equal("UpdateMenu", UIManager.last_broadcast.name)
+    assert(UIManager.last_broadcast and UIManager.last_broadcast["name"] == "UpdateMenu")
   end)
 
   it("Restore session menu item availability depends on Device.canRestart", function()

@@ -33,7 +33,7 @@ describe("AirPlaneMode actions - stop, delete, enable/disable", function()
     local settings = require("flight_config"):init()
     -- create a dummy airplanemode file
     local fh = io.open(settings.airplanemode, "w")
-    assert.is_not_nil(fh)
+    assert(fh)
     fh:write("dummy")
     fh:close()
 
@@ -48,8 +48,8 @@ describe("AirPlaneMode actions - stop, delete, enable/disable", function()
     -- file should be removed
     assert.is_false(package.loaded["utils/flight_helpers"].isFile(settings.airplanemode))
     -- settings should be deleted
-    assert.is_false(U:FlightHas("airplanemode", settings.airplanemode))
-    assert.is_false(U:FlightHas("airplanemode_in_footer", settings.airplanemode))
+    assert.is_false(U:FlightHas("airplanemode"))
+    assert.is_false(U:FlightHas("airplanemode_in_footer"))
   end)
 
   it("Enable should set airplanemode and create a backup; Disable should clear it and remove backup", function()

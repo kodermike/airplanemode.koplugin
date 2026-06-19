@@ -1,7 +1,7 @@
 ---@class Utilities
 
 local LuaSettings = require("luasettings")
-local logger = require("logger")
+local logger = require("utils/flight_log")
 local ffiutil = require("ffi/util")
 
 local FlightConfig = require("flight_config")
@@ -28,7 +28,8 @@ end
 function Utilities:readFlightPlugins(listname, settings_file)
   settings_file = settings_file or settings.airplanemode
   if settings.debug_is_on then
-    logger.dbg("AIRPLANEMODE: readFlightplugins - reading plugins from ", settings_file)
+    local funcname = debug.getinfo(1, "n").name
+    logger.dbg(funcname, "reading plugins from ", settings_file)
   end
   local config = sethandler(settings_file)
   local disabled_plugins = config:readSetting(listname) or {}
@@ -43,7 +44,8 @@ end
 function Utilities:saveFlightPlugins(plugin_list, settings_file)
   settings_file = settings_file or settings.airplanemode
   if not plugin_list or type(plugin_list) ~= "table" then
-    logger.err("AIRPLANEMODE: plugin_list is not a table, cannot save")
+    local funcname = debug.getinfo(1, "n").name
+    logger.err(funcname, "plugin_list is not a table, cannot save")
     return false
   end
   local config = sethandler(settings_file)
@@ -60,13 +62,15 @@ end
 function Utilities:readFlightSetting(object, settings_file)
   settings_file = settings_file or settings.airplanemode
   if not object then
-    logger.err("AIRPLANEMODE: readFlightSetting - object sent is nil, cannot read")
+    local funcname = debug.getinfo(1, "n").name
+    logger.err(funcname, "object sent is nil, cannot read")
     return false
   end
   local config = sethandler(settings_file)
   local setting = config:readSetting(object) or nil
   if settings.debug_is_on then
-    logger.dbg("AIRPLANEMODE: readFlightSetting - object: ", object, " = ", setting)
+    local funcname = debug.getinfo(1, "n").name
+    logger.dbg(funcname, "object: ", object, " = ", setting)
   end
   config:close()
   return setting
@@ -80,23 +84,28 @@ end
 function Utilities:saveFlightSetting(object, value, settings_file)
   settings_file = settings_file or settings.airplanemode
   if not object then
-    logger.err("AIRPLANEMODE: saveFlightsetting - object sent is nil, cannot save")
+    local funcname = debug.getinfo(1, "n").name
+    logger.err(funcname, "object sent is nil, cannot save")
     return false
   else
     if settings.debug_is_on then
-      logger.dbg("AIRPLANEMODE: saveFlightsetting - object: ", object)
+      local funcname = debug.getinfo(1, "n").name
+      logger.dbg(funcname, "object: ", object)
     end
   end
   if value == nil then
-    logger.err("AIRPLANEMODE: saveFlightsetting - value sent is nil, cannot save for object: ", object)
+    local funcname = debug.getinfo(1, "n").name
+    logger.err(funcname, "value sent is nil, cannot save for object: ", object)
     return false
   else
     if settings.debug_is_on then
-      logger.dbg("AIRPLANEMODE: saveFlightsetting - value: ", value)
+      local funcname = debug.getinfo(1, "n").name
+      logger.dbg(funcname, "value: ", value)
     end
   end
   if settings.debug_is_on then
-    logger.dbg("AIRPLANEMODE: saveFlightsetting - saving setting: ", object, " = ", value)
+    local funcname = debug.getinfo(1, "n").name
+    logger.dbg(funcname, "saving setting: ", object, " = ", value)
   end
 
   local config = sethandler(settings_file)
@@ -118,13 +127,15 @@ end
 function Utilities:delFlightSetting(object, settings_file)
   settings_file = settings_file or settings.airplanemode
   if not object then
-    logger.err("AIRPLANEMODE: delFlightsetting - object sent is nil, cannot delete")
+    local funcname = debug.getinfo(1, "n").name
+    logger.err(funcname, "object sent is nil, cannot delete")
     return false
   end
   local config = sethandler(settings_file)
   if object == "airplanemode" then
     if settings.debug_is_on then
-      logger.dbg("AIRPLANEMODE: delFlightsetting called for 'airplanemode' at ", os.time(), "\nstack:\n", debug.traceback())
+      local funcname = debug.getinfo(1, "n").name
+      logger.dbg(funcname, "delFlightsetting called for 'airplanemode' at ", os.time(), "\nstack:\n", debug.traceback())
     end
   end
   local response = config:delSetting(object)
@@ -140,13 +151,18 @@ end
 function Utilities:FlightHas(object, settings_file)
   settings_file = settings_file or settings.airplanemode
   if not object then
-    logger.err("AIRPLANEMODE: Flighthas - object sent is nil, cannot check")
+    local funcname = debug.getinfo(1, "n").name
+    logger.err(funcname, "object sent is nil, cannot check")
     return false
   end
   local config = sethandler(settings_file)
   local value = config:has(object)
   config:close()
-  return value
+  if value == nil then
+    return false
+  else
+    return value
+  end
 end
 
 ---Check if a setting does not exist
@@ -156,7 +172,8 @@ end
 function Utilities:FlightHasNot(object, settings_file)
   settings_file = settings_file or settings.airplanemode
   if not object then
-    logger.err("AIRPLANEMODE: FlighthasNot - object sent is nil, cannot check")
+    local funcname = debug.getinfo(1, "n").name
+    logger.err(funcname, "object sent is nil, cannot check")
     return false
   end
   local config = sethandler(settings_file)
@@ -172,7 +189,8 @@ end
 function Utilities:FlightToggle(object, settings_file)
   settings_file = settings_file or settings.airplanemode
   if not object then
-    logger.err("AIRPLANEMODE: Flighttoggle - object sent is nil, cannot toggle")
+    local funcname = debug.getinfo(1, "n").name
+    logger.err(funcname, "object sent is nil, cannot toggle")
     return false
   end
   local config = sethandler(settings_file)
@@ -189,7 +207,8 @@ end
 function Utilities:FlightIsTrue(object, settings_file)
   settings_file = settings_file or settings.airplanemode
   if not object then
-    logger.err("AIRPLANEMODE: FlightisTrue - object sent is nil, cannot check")
+    local funcname = debug.getinfo(1, "n").name
+    logger.err(funcname, "object sent is nil, cannot check")
     return false
   end
   local config = sethandler(settings_file)
@@ -211,7 +230,8 @@ end
 function Utilities:FlightIsFalse(object, settings_file)
   settings_file = settings_file or settings.airplanemode
   if not object then
-    logger.err("AIRPLANEMODE: FlightisFalse - object sent is nil, cannot check")
+    local funcname = debug.getinfo(1, "n").name
+    logger.err(funcname, "object sent is nil, cannot check")
     return false
   end
   local config = sethandler(settings_file)
@@ -232,7 +252,8 @@ end
 function Utilities:FlightMakeTrue(object, settings_file)
   settings_file = settings_file or settings.airplanemode
   if not object then
-    logger.err("AIRPLANEMODE: FlightmakeTrue - object sent is nil, cannot make true")
+    local funcname = debug.getinfo(1, "n").name
+    logger.err(funcname, "object sent is nil, cannot make true")
     return
   end
   local config = sethandler(settings_file)
@@ -254,7 +275,8 @@ end
 function Utilities:FlightMakeFalse(object, settings_file)
   settings_file = settings_file or settings.airplanemode
   if not object then
-    logger.err("AIRPLANEMODE: FlightmakeFalse - object sent is nil, cannot make false")
+    local funcname = debug.getinfo(1, "n").name
+    logger.err(funcname, "object sent is nil, cannot make false")
     return
   end
   local config = sethandler(settings_file)
@@ -276,14 +298,15 @@ end
 ---@return boolean
 function Utilities:FlightNilOrFalse(object, settings_file)
   settings_file = settings_file or settings.airplanemode
+  local funcname = debug.getinfo(1, "n").name
   if not object then
-    logger.err("AIRPLANEMODE: UTILITIES - apmnilorfalse has no object")
+    logger.err(funcname, "apmnilorfalse has no object")
     return false
   end
-  logger.dbg("AIRPLANEMODE: UTILITIES - apmnilorfalse checking:", object)
+  logger.dbg(funcname, "checking:", object)
   local config = sethandler(settings_file)
   if config:nilOrFalse(object) then
-    logger.dbg("AIRPLANEMODE: UTILITIES - apmnilorfalse is nil or false:", object)
+    logger.dbg(funcname, "is nil or false:", object)
     config:flush()
     config:close()
     return true
@@ -299,12 +322,10 @@ end
 ---@param settings_file? string
 ---@return boolean
 function Utilities:FlightNilOrTrue(object, settings_file)
+  settings_file = settings_file or settings.airplanemode
   if not object then
-    logger.err("AIRPLANEMODE: FlightnilOrTrue - object sent is nil, cannot toggle")
-    return false
-  end
-  if not settings_file then
-    logger.err("AIRPLANEMODE: FlightnilOrTrue - settings_file sent is nil, cannot toggle")
+    local funcname = debug.getinfo(1, "n").name
+    logger.err(funcname, "object sent is nil, cannot toggle")
     return false
   end
 
@@ -327,11 +348,13 @@ end
 function Utilities:FlightFlipNilOrFalse(object, settings_file)
   settings_file = settings_file or settings.airplanemode
   if not object then
-    logger.err("AIRPLANEMODE: FlightflipNilOrFalse - object sent is nil, cannot flip")
+    local funcname = debug.getinfo(1, "n").name
+    logger.err(funcname, "object sent is nil, cannot flip")
     return false
   end
   if not settings_file then
-    logger.err("AIRPLANEMODE: FlightflipNilOrFalse - settings_file sent is nil, cannot flip")
+    local funcname = debug.getinfo(1, "n").name
+    logger.err(funcname, "settings_file sent is nil, cannot flip")
     return false
   end
   local config = sethandler(settings_file)
@@ -352,20 +375,21 @@ end
 function Utilities:backupFlight(settings_file, backup_file)
   settings_file = settings_file or settings.airplanemode
   backup_file = backup_file or settings.backup
-  logger.dbg("AIRPLANEMODE: Backup - starting")
+  local funcname = debug.getinfo(1, "n").name
+  logger.dbg(funcname, "starting")
 
   if H.isFile(settings_file) then
-    logger.dbg("AIRPLANEMODE: Backup - backup found, copying to backup file")
+    logger.dbg(funcname, "backup found, copying to backup file")
     if H.isFile(backup_file) then
-      logger.dbg("AIRPLANEMODE: Backup - removing leftover backup file")
+      logger.dbg(funcname, "removing leftover backup file")
       H.removeFile(backup_file)
     end
-    logger.dbg("AIRPLANEMODE: Backup - copying settings to backup file")
+    logger.dbg(funcname, "copying settings to backup file")
     ffiutil.copyFile(settings_file, backup_file)
-    logger.dbg("AIRPLANEMODE: Backup - backup completed")
+    logger.dbg(funcname, "backup completed")
     return H.isFile(backup_file)
   else
-    logger.err("AIRPLANEMODE: Backup - failed to find settings file at: ", settings_file)
+    logger.err(funcname, "failed to find settings file at: ", settings_file)
     return false
   end
 end
@@ -375,12 +399,13 @@ end
 function Utilities:getFlightStatus()
   -- test we can see the real settings file.
   if not H.isFile(settings.airplanemode) then
-    logger.err("AIRPLANEMODE: Settings file not found! Abort!", settings.airplanemode)
+    local funcname = debug.getinfo(1, "n").name
+    logger.err(funcname, "Settings file not found! Abort!", settings.airplanemode)
     return false
   end
   -- check if we currently have a backup of our settings
   -- also verify if the airplanemode flag is set. we will use this to decide if something is funky
-  local airplanemode_active = self:readFlightSetting("airplanemode_enabled", settings.airplanemode) or false
+  local airplanemode_active = self:readFlightSetting("airplanemode_enabled") or false
   if H.isFile(settings.backup) and airplanemode_active then
     return true
   elseif not airplanemode_active then
@@ -393,30 +418,31 @@ end
 ---@param toggle boolean
 ---@return nil
 function Utilities:toggleAirPlaneMode(toggle)
-  logger.dbg("AIRPLANEMODE: Utilities - toggleAirPlaneMode request, desired state:", toggle)
+  local funcname = debug.getinfo(1, "n").name
+  logger.dbg(funcname, "desired state:", toggle)
   if toggle == true then
-    self:FlightMakeTrue("airplanemode_enabled", settings.airplanemode)
-    if self:FlightIsTrue("airplanemode_enabled", settings.airplanemode) then
-      logger.dbg("AIRPLANEMODE: Utilities - AirPlaneMode explicitly set to true")
+    self:FlightMakeTrue("airplanemode_enabled")
+    if self:FlightIsTrue("airplanemode_enabled") then
+      logger.dbg(funcname, "AirPlaneMode explicitly set to true")
       local p = LuaSettings:open(settings.airplanemode)
-      logger.dbg("AIRPLANEMODE: Utilities - AirPlaneMode read from settings:", p:readSetting("airplanemode_enabled"))
+      logger.dbg(funcname, "AirPlaneMode read from settings:", p:readSetting("airplanemode_enabled"))
       p:close()
     else
-      logger.err("AIRPLANEMODE: Utilities - Failed to set AirPlaneMode true")
+      logger.err(funcname, "Failed to set AirPlaneMode true")
     end
   elseif toggle == false then
     -- persist explicit false so the setting survives restarts
-    self:FlightMakeFalse("airplanemode_enabled", settings.airplanemode)
-    if self:FlightIsFalse("airplanemode_enabled", settings.airplanemode) then
-      logger.dbg("AIRPLANEMODE: Utilities - AirPlaneMode explicitly set to false")
+    self:FlightMakeFalse("airplanemode_enabled")
+    if self:FlightIsFalse("airplanemode_enabled") then
+      logger.dbg(funcname, "AirPlaneMode explicitly set to false")
       local p = LuaSettings:open(settings.airplanemode)
-      logger.dbg("AIRPLANEMODE: Utilities - AirPlaneMode read from settings:", p:readSetting("airplanemode_enabled"))
+      logger.dbg(funcname, "AirPlaneMode read from settings:", p:readSetting("airplanemode_enabled"))
       p:close()
     else
-      logger.err("AIRPLANEMODE: Utilities - Failed to set AirPlaneMode false")
+      logger.err(funcname, "Failed to set AirPlaneMode false")
     end
   else
-    logger.err("AIRPLANEMODE: Utilities - toggleAirPlaneMode called without explicit boolean: ", tostring(toggle))
+    logger.err(funcname, "toggleAirPlaneMode called without explicit boolean: ", tostring(toggle))
   end
   return
 end
@@ -425,17 +451,18 @@ end
 ---@return nil
 function Utilities:dumpSettings()
   -- Short-lived verification: read on-disk file contents and log them
-  local funcname = debug.getinfo(1, "n").name
-
   local fh = io.open(settings.airplanemode, "r")
   if fh then
     local contents = fh:read("*a")
     fh:close()
+    local funcname = debug.getinfo(1, "n").name
     logger.dbg(funcname, "on-disk airplanemode.lua after save:\n", contents)
   else
+    local funcname = debug.getinfo(1, "n").name
     logger.err(funcname, "failed to open on-disk airplanemode.lua for verification: ", settings.airplanemode)
   end
   local check_state = self:readFlightSetting("airplanemode") or false
+  local funcname = debug.getinfo(1, "n").name
   logger.dbg(funcname, "check state after dumpSettings: ", check_state)
   return
 end

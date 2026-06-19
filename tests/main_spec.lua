@@ -14,9 +14,9 @@ describe("AirPlaneMode plugin - basic specs", function()
     -- expect actions registered
     local actions = helper.Dispatcher._actions
     assert.is_table(actions)
-    assert.is_not_nil(actions["airplanemode_enable"]) -- at least one
-    assert.is_not_nil(actions["airplanemode_disable"]) -- at least one
-    assert.is_not_nil(actions["airplanemode_toggle"]) -- toggle
+    assert(actions["airplanemode_enable"]) -- at least one
+    assert(actions["airplanemode_disable"]) -- at least one
+    assert(actions["airplanemode_toggle"]) -- toggle
   end)
 
   it("initSettingsFile writes default settings when absent", function()

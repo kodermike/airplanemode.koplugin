@@ -91,8 +91,20 @@ function FlightDetails:menu()
     callback = function()
       if U:FlightHas("debug_is_on") and U:FlightIsTrue("debug_is_on") then
         U:FlightMakeFalse("debug_is_on")
+        settings.debug_is_on = false
+        local logger = require("logger")
+        local LvDEBUG = logger.LvDEBUG
+        if LvDEBUG == "dbg" then
+          logger:setLevel(logger.levels.info)
+        end
       else
         U:FlightMakeTrue("debug_is_on")
+        settings.debug_is_on = true
+        local logger = require("logger")
+        local LvDEBUG = logger.LvDEBUG
+        if LvDEBUG ~= "dbg" then
+          logger:setLevel(logger.levels.dbg)
+        end
       end
     end,
     checked_func = function()
