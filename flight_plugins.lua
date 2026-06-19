@@ -87,27 +87,22 @@ return function(AirPlaneMode)
       logger.dbg(funcname, "Stopping plugin", plugin)
     end
     if stopPluginMethod then
-      local mstatus, __ = pcall(function()
-        pcall(modcheck["stopPlugin"])
-      end)
-      if mstatus == "false" then
-        -- stopPlugin failed, just do a normal stop
-        local sstatus, serr = pcall(function()
-          pcall(modcheck["stop"])
-        end)
-        if sstatus == "false" then
+      -- try calling stopPlugin as a method (preserve `self`)
+      local ok, __ = pcall(modcheck.stopPlugin, modcheck)
+      if not ok then
+        -- stopPlugin failed, try fallback to stop
+        local ok2, err2 = pcall(modcheck.stop, modcheck)
+        if not ok2 then
           local funcname = debug.getinfo(1, "n").name
-          logger.err(funcname, "Failed to stop", plugin, ":", serr)
+          logger.err(funcname, "Failed to stop", plugin, ":", err2)
         end
       end
     else
       -- no stopPlugin, fallback to regular stop
-      local sstatus, serr = pcall(function()
-        pcall(modcheck["stop"])
-      end)
-      if sstatus == "false" then
+      local ok, err = pcall(modcheck.stop, modcheck)
+      if not ok then
         local funcname = debug.getinfo(1, "n").name
-        logger.err(funcname, "Failed to stop", plugin, ":", serr)
+        logger.err(funcname, "Failed to stop", plugin, ":", err)
       end
     end
   end
@@ -211,11 +206,9 @@ return function(AirPlaneMode)
                   local funcname = debug.getinfo(1, "n").name
                   logger.dbg(funcname, "isRunning method found for", plugin)
                 end
-                local status, __ = pcall(function()
-                  pcall(modcheck["isRunning"]())
-                end)
-                -- if the status came back that the plugin was running
-                if status == "true" then
+                local ok, running = pcall(modcheck.isRunning, modcheck)
+                -- if isRunning executed successfully and returned true
+                if ok and running == true then
                   -- try to run stopPlugin if available since it's cleaner
                   if settings.debug_is_on then
                     local funcname = debug.getinfo(1, "n").name

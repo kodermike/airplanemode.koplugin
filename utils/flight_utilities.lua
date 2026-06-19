@@ -322,14 +322,10 @@ end
 ---@param settings_file? string
 ---@return boolean
 function Utilities:FlightNilOrTrue(object, settings_file)
+  settings_file = settings_file or settings.airplanemode
   if not object then
     local funcname = debug.getinfo(1, "n").name
     logger.err(funcname, "object sent is nil, cannot toggle")
-    return false
-  end
-  if not settings_file then
-    local funcname = debug.getinfo(1, "n").name
-    logger.err(funcname, "settings_file sent is nil, cannot toggle")
     return false
   end
 
