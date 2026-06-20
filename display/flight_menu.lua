@@ -14,7 +14,7 @@ local _ = require("gettext")
 local FlightConfig = require("flight_config")
 local settings = FlightConfig:init()
 
-local FlightDetails = require("display/flight_details")
+local FlightAdvancedMenu = require("display/flight_advanced_menu")
 
 local U = require("utils/flight_utilities")
 
@@ -195,7 +195,7 @@ function FlightMenu:getMenuItems()
     text = _("Advanced Settings"),
     keep_menu_open = true,
     sub_item_table_func = function()
-      return FlightDetails:menu()
+      return FlightAdvancedMenu:menu()
     end,
   })
   return airplane_config_table

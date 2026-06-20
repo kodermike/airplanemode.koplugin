@@ -1,7 +1,7 @@
 local helper = require("tests/spec_helper")
 local U = helper.U
 
-describe("display/flight_details - KOReader version and menu entries", function()
+describe("display/flight_advanced_menu - KOReader version and menu entries", function()
   setup(function()
     helper.reset()
   end)
@@ -54,7 +54,7 @@ describe("display/flight_details - KOReader version and menu entries", function(
       return false
     end
 
-    local FD = require("display/flight_details")
+    local FD = require("display/flight_advanced_menu")
 
     -- string version
     package.loaded["version"] = "1.2.3-string"
@@ -82,7 +82,7 @@ describe("display/flight_details - KOReader version and menu entries", function(
         return "FW1"
       end,
     }
-    local FD = require("display/flight_details")
+    local FD = require("display/flight_advanced_menu")
     local menu = FD:menu()
     assert.is_table(menu)
     -- pick first entry and invoke callback which should call UIManager:show

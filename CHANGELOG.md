@@ -1,19 +1,25 @@
 # Changelog
 
-## v.1.9.9 (pre-release)
+## v.1.9.0 (pre-release)
 
-### 🚀 Added
+### Added 🚀
 
-- An update manager - now you can update AirPlaneMode from directly inside the plugin (#71)
 - Broke builtin and user added plugins into separate spaces (#64)
+- Added `About` box, as well as more information for use when submitting bug reports
 
-### 🏠 Housekeeping
+### Housekeeping 🏠
 
-* Heavy refactor, breaking the monolithic lua file into components
+* Heavy initial refactor, breaking the monolithic lua file into components
 * Moved all settings management that is AirPlaneMode specific to the AirPlaneMode config file
 * Added a hook for `stopPlugin` calls (#68)
 * Added a hook to delete configs when being disabled by KOReader the plugin manager (#65)
 * Improved linting and tests for pre-release checks
+
+### Experimental 💣
+
+- Developer mode added - disable/enable features that are still in progress
+- Debug logging - enables/disables debug logging, only available when devmode is on
+- Update manager - now you can update AirPlaneMode from directly inside the plugin (#71). Currently gated with dev mode
 
 ## v.1.2.2 🔥
 
@@ -30,14 +36,14 @@
 
 ## v.1.1.0
 
-### 🚀 Added
+### Added 🚀
 
 - Added additional settings flushes - in final testing for the next release, discovered that without those extra flushes changes weren't being properly propagated.
 - New Koreader release, bumping this build for stable users.
 
 ## v.1.0.2
 
-### 🚀 Added
+### Added 🚀
 
 - Issue 52 - adding github actions for linting and release builds
 - Issue 46 - wifi settings that weren't in the original configuration need to be just removed (_except if an emulator_)
@@ -53,15 +59,13 @@
   - Removed message for android devices (no longer relevant)
   - Made "disable device management" visible only to users who can manage their hardware
 
-## v.1.0.1b (2025.11.25)
-
-### 🔥 Hotfix
+## v.1.0.1b (2025.11.25) 🔥
 
 - Issue 32 - crash reported on kindle when enabling/disabling outside of reader mode. Confirmed on KLC.
 
 ## v.1.0.1 (2025.11.25)
 
-### 🚀 Added
+### Added 🚀
 
 - Added better version management. The plugin will now warn if being run with a config from a newer version; the \_meta file has been updated to list the version so that external plugin managers like [UpdatesManager](https://github.com/advokatb/updatesmanager.koplugin) can easily identify whether a local install needs updating; general clean up around how the version is stored and updated within the configs
 
@@ -71,7 +75,7 @@
 
 - Added dynamic "plugin stop" call, supporting the new function call to disable a plugin's external software (like with SSH, which spawns dropbear)
 
-### 🩹 Fixes
+### Fixes 🩹
 
 - Fixed how reading location is preserved when restarting. Now accurately returns KOReader to the page it restarted on
 
@@ -79,7 +83,7 @@
 
 ## v.1.0.0 (2025.08.16)
 
-### 🚀 Added
+### Added 🚀
 
 - <u>Configuration management</u> (and a configuration to manage!). This includes
   - Minor updates to plugin support, in particular not turning off Calibre and instead just disabling the wireless function. This lets users continue to search using the calibre metadata search even when offline.
@@ -92,7 +96,7 @@
 
   - Changed what (and how to some extent) we store in the airplanemode configuration file. Existing users should be migrated seemlessly the first time they launch koreader with the new version.
 
-### 🩹 Fixes
+### Fixes 🩹
 
 - Correctly call the ui function to disable SSH if it's running when we start
 
@@ -110,11 +114,11 @@
 
 ## v0.0.3 (2025.05.26)
 
-### 🚀 Added
+### Added 🚀
 
 - Gesture support
 
-### 🩹 Fixes
+### Fixes 🩹
 
 - Finally figured out enable/disble wifi so it works on different devices correctly. Tested on Clara and Kindle, plugin settings reverted correctly, wifi reconnected correctly, and wireless settings are not lost
 
@@ -128,11 +132,11 @@
 
 ## v0.0.2 (2025.05.22)
 
-### 🚀 Added
+### Added 🚀
 
 - No additions today.
 
-### 🩹 Fixes
+### Fixes 🩹
 
 - Replaced how we reference files from `rootpath` to the function for
   `DataStorage:getDataDir` - I suspect this was causing some of the issues on
@@ -146,7 +150,7 @@
 
 ## v0.0.1 (2025.05.21)
 
-### 🚀 Added
+### Added 🚀
 
 - Clicking AirPlane Mode now opens a menu where you can choose between
   enable/disabe and editing which plugins are included as disabled
@@ -161,7 +165,7 @@
 
 - Documentation updated!
 
-### 🩹 Fixes
+### Fixes 🩹
 
 - cleaned up all of the commented code and debug statements :-)
 
@@ -169,10 +173,10 @@
 
 - Initial testing release
 
-### 🚀 Added
+### Added 🚀
 
 - Everything
 
-### 🩹 Fixes
+### Fixes 🩹
 
 - Existential nihilism

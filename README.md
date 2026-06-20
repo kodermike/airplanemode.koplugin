@@ -18,14 +18,18 @@
 - Enabling **AirPlaneMode** will:
   - Back up the current KOReader settings file
   - Disables a configurable set of plugins
-  - Disabe Wi‑Fi, and changes default Network settings to disable automatic activation
+  - Disables Wi‑Fi, and changes default Network settings to disable automatic activation
   - If the Calibre plugin is enabled, adjusts Calibre's wireless-only settings to off while leaving the plugin search functions enabled
+  
 - Disabling **AirPlaneMode** will:
   - restore previous settings from the backup
+  
   - re-enables plugins that were disabled for **AirPlaneMode**
-  - Return Wi‑Fi settings to their previous configuration
 
-- On devices where network hardware cannot be managed, Wi‑Fi actions are skipped.
+  - Return Wi‑Fi settings to their previous configuration
+  
+
+*On devices where network hardware cannot be managed, Wi‑Fi actions are skipped.*
 
 ---
 
@@ -52,7 +56,7 @@
 
 #### For users of AirPlaneMode >=2.0
 
-- In the configuration menu, you can elect to update **AirPlaneMode** directly from the plugin
+- In the configuration menu, you can elect to update **AirPlaneMode** directly from the plugin in the Advance Settings menu.
 
 ## Usage
 
@@ -62,22 +66,25 @@
 ![AirPlaneMode-menu](.github/assets/AirPlaneMode-menu.png)
 
 - Enable / Disable **AirPlaneMode**
-
 - Manage which builtin and user plugins should be disabled when **AirPlaneMode** is active
-
 - Enable silent restarts (assumes confirmation) so that you aren't prompted to restart
-
 - Toggle **AirPlaneMode** visibility in the reader footer. This option also requires `External Content` in the status bar UI to be included.
-
 - Enable the option to resume where you left off if possible when restarting with **AirPlaneMode**. This option temporarily overrides preferences to resume where you left off when toggling **AirPlaneMode**.
+- For applicable devices, disable managing Wi-Fi so that **AirPlaneMode** only manages Plugin settings when enabled
+- Open the **AirPlaneMode** Advanced Settings menu
 
-- If available, enable the option to only manage plugins when **AirPlaneMode** is active instead of managing Network as well.
+The Advanced Settings menu offers the following
 
-- Open the **AirPlaneMode** update manager
+![AirPlaneMode-Advanced](.github/assets/AirPlaneMode-Advanced.png)
+
+* Detailed information about your current setup. This information is especially useful when filing an issue
+* Enable/Disable `Developer Mode`. Developer mode enables features that are still being developed but are not yet ready for general use. At present, this includes:
+  * Update Management
+  * Debug logging
 
 ## Gesture support
 
-Gestures (Device -> Gestures) can be configured to call **AirPlaneMode** actions; the plugin registers three dispatcher actions you can bind to gestures or hotkeys:
+Gestures (Device -> Gestures) can be configured to call **AirPlaneMode** actions; the Plugin registers three dispatcher actions you can bind to gestures or hotkeys:
 
 - `airplanemode_enable` — enable AirPlaneMode
 - `airplanemode_disable` — disable AirPlaneMode
@@ -95,7 +102,7 @@ Gestures (Device -> Gestures) can be configured to call **AirPlaneMode** actions
   - `httpinspector`
   - `calibre` (wireless component only)
 
-Note: **AirPlaneMode's** Plugin Manager only disables plugins inside KOReader while **AirPlaneMode** is active — it does not edit KOReader plugin settings directly.
+Note: **AirPlaneMode's** Plugin Manager only disables plugins in KOReader while **AirPlaneMode** is active — it does not edit KOReader plugin settings directly.
 
 ![AirPlane Mode icon when enabled](.github/assets/enabled.jpg)
 
@@ -103,7 +110,9 @@ Note: **AirPlaneMode's** Plugin Manager only disables plugins inside KOReader wh
 
 ## Contributing
 
-Find a bug 🐛? Want to contribute 🤝? Please see [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
+Find a bug 🐛? Want to contribute 🤝? Please see [CONTRIBUTING](CONTRIBUTING.md) for more information.
+
+
 
 ## 🔧 Developer Notes
 
@@ -112,4 +121,4 @@ Find a bug 🐛? Want to contribute 🤝? Please see [CONTRIBUTING.md](CONTRIBUT
 - The `features` branch is suitable for testing against nightly KOReader builds. The `main` branch is intended to work with stable releases.
 - For more detailed information on contributing, please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-###### Updated 2026.06.04
+###### Updated 2026.06.20

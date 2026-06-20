@@ -1,4 +1,4 @@
----@class FlightDetails
+---@class FlightAdvancedMenu
 ---@field device_model_name string
 ---@field device_firmware_info string
 ---@field KOReader_version string
@@ -18,11 +18,11 @@ local H = require("utils/flight_helpers")
 local U = require("utils/flight_utilities")
 local FM = require("utils/flight_deviceinfo")
 
-local FlightDetails = {}
+local FlightAdvancedMenu = {}
 
 ---Retrieve KOReader version
 ---@return string
-function FlightDetails.getKOReaderVersion()
+function FlightAdvancedMenu.getKOReaderVersion()
   local ok, v_info = pcall(require, "version")
   if ok then
     if type(v_info) == "string" and v_info ~= "" then
@@ -53,10 +53,10 @@ local function generic_entry(t)
   }
 end
 
----FlightDetails:menu()
+---FlightAdvancedMenu:menu()
 ---Genrates the advance details menu
 ---@return table
-function FlightDetails:menu()
+function FlightAdvancedMenu:menu()
   local airplane_specs = {}
   -- Generate information buttons - all use the same popup for displaying About
   local button_list = {
@@ -146,4 +146,4 @@ function FlightDetails:menu()
   return airplane_specs
 end
 
-return FlightDetails
+return FlightAdvancedMenu
