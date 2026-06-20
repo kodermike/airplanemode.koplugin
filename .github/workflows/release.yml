@@ -35,10 +35,11 @@ jobs:
           echo "KOROOT=${KOROOT}" >> ${GITHUB_ENV}
           echo "Kobo Root: ${KOROOT}"
 
-      - name: Remove tests
+      - name: Remove extras
         run: |
           set -e
           [[ -d tests ]] && rm -rf tests
+          [[ -d lua_stubs ]] && rm -rf lua_stubs
 
       - name: Create Release Setup
         run: |

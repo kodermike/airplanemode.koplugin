@@ -24,7 +24,7 @@ describe("display/flight_details - KOReader version and menu entries", function(
         return s
       end,
     }
-    -- ensure device mock exposes boolean checks expected by flight_mechanics
+    -- ensure device mock exposes boolean checks expected by flight_deviceinfo
     package.loaded["device"] = package.loaded["device"] or {}
     package.loaded["device"].isSDL = function()
       return false
@@ -74,7 +74,7 @@ describe("display/flight_details - KOReader version and menu entries", function(
 
   it("menu generic entries show an InfoMessage via UIManager when invoked", function()
     -- ensure FM provides device info used in menu
-    package.loaded["utils/flight_mechanics"] = {
+    package.loaded["utils/flight_deviceinfo"] = {
       get_device_model_name = function()
         return "ModelX"
       end,

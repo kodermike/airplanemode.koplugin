@@ -16,7 +16,7 @@ local FlightConfig = require("flight_config")
 local settings = FlightConfig:init()
 local H = require("utils/flight_helpers")
 local U = require("utils/flight_utilities")
-local FM = require("utils/flight_mechanics")
+local FM = require("utils/flight_deviceinfo")
 
 local FlightDetails = {}
 
@@ -100,7 +100,7 @@ function FlightDetails:menu()
     table.insert(airplane_specs, {
       text = _("Update management"),
       sub_item_table_func = function()
-        local updater_menu = require("display/flight_plan_menu")
+        local updater_menu = require("display/flight_updater_menu")
         return updater_menu:showMenu()
       end,
       enabled_func = function()

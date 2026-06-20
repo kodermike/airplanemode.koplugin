@@ -1,4 +1,4 @@
----@class FlightPlan
+---@class FlightUpdater
 ---@field dev_branch string
 ---@field last_install_source string
 
@@ -10,7 +10,7 @@ local _ = require("gettext")
 
 local U = require("utils/flight_utilities")
 
-local FlightPlan = {}
+local FlightUpdater = {}
 
 --[[
 The guts of this page were lifted from the great work @andyhazz has done with bookends and bookshelf. Any bugs were introduced by me; all code that looks good was probably theirs.
@@ -56,7 +56,7 @@ end
 -- and forward slash (so feature/foo keeps its slash). Uses the public
 -- api.github.com zipball endpoint.
 -- ]]
-function FlightPlan.composeBranchUrl(branch)
+function FlightUpdater.composeBranchUrl(branch)
   local encoded = branch:gsub("[^%w%-_/.~]", function(c)
     return string.format("%%%02X", c:byte())
   end)
@@ -120,7 +120,7 @@ end
 
 --- Offer the user a link to the releases page in a browser.
 ---@param message string
-function FlightPlan.offerReleasesPage(message)
+function FlightUpdater.offerReleasesPage(message)
   local url = "https://github.com/kodermike/airplanemode.koplugin/releases"
   if Device:canOpenLink() then
     UIManager:show(ConfirmBox:new({
@@ -140,14 +140,14 @@ end
 
 --- Return the available update version and zip URL, or nil if none/not checked.
 ---@return string?, string?
-function FlightPlan.getAvailableUpdate()
+function FlightUpdater.getAvailableUpdate()
   return _cached_version, _cached_zip_url
 end
 
 --- Fire a silent background update check if the cache is stale (>1h or never checked).
 -- Results available via getAvailableUpdate().
 ---@param on_update_found? fun(version: string)
-function FlightPlan.checkBackground(on_update_found)
+function FlightUpdater.checkBackground(on_update_found)
   if _check_in_flight then
     return
   end
@@ -203,7 +203,7 @@ end
 
 --- Check for updates and show a message if a new version is available.
 ---@param on_success? fun()
-function FlightPlan.check(on_success)
+function FlightUpdater.check(on_success)
   local NetworkMgr = require("ui/network/manager")
   NetworkMgr:runWhenOnline(function()
     UIManager:show(InfoMessage:new({
@@ -217,7 +217,7 @@ function FlightPlan.check(on_success)
       -- Fetch all releases to gather notes between installed and latest
       local releases = httpGetJSON("https://api.github.com/repos/kodermike/airplanemode.koplugin/releases", user_agent)
       if not releases or #releases == 0 then
-        FlightPlan.offerReleasesPage(_("Could not check for updates."))
+        FlightUpdater.offerReleasesPage(_("Could not check for updates."))
         return
       end
 
@@ -300,7 +300,7 @@ function FlightPlan.check(on_success)
                 }))
                 return
               end
-              FlightPlan.install(latest_zip_url, settings.version, latest_version, on_success)
+              FlightUpdater.install(latest_zip_url, settings.version, latest_version, on_success)
             end,
           },
         },
@@ -322,7 +322,7 @@ end
 ---@param new_version string
 ---@param on_success? fun()
 ---@param error_label? string
-function FlightPlan.install(zip_url, old_version, new_version, on_success, error_label)
+function FlightUpdater.install(zip_url, old_version, new_version, on_success, error_label)
   local DataStorage = require("datastorage")
   local lfs = require("libs/libkoreader-lfs")
 
@@ -389,7 +389,7 @@ function FlightPlan.install(zip_url, old_version, new_version, on_success, error
           timeout = 3,
         }))
       else
-        FlightPlan.offerReleasesPage(_("Download failed."))
+        FlightUpdater.offerReleasesPage(_("Download failed."))
       end
       return
     end
@@ -431,12 +431,12 @@ end
 ---@param branch string
 ---@param on_success? fun()
 -- Same install pipeline as the release path; just composes a different URL.
-function FlightPlan.installBranch(branch, on_success)
+function FlightUpdater.installBranch(branch, on_success)
   local NetworkMgr = require("ui/network/manager")
   NetworkMgr:runWhenOnline(function()
-    local zip_url = FlightPlan.composeBranchUrl(branch)
+    local zip_url = FlightUpdater.composeBranchUrl(branch)
     local error_label = _("Could not install branch:") .. " " .. branch
-    FlightPlan.install(zip_url, settings.version, "branch:" .. branch, on_success, error_label)
+    FlightUpdater.install(zip_url, settings.version, "branch:" .. branch, on_success, error_label)
   end)
 end
 
@@ -445,7 +445,7 @@ end
 -- Used by the "Reset to latest stable release" entry: even when on a branch whose
 -- _meta.lua reports a higher version than the current release, we still want to
 -- pull the release zip and re-stamp last_install_source = "release".
-function FlightPlan.installLatestStable(on_success)
+function FlightUpdater.installLatestStable(on_success)
   local NetworkMgr = require("ui/network/manager")
   NetworkMgr:runWhenOnline(function()
     UIManager:show(InfoMessage:new({
@@ -457,7 +457,7 @@ function FlightPlan.installLatestStable(on_success)
       local user_agent = "KOReader-AirPlaneMode/" .. settings.version
       local release = httpGetJSON("https://api.github.com/repos/kodermike/airplanemode.koplugin/releases/latest", user_agent)
       if not release or not release.tag_name or release.draft or release.prerelease then
-        FlightPlan.offerReleasesPage(_("Could not fetch latest release."))
+        FlightUpdater.offerReleasesPage(_("Could not fetch latest release."))
         return
       end
       local zip_url
@@ -470,25 +470,25 @@ function FlightPlan.installLatestStable(on_success)
         end
       end
       if not zip_url then
-        FlightPlan.offerReleasesPage(_("Latest release has no downloadable zip."))
+        FlightUpdater.offerReleasesPage(_("Latest release has no downloadable zip."))
         return
       end
       local new_version = release.tag_name:gsub("^v", "")
-      FlightPlan.install(zip_url, settings.version, new_version, on_success)
+      FlightUpdater.install(zip_url, settings.version, new_version, on_success)
     end)
   end)
 end
 
 --- Check for updates and show a message if a new version is available.
-function FlightPlan:checkForUpdates()
+function FlightUpdater:checkForUpdates()
   if U:FlightHas("dev_branch") and U:readFlightSetting("dev_branch") ~= "" then
     local branch = U:readFlightSetting("dev_branch")
-    FlightPlan.installBranch(branch, function()
+    FlightUpdater.installBranch(branch, function()
       local last_install_source = "branch:" .. branch
       U:saveFlightSetting("last_install_source", last_install_source)
     end)
   else
-    FlightPlan.check(function()
+    FlightUpdater.check(function()
       local last_install_source = "release"
       U:saveFlightSetting("last_install_source", last_install_source)
     end)
@@ -496,14 +496,14 @@ function FlightPlan:checkForUpdates()
 end
 
 --- Reset to the latest stable release, clearing the dev branch setting.
-function FlightPlan:resetToStableRelease()
+function FlightUpdater:resetToStableRelease()
   UIManager:show(ConfirmBox:new({
     text = _("This will clear the development branch setting and install the latest stable release of AirPlaneMode, then restart KOReader. Continue?"),
     ok_text = _("Reset"),
     ok_callback = function()
       self.dev_branch = ""
       U:saveFlightSetting("dev_branch", "")
-      FlightPlan.installLatestStable(function()
+      FlightUpdater.installLatestStable(function()
         self.last_install_source = "release"
         U:saveFlightSetting("last_install_source", "release")
         UIManager:close(self)
@@ -514,7 +514,7 @@ end
 
 --- Open a single-line dialog to set / change / clear the dev branch.
 ---@param touchmenu_instance? table
-function FlightPlan:editDevBranch(touchmenu_instance)
+function FlightUpdater:editDevBranch(touchmenu_instance)
   local InputDialog = require("ui/widget/inputdialog")
   local dlg
   dlg = InputDialog:new({
@@ -551,4 +551,4 @@ function FlightPlan:editDevBranch(touchmenu_instance)
   dlg:onShowKeyboard()
 end
 
-return FlightPlan
+return FlightUpdater

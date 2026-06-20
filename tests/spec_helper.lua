@@ -655,7 +655,7 @@ if not use_koreader then
       self._disabled = false
     end,
   }
-  package.loaded["flight_net"] = FlightNetwork
+  package.loaded["flight_network"] = FlightNetwork
 
   -- PluginManager mock
   local AirPlaneMode = {
