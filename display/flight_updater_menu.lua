@@ -1,4 +1,4 @@
----@class FlightPlan
+---@class FlightUpdater
 
 local _ = require("gettext")
 
@@ -6,13 +6,13 @@ local FlightConfig = require("flight_config")
 local settings = FlightConfig:init()
 
 local U = require("utils/flight_utilities")
-local Updater = require("utils/flight_plan")
+local Updater = require("utils/flight_updater")
 
-local FlightPlanMenu = {}
+local FlightUpdaterMenu = {}
 
 --- Show the flight plan menu.
 ---@return table
-function FlightPlanMenu:showMenu()
+function FlightUpdaterMenu:showMenu()
   local check_updates = U:readFlightSetting("check_updates") or false
   return {
     {
@@ -101,4 +101,4 @@ function FlightPlanMenu:showMenu()
   }
 end
 
-return FlightPlanMenu
+return FlightUpdaterMenu

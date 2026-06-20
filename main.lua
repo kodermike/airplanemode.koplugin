@@ -29,7 +29,7 @@ local settings = FlightConfig:init()
 
 local H = require("utils/flight_helpers")
 local U = require("utils/flight_utilities")
-local A = require("flight_net")
+local A = require("flight_network")
 local M = require("display/flight_menu")
 
 local function restoreState()

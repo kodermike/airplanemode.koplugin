@@ -133,6 +133,10 @@ function FlightMenu:getMenuItems()
       U:saveFlightSetting("airplanemode_in_footer", self.show_value_in_footer)
       if self.show_value_in_footer then
         self.apm:addAdditionalFooterContent()
+        UIManager:show(InfoMessage:new({
+          text = _("Remember to enable External Content in the status bar for AirPlaneMode to show in the footer."),
+          timeout = 3,
+        }))
       else
         self.apm:removeAdditionalFooterContent()
       end

@@ -1,14 +1,14 @@
 local helper = require("tests/spec_helper")
 local U = helper.U
 
-describe("display/flight_plan_menu - updater menu and toggles", function()
+describe("display/flight_updater_menu - updater menu and toggles", function()
   setup(function()
     helper.reset()
   end)
 
   it("showMenu toggles check_updates and reports available/installed text", function()
     -- stub Updater
-    package.loaded["utils/flight_plan"] = {
+    package.loaded["utils/flight_updater"] = {
       getAvailableUpdate = function()
         return nil
       end,
@@ -17,7 +17,7 @@ describe("display/flight_plan_menu - updater menu and toggles", function()
       resetToStableRelease = function() end,
     }
 
-    local FPM = require("display/flight_plan_menu")
+    local FPM = require("display/flight_updater_menu")
     local settings = require("flight_config"):init()
 
     -- ensure check_updates default false
@@ -41,7 +41,7 @@ describe("display/flight_plan_menu - updater menu and toggles", function()
     assert.is_string(txt)
 
     -- stub available update
-    package.loaded["utils/flight_plan"].getAvailableUpdate = function()
+    package.loaded["utils/flight_updater"].getAvailableUpdate = function()
       return "9.9"
     end
     local txt2 = second.text_func()
