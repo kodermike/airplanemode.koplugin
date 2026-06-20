@@ -69,6 +69,27 @@ function FlightDetails:menu()
     table.insert(airplane_specs, generic_entry(text))
   end
 
+  -- Dev mode toggle for showing in-progress features
+  table.insert(airplane_specs, {
+    text = _("Developer Mode"),
+    callback = function()
+      if settings.dev_mode then
+        U:FlightMakeFalse("dev_mode")
+        settings.dev_mode = false
+      else
+        U:FlightMakeTrue("dev_mode")
+        UIManager:show(InfoMessage:new({
+          text = _("Developer Mode Enabled\n\nSome features may not yet function correctly."),
+          timeout = 3,
+        }))
+        settings.dev_mode = true
+      end
+    end,
+    checked_func = function()
+      return settings.dev_mode
+    end,
+  })
+
   -- Updater management
   if U:getFlightStatus() then
     table.insert(airplane_specs, {
@@ -81,6 +102,9 @@ function FlightDetails:menu()
       sub_item_table_func = function()
         local updater_menu = require("display/flight_plan_menu")
         return updater_menu:showMenu()
+      end,
+      enabled_func = function()
+        return settings.dev_mode
       end,
     })
   end
@@ -113,6 +137,9 @@ function FlightDetails:menu()
       else
         return false
       end
+    end,
+    enabled_func = function()
+      return settings.dev_mode
     end,
   })
 

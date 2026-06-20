@@ -12,6 +12,7 @@
 ---@field description string
 ---@field fullname string
 ---@field debug_is_on boolean
+---@field dev_mode boolean
 
 local DataStorage = require("datastorage")
 local meta = require("_meta")
@@ -30,6 +31,7 @@ local FlightConfig = {
   description = nil,
   fullname = nil,
   debug_is_on = nil,
+  dev_mode = nil,
 }
 
 ---Return base config file locations
@@ -63,6 +65,11 @@ function FlightConfig:init()
       else
         self.debug_is_on = false
       end
+      if cfg:has("dev_mode") then
+        self.dev_mode = cfg:readSetting("dev_mode")
+      else
+        self.dev_mode = false
+      end
       cfg:close()
     end
   end
@@ -81,6 +88,7 @@ function FlightConfig:init()
     description = self.description,
     fullname = self.fullname,
     debug_is_on = self.debug_is_on,
+    dev_mode = self.dev_mode,
   }
 end
 

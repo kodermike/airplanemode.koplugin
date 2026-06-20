@@ -163,7 +163,7 @@ function FlightMenu:getMenuItems()
   end
   -- Roaming Mode
   table.insert(airplane_config_table, {
-    text = _("Roaming Mode"),
+    text = _("Don't Manage WiFi"),
     callback = function()
       U:FlightToggle("managewifi")
     end,

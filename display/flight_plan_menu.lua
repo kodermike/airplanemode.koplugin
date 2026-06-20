@@ -11,7 +11,7 @@ local Updater = require("utils/flight_plan")
 local FlightPlanMenu = {}
 
 --- Show the flight plan menu.
----@return nil
+---@return table
 function FlightPlanMenu:showMenu()
   local check_updates = U:readFlightSetting("check_updates") or false
   return {
