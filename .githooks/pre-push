@@ -19,7 +19,7 @@ fi
 
 for keyword in TODO FIXME FIX BUG; do
   printf "%10s" "${yellow}Checking ${keyword}: ${reset}"
-  if grep -r -q --include="*.lua" "${keyword}:"; then
+  if grep -r -q --include="*.lua" -i "${keyword}:"; then
     printf "%10s\n" "${red}FAIL${reset}"
     grep -r --include="*.lua" -n "${keyword}:"
     BLOCKER=1
