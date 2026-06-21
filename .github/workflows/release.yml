@@ -4,14 +4,23 @@ permissions:
   contents: write
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (example: v1.2.3)"
+        required: false
 
 jobs:
-  build-release:
+  release:
+    name: Build, Manual-Approve, and Publish Release
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # Allow creating releases (contents) and writing issues (manual-approval action)
+    permissions:
+      contents: write
+      issues: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -19,7 +28,20 @@ jobs:
       - name: Setup ENV Vars
         run: |
           set -e
-          VERSION=$(echo "$GITHUB_REF" | sed -n 's_^refs/tags/__p')
+          # If a tag was provided when triggering the workflow, use it; otherwise try to derive from GITHUB_REF
+          INPUT_TAG="${{ github.event.inputs.tag }}"
+          if [ -n "$INPUT_TAG" ]; then
+            VERSION="$INPUT_TAG"
+          else
+            VERSION=$(echo "$GITHUB_REF" | sed -n 's_^refs/tags/__p')
+          fi
+
+          if [ -z "$VERSION" ]; then
+            echo "ERROR: No version provided via workflow input and GITHUB_REF does not contain a tag."
+            echo "Please provide a tag when triggering the workflow (e.g. v1.2.3)."
+            exit 1
+          fi
+
           echo "VERSION=$VERSION" >> ${GITHUB_ENV}
           echo "Version: $VERSION"
           PLUGIN_DIR=airplanemode.koplugin
@@ -35,6 +57,12 @@ jobs:
           echo "KOROOT=${KOROOT}" >> ${GITHUB_ENV}
           echo "Kobo Root: ${KOROOT}"
 
+      - name: Remove extras
+        run: |
+          set -e
+          [[ -d tests ]] && rm -rf tests
+          [[ -d lua_stubs ]] && rm -rf lua_stubs
+
       - name: Create Release Setup
         run: |
           set -e
@@ -42,31 +70,31 @@ jobs:
           mkdir -p "${PKG_ROOT}/${PLUGIN_DIR}"
           mkdir -p "${PKG_ROOT}/${KOROOT}/${PLUGIN_DIR}"
           shopt -s extglob && \
-          cp $(/bin/ls|grep -v ${PKG_ROOT}) "${PKG_ROOT}/${PLUGIN_DIR}" && \
-          cp $(/bin/ls|grep -v ${PKG_ROOT}) "${PKG_ROOT}/${KOROOT}/${PLUGIN_DIR}"
-          
+          cp -r $(/bin/ls|grep -v ${PKG_ROOT}) "${PKG_ROOT}/${PLUGIN_DIR}" && \
+          cp -r $(/bin/ls|grep -v ${PKG_ROOT}) "${PKG_ROOT}/${KOROOT}/${PLUGIN_DIR}"
+
       - name: Create zip Archive
         run: |
           sudo apt-get install -y zip && \
           cd ${PKG_ROOT} && zip -r "../${ARCHIVE_NAME}.zip" "${PLUGIN_DIR}"
-      
+
       - name: Create tar Archive
         run: |
           cd ${PKG_ROOT} && tar zcf "../${ARCHIVE_NAME}.tar.gz" "${PLUGIN_DIR}"
-      
+
       - name: Create KoboRoot Archive
         run: |
           cd ${PKG_ROOT} && tar zcf "../KoboRoot.tgz" "${KOROOT}"
-      
+
       - name: Extract changelog for this version
         id: changelog
         run: |
           echo "Extracting changelog for version: $VERSION"
-          
+
           # Extract changelog entry for this version from CHANGELOG.md
           # Use a more reliable method: find the version section and extract until next version
           START_LINE=$(grep -n "^## \[$VERSION\]" CHANGELOG.md | head -1 | cut -d: -f1)
-          
+
           if [ -z "$START_LINE" ]; then
             echo "⚠ No changelog entry found for version $VERSION"
             echo "## Version $VERSION" > release_notes.txt
@@ -74,28 +102,28 @@ jobs:
             echo "See [CHANGELOG.md](CHANGELOG.md) for details." >> release_notes.txt
           else
             echo "Found changelog entry at line $START_LINE"
-            
+
             # Find the next version header (if any)
             NEXT_LINE=$(awk -v start="$START_LINE" 'NR > start && /^## \[/ {print NR; exit}' CHANGELOG.md)
-            
+
             if [ -z "$NEXT_LINE" ]; then
               # No next version found, extract to end of file
-              sed -n "${START_LINE},\$p" CHANGELOG.md > release_notes.txt
+              sed -n "${START_LINE},$p" CHANGELOG.md > release_notes.txt
             else
               # Extract up to (but not including) next version
               END_LINE=$((NEXT_LINE - 1))
               sed -n "${START_LINE},${END_LINE}p" CHANGELOG.md > release_notes.txt
             fi
-            
+
             # Remove the version header line (first line: "## [VERSION] - DATE")
             sed -i '1d' release_notes.txt
-            
+
             # Remove trailing empty lines using perl (more reliable than sed)
             perl -i -pe 'chomp if eof' release_notes.txt
             # Remove any remaining trailing newlines
             perl -i -0pe 's/\n+$//' release_notes.txt
           fi
-          
+
           # Verify we have content
           if [ ! -s release_notes.txt ]; then
             echo "⚠ Extracted changelog is empty, creating default"
@@ -103,11 +131,20 @@ jobs:
             echo "" >> release_notes.txt
             echo "See [CHANGELOG.md](CHANGELOG.md) for details." >> release_notes.txt
           fi
-          
+
           echo "--- Release Notes ---"
           cat release_notes.txt
           echo "--- End Release Notes ---"
           echo "File size: $(wc -c < release_notes.txt) bytes"
+
+      - name: Await Manual Approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: kodermike
+          minimum-approvals: 1
+          issue-title: "Manual Approval Required for Release"
+          issue-body: "Please approve or deny the deployment."
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
@@ -120,5 +157,4 @@ jobs:
           draft: false
           prerelease: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
-
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
