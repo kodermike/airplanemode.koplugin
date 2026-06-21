@@ -42,6 +42,7 @@ jobs:
             exit 1
           fi
 
+          echo "Working with Github Ref: $GITHUB_REF"
           echo "VERSION=$VERSION" >> ${GITHUB_ENV}
           echo "Version: $VERSION"
           PLUGIN_DIR=airplanemode.koplugin
@@ -122,6 +123,7 @@ jobs:
             perl -i -pe 'chomp if eof' release_notes.txt
             # Remove any remaining trailing newlines
             perl -i -0pe 's/\n+$//' release_notes.txt
+            echo "" >> release_notes.txt
           fi
 
           # Verify we have content
