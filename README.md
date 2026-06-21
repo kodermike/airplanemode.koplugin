@@ -9,7 +9,7 @@
 
 </div>
 
-**AirPlaneMode** is a [ KOReader ](https://github.com/koreader/koreader.git) plugin that lets you enable/disable networking and selected plugins in one action. The plugin focuses on safely disabling identified plugins while preserving user plugin preferences when disabling.
+**AirPlaneMode** is a [KOReader](https://github.com/koreader/koreader.git) plugin that lets you enable/disable networking and selected plugins in one action. The plugin focuses on safely disabling identified plugins while preserving user plugin preferences when disabling.
 
 ---
 
@@ -20,16 +20,13 @@
   - Disables a configurable set of plugins
   - Disables Wi‑Fi, and changes default Network settings to disable automatic activation
   - If the Calibre plugin is enabled, adjusts Calibre's wireless-only settings to off while leaving the plugin search functions enabled
-  
 - Disabling **AirPlaneMode** will:
   - restore previous settings from the backup
-  
   - re-enables plugins that were disabled for **AirPlaneMode**
 
   - Return Wi‑Fi settings to their previous configuration
-  
 
-*On devices where network hardware cannot be managed, Wi‑Fi actions are skipped.*
+_On devices where network hardware cannot be managed, Wi‑Fi actions are skipped._
 
 ---
 
@@ -77,10 +74,10 @@ The Advanced Settings menu offers the following
 
 ![AirPlaneMode-Advanced](.github/assets/AirPlaneMode-Advanced.png)
 
-* Detailed information about your current setup. This information is especially useful when filing an issue
-* Enable/Disable `Developer Mode`. Developer mode enables features that are still being developed but are not yet ready for general use. At present, this includes:
-  * Update Management
-  * Debug logging
+- Detailed information about your current setup. This information is especially useful when filing an issue
+- Enable/Disable `Developer Mode`. Developer mode enables features that are still being developed but are not yet ready for general use. At present, this includes:
+  - Update Management
+  - Debug logging
 
 ## Gesture support
 
@@ -112,13 +109,11 @@ Note: **AirPlaneMode's** Plugin Manager only disables plugins in KOReader while 
 
 Find a bug 🐛? Want to contribute 🤝? Please see [CONTRIBUTING](CONTRIBUTING.md) for more information.
 
-
-
 ## 🔧 Developer Notes
 
 - **AirPlaneMode** support the `stopPlugin` dispatcher action to stop **AirPlaneMode** from another service or plugin while it is active.
 - **AirPlaneMode** also supports the `deletePluginSettings` dispatcher action to delete all AirPlaneMode settings and reset the installation to a clean slate.
-- The `features` branch is suitable for testing against nightly KOReader builds. The `main` branch is intended to work with stable releases.
+- The `feature` branch is suitable for testing against nightly KOReader builds. The `main` branch is intended to work with stable releases.
 - For more detailed information on contributing, please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ###### Updated 2026.06.20

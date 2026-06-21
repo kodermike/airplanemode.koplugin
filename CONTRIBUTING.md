@@ -53,16 +53,16 @@ The [KOReader emulator](https://github.com/koreader/koreader/blob/master/doc/Bui
 
 ### Making a change
 
-- **Fork** the [AirPlaneMode repository](https://github.com/kodermike/airplanemode.koplugin.git) (click the Fork button at the top right of the GitHub page). If your change is a new feature, or a bug fix for the `features` branch, be sure to uncheck the option to only copy the `main` branch.
-- Create a new branch for your change. If your change is a bug fix, use `fix/` as the prefix.  If this is a new feature, please use `feature/` as the prefix to your branch name. Please branch off of the branch that corresponds to the version you are targeting
+- **Fork** the [AirPlaneMode repository](https://github.com/kodermike/airplanemode.koplugin.git) (click the Fork button at the top right of the GitHub page). If your change is a new feature, or a bug fix for the `feature` branch, be sure to uncheck the option to only copy the `main` branch.
+- Create a new branch for your change. If your change is a bug fix, use `fix/` as the prefix. If this is a new feature, please use `feature/` as the prefix to your branch name. Please branch off of the branch that corresponds to the version you are targeting
   - Fork from`main` for bug fixes that apply to the stable release. Everything in `main` should work with the current stable release of KOReader
-  - Fork from`features` for new features or bug fixes that apply only to this branch. The `features` branch is verified against the nightly KOReader release first, then against the stable release before being merged into `main`.  
+  - Fork from`feature` for new features or bug fixes that apply only to this branch. The `feature` branch is verified against the nightly KOReader release first, then against the stable release before being merged into `main`.
 
 ```
 # If submitting a bug fix for main
 git checkout main && git checkout -b fix/my-bug-description
 # If submitting a new feature
-git checkout features && git checkout -b feature/my-nifty-feature
+git checkout feature && git checkout -b feature/my-nifty-feature
 ```
 
 - Make your changes
@@ -75,7 +75,7 @@ git checkout features && git checkout -b feature/my-nifty-feature
 git commit -m "Fix plugin crashes when on actual airplane"
 ```
 
-- Push your branch and open a **Pull Request** against the appropriate branch (`main` or `features`)
+- Push your branch and open a **Pull Request** against the appropriate branch (`main` or `feature`)
 
 ### Code style
 
