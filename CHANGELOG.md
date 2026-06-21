@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.9.0]
+## [v1.9.0]
 
 ### Added 🚀
 
@@ -21,27 +21,27 @@
 - Debug logging - enables/disables debug logging, only available when devmode is on
 - Update manager - now you can update AirPlaneMode from directly inside the plugin (#71). Currently gated with dev mode
 
-## [1.2.2] 🔥
+## [v1.2.2] 🔥
 
 - More version comparison fun. Removed it. Found while testing issue #60
 
-## [1.2.1] 🔥
+## [v1.2.1] 🔥
 
 - Fixed logic bug for version comparisons (was trying to compare ints, but sometimes I had alphanumeric versions)
 - Fixed a typo that could cause crashes
 
-## [1.2.0]
+## [v1.2.0]
 
 - for when you mess up your own tagging scheme.
 
-## [1.1.0]
+## [v1.1.0]
 
 ### Added 🚀
 
 - Added additional settings flushes - in final testing for the next release, discovered that without those extra flushes changes weren't being properly propagated.
 - New Koreader release, bumping this build for stable users.
 
-## [1.0.2]
+## [v1.0.2]
 
 ### Added 🚀
 
@@ -59,11 +59,11 @@
   - Removed message for android devices (no longer relevant)
   - Made "disable device management" visible only to users who can manage their hardware
 
-## [1.0.1b] (2025.11.25) 🔥
+## [v1.0.1b] (2025.11.25) 🔥
 
 - Issue 32 - crash reported on kindle when enabling/disabling outside of reader mode. Confirmed on KLC.
 
-## [1.0.1] (2025.11.25)
+## [v1.0.1] (2025.11.25)
 
 ### Added 🚀
 
@@ -81,7 +81,7 @@
 
 - Fix for the reader footer patch to not crash when trying to order or save footer preferences ([#17](https://github.com/kodermike/airplanemode.koplugin/issues/17))
 
-## [1.0.0] (2025.08.16)
+## [v1.0.0] (2025.08.16)
 
 ### Added 🚀
 
