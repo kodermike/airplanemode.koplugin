@@ -4,6 +4,9 @@ permissions:
   contents: write
 
 on:
+  push:
+    tags:
+      - '*'
   workflow_dispatch:
     inputs:
       tag:
