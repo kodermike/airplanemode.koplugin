@@ -20,9 +20,12 @@ Find a bug? Have a suggestion for a new feature? Notice a mistake in the documen
 Bug reports are an unfortunate part of software development, but without reports I won't always know there's a problem. If something goes wrong, please [Open an **Issue**](https://github.com/kodermike/airplanemode.koplugin/issues) and include:
 
 - A clear description of what happened vs. what you expected
-- Your **KOReader version** (visible in ☰ → Help → About)
-- Your **device model** (e.g. Kobo Libra 2, Kindle Paperwhite 5)
-- The version of **AirPlaneMode** you are using (visible in ⚙️ → Network → AirPlaneMode → About)
+- From ⚙️ → Network → AirPlaneMode → Advanced Settings, please include:
+  - The version of **AirPlaneMode** you are using
+  - The version of **KOReader** you are using
+  - What kind of **device** you are using
+  - What **firmware** your device is using if applicable
+
 - The steps to reproduce the problem, if you can
 
 If the bug causes a crash, the KOReader log (`crash.log` in the KOReader folder) is very helpful. If you can provide a snippet around the problem, even if it didn't produce a crash there may still be useful information in the log.
@@ -50,16 +53,16 @@ The [KOReader emulator](https://github.com/koreader/koreader/blob/master/doc/Bui
 
 ### Making a change
 
-- **Fork** the [AirPlaneMode repository](https://github.com/kodermike/airplanemode.koplugin.git) (click the Fork button at the top right of the GitHub page). If your change is a new feature, or a bug fix for the `features` branch, be sure to uncheck the option to only copy the `main` branch.
-- Create a new branch for your change. If your change is a bug fix, use `fix/` as the prefix. Please branch off of the branch that corresponds to the version you are targeting
-  - `main` is for bug fixes that apply to the stable quarterly releases of KOReader
-  - `features` is for new features that are not yet ready for a stable release and work against the `nightly` release of KOReader. If it's a new feature, please checkout the `features` branch first, then branch off of it and use `feature/` as the prefix.
+- **Fork** the [AirPlaneMode repository](https://github.com/kodermike/airplanemode.koplugin.git) (click the Fork button at the top right of the GitHub page). If your change is a new feature, or a bug fix for the `feature` branch, be sure to uncheck the option to only copy the `main` branch.
+- Create a new branch for your change. If your change is a bug fix, use `fix/` as the prefix. If this is a new feature, please use `feature/` as the prefix to your branch name. Please branch off of the branch that corresponds to the version you are targeting
+  - Fork from`main` for bug fixes that apply to the stable release. Everything in `main` should work with the current stable release of KOReader
+  - Fork from`feature` for new features or bug fixes that apply only to this branch. The `feature` branch is verified against the nightly KOReader release first, then against the stable release before being merged into `main`.
 
 ```
 # If submitting a bug fix for main
-git checkout -b fix/my-bug-description
+git checkout main && git checkout -b fix/my-bug-description
 # If submitting a new feature
-git checkout features && git checkout -b feature/my-nifty-feature
+git checkout feature && git checkout -b feature/my-nifty-feature
 ```
 
 - Make your changes
@@ -72,7 +75,7 @@ git checkout features && git checkout -b feature/my-nifty-feature
 git commit -m "Fix plugin crashes when on actual airplane"
 ```
 
-- Push your branch and open a **Pull Request** against the appropriate branch (`main` or `features`)
+- Push your branch and open a **Pull Request** against the appropriate branch (`main` or `feature`)
 
 ### Code style
 
@@ -86,18 +89,22 @@ git commit -m "Fix plugin crashes when on actual airplane"
 
 ```
 airplanemode.koplugin/
-├── main.lua                  — plugin entry point
-├── flight_config.lua         — generates accessible variables from settings file
-├── flight_footer.lua         — generates the footer icon display for reader mode
-├── flight_network.lua        — wrapper for network calls
-├── flight_plugins.lua        — plugin management for start/stop
-├── display/                  — where most ui code should be found
-│   ├── flight_menu.lua       — generates the main menu
-│   ├── flight_updater_menu.lua  — plugin update menu
-└── utils/                    — frequentky reused functions
-    ├── flight_helpers.lua    — general filesystem helpers
-    ├── flight_updater.lua    — update code
-    └── flight_utilities.lua  — utility wrapper for KOReader calls
+├── main.lua                        — plugin entry point
+├── _meta.lua                       — plugin meta information (version, fullname)
+├── flight_config.lua               — generates global settings
+├── flight_footer.lua               — generates the footer icon for reader mode
+├── flight_network.lua              — wrapper for network calls
+├── flight_plugins.lua              — plugin management for start/stop
+├── display/                        — where most ui code should be found
+│   ├── flight_advanced_menu.lua    — generates menu display of advanced settings
+│   ├── flight_menu.lua             — generates the main menu
+│   └── flight_updater_menu.lua     — plugin update menu
+└── utils/                          — frequentky reused functions
+    ├── flight_deviceinfo.lua       — generates details about the device
+    ├── flight_helpers.lua          — general filesystem helpe
+    ├── flight_log.lua              — logging wrapper
+    ├── flight_updater.lua          — update code
+    └── flight_utilities.lua        — utility wrapper for KOReader calls
 ```
 
 ### Pull Request checklist
@@ -105,7 +112,8 @@ airplanemode.koplugin/
 Before submitting, please verify:
 
 - [ ] The change works on a real device or the KOReader emulator
-- [ ] Running `luacheck` reports no errors
+- [ ] Running `luacheck .` reports no errors
+- [ ] Running `tests/run_tests.sh` shows no errors
 - [ ] The commit message clearly describes the change
 - [ ] If your change is against the `main` branch, no debug logging or commented-out code is left in. Feature changes can contain debug output until merged into the `main` branch for a stable release.
 
@@ -115,7 +123,7 @@ Before submitting, please verify:
 
 Simple changes to documentation (minor typo corrections, for example) can be submitted in the body of an issue.
 
-If the documentation suggestions involves new documentation, or significant changes to current documentation, please consider opening a PR using the same steps as feature request and bug reports that involve new PR's. All documentation is in markdown, and submitted changes should also be in markdown as appropriate.
+If the documentation suggestions involves new documentation, or significant changes to current documentation, please consider opening a PR using the same steps as feature request and bug reports. All documentation is in markdown, and submitted changes should also be in markdown as appropriate.
 
 ---
 
