@@ -4,14 +4,23 @@ permissions:
   contents: write
 
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (example: v1.2.3)"
+        required: false
 
 jobs:
-  build-release:
+  release:
+    name: Build, Manual-Approve, and Publish Release
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # Allow creating releases (contents) and writing issues (manual-approval action)
+    permissions:
+      contents: write
+      issues: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -19,7 +28,20 @@ jobs:
       - name: Setup ENV Vars
         run: |
           set -e
-          VERSION=$(echo "$GITHUB_REF" | sed -n 's_^refs/tags/__p')
+          # If a tag was provided when triggering the workflow, use it; otherwise try to derive from GITHUB_REF
+          INPUT_TAG="${{ github.event.inputs.tag }}"
+          if [ -n "$INPUT_TAG" ]; then
+            VERSION="$INPUT_TAG"
+          else
+            VERSION=$(echo "$GITHUB_REF" | sed -n 's_^refs/tags/__p')
+          fi
+
+          if [ -z "$VERSION" ]; then
+            echo "ERROR: No version provided via workflow input and GITHUB_REF does not contain a tag."
+            echo "Please provide a tag when triggering the workflow (e.g. v1.2.3)."
+            exit 1
+          fi
+
           echo "VERSION=$VERSION" >> ${GITHUB_ENV}
           echo "Version: $VERSION"
           PLUGIN_DIR=airplanemode.koplugin
@@ -86,7 +108,7 @@ jobs:
 
             if [ -z "$NEXT_LINE" ]; then
               # No next version found, extract to end of file
-              sed -n "${START_LINE},\$p" CHANGELOG.md > release_notes.txt
+              sed -n "${START_LINE},$p" CHANGELOG.md > release_notes.txt
             else
               # Extract up to (but not including) next version
               END_LINE=$((NEXT_LINE - 1))
@@ -114,6 +136,15 @@ jobs:
           cat release_notes.txt
           echo "--- End Release Notes ---"
           echo "File size: $(wc -c < release_notes.txt) bytes"
+
+      - name: Await Manual Approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: kodermike
+          minimum-approvals: 1
+          issue-title: "Manual Approval Required for Release"
+          issue-body: "Please approve or deny the deployment."
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
