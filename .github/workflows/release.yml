@@ -36,13 +36,14 @@ jobs:
             VERSION=$(echo "$GITHUB_REF" | sed -n 's_^refs/tags/__p')
           fi
 
+          echo "Working with Github Ref: $GITHUB_REF"
+
           if [ -z "$VERSION" ]; then
             echo "ERROR: No version provided via workflow input and GITHUB_REF does not contain a tag."
             echo "Please provide a tag when triggering the workflow (e.g. v1.2.3)."
             exit 1
           fi
 
-          echo "Working with Github Ref: $GITHUB_REF"
           echo "VERSION=$VERSION" >> ${GITHUB_ENV}
           echo "Version: $VERSION"
           PLUGIN_DIR=airplanemode.koplugin
