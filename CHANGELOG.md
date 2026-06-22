@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.9.1] 🔥
+
+- Issue identified in #77 - old plugin schema wasn't migrating correctly resulting in plugin lists being reset and never unset.
+
 ## [v1.9.0]
 
 ### Added 🚀
