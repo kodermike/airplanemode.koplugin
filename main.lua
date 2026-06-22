@@ -124,7 +124,7 @@ function AirPlaneMode:init()
       self:initSettingsFile()
     end
   end
-  if U:FlightHas("airplanemode", settings.koreader) then
+  if U:FlightHas("disabled_plugins") then
     self:migratesettings()
   end
   self.additional_footer_content_func = function()
@@ -210,17 +210,19 @@ function AirPlaneMode:migratesettings()
   -- in case it is running
   if U:FlightIsTrue("airplanemode", settings.koreader) then
     U:FlightMakeTrue("airplanemode_enabled")
-  elseif U:FlightIsFalse("airplanemode", settings.koreader) then
+    U:delFlightSetting("airplanemode", settings.koreader)
+  else
     U:FlightMakeFalse("airplanemode_enabled")
   end
   -- if we have anything configured to disable, update the variable name
-  U:delFlightSetting("airplanemode", settings.koreader)
-  if U:FlightHas(settings.koreader_plugins) then
-    local disabled_plugins = U:readFlightSetting(settings.koreader_plugins)
-    if disabled_plugins then
-      U:saveFlightSetting(settings.koreader_plugins, disabled_plugins)
-      U:delFlightSetting(settings.koreader_plugins)
+  if U:FlightHas("disabled_plugins") then
+    local disabled_plugins = U:readFlightSetting(settings.airplane_plugins)
+    local transfer = {}
+    for plugin, _ in pairs(disabled_plugins) do
+      transfer[plugin] = true
     end
+    U:saveFlightSetting(settings.koreader_plugins, transfer)
+    U:delFlightSetting(settings.airplane_plugins)
   end
   -- move footer toggle
   if U:FlightHas("airplanemode_in_footer", settings.koreader) then
