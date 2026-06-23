@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.9.2] 🔥
+
+- Other issue identified in issue #77 - the old restore where you left off code assumed there were only two options - in the reader or in the filebrowser. But with the use of new plugins to override the filebrowser (simpleui, etc.) that is no longer the fallback if not in reader. Fixed.
+
 ## [v1.9.1] 🔥
 
 - Issue identified in #77 - old plugin schema wasn't migrating correctly resulting in plugin lists being reset and never unset.

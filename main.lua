@@ -41,12 +41,14 @@ local function restoreState()
     end
     local last_start = U:readFlightSetting("restart_with") or nil
     -- make sure we didn't enable this while already in airplanemode
-    if last_start ~= nil then
-      if settings.debug_is_on then
-        local funcname = debug.getinfo(1, "n").name
-        logger.dbg(funcname, "resetting the main config to use", last_start)
-      end
-      U:saveFlightSetting("start_with", last_start)
+    if settings.debug_is_on then
+      local funcname = debug.getinfo(1, "n").name
+      logger.dbg(funcname, "resetting the main config to use", last_start)
+    end
+    if U:FlightHas("start_with", settings.koreader) and last_start ~= nil then
+      U:saveFlightSetting("start_with", last_start, settings.koreader)
+    end
+    if U:FlightHas("restart_with") then
       U:delFlightSetting("restart_with")
     end
   end
@@ -62,19 +64,21 @@ local function saveState(name)
     local funcname = debug.getinfo(1, "n").name
     logger.dbg(funcname, "Activated while in", name)
   end
-  local cur_start = U:readFlightSetting("start_with", settings.koreader) or nil
-  local ui_mode
-  -- figure out where we are./
-  if cur_start == nil then
-    cur_start = "filemanager"
-  end
-  ui_mode = name:gsub("airplanemode", "")
-  if ui_mode == "reader" then
-    ui_mode = "last"
-  end
-  if ui_mode ~= nil then
+  if U:FlightHas("start_with", settings.koreader) then
+    local cur_start = U:readFlightSetting("start_with", settings.koreader)
+    local ui_mode
+    ui_mode = name:gsub("airplanemode", "")
+    if ui_mode == "reader" then
+      ui_mode = "last"
+    else
+      ui_mode = U:readFlightSetting("start_with", settings.koreader)
+    end
     -- save that state in our config
     U:saveFlightSetting("restart_with", cur_start)
+    if settings.debug_is_on then
+      local funcname = debug.getinfo(1, "n").name
+      logger.dbg(funcname, "Saving restart as:", cur_start)
+    end
     -- set our new restart mode
     U:saveFlightSetting("start_with", ui_mode, settings.koreader)
   end
