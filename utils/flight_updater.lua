@@ -502,7 +502,7 @@ function FlightUpdater:resetToStableRelease()
     ok_text = _("Reset"),
     ok_callback = function()
       self.dev_branch = ""
-      U:saveFlightSetting("dev_branch", "")
+      U:delFlightSetting("dev_branch")
       FlightUpdater.installLatestStable(function()
         self.last_install_source = "release"
         U:saveFlightSetting("last_install_source", "release")
