@@ -16,7 +16,7 @@ function FlightUpdaterMenu:showMenu()
   local check_updates = U:readFlightSetting("check_updates") or false
   return {
     {
-      text = _("Notify on wake when update available"),
+      text = _("Check for updates after waking"),
       checked_func = function()
         return check_updates
       end,
