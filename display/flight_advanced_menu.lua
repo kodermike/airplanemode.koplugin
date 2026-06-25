@@ -40,6 +40,16 @@ function FlightAdvancedMenu.getKOReaderVersion()
   return value or "unknown"
 end
 
+local function branch_or_tree()
+  local version_string
+  if U:FlightHas("dev_branch") then
+    version_string = "branch: " .. U:readFlightSetting("dev_branch")
+  else
+    version_string = settings.fullname .. ": v" .. settings.version
+  end
+  return version_string
+end
+
 local function generic_entry(t)
   local icon = U:getFlightStatus() and settings.icon_on or settings.icon_off
   return {
@@ -47,7 +57,7 @@ local function generic_entry(t)
     keep_menu_open = true,
     callback = function()
       UIManager:show(InfoMessage:new({
-        text = T(_("%1  %2 v%3\n\n%4\n\nLicensed under Affero GPL v3."), icon, BD.ltr(settings.fullname), BD.ltr(settings.version), BD.ltr(settings.description)),
+        text = T(_("%1  %2 v%3\n\n%4\n\nLicensed under Affero GPL v3."), icon, BD.ltr(settings.fullname), BD.ltr(branch_or_tree()), BD.ltr(settings.description)),
       }))
     end,
   }
@@ -60,7 +70,7 @@ function FlightAdvancedMenu:menu()
   local airplane_specs = {}
   -- Generate information buttons - all use the same popup for displaying About
   local button_list = {
-    T(_("%1: v%2"), settings.fullname, settings.version),
+    T(_("%1"), branch_or_tree()),
     T(_("KOReader Version: %s"):format(BD.ltr(self:getKOReaderVersion()))),
     T(_("Device: %s"):format(BD.ltr(FM:get_device_model_name()))),
     T(_("Firmware: %s"):format(BD.ltr(FM:get_device_firmware_info()))),

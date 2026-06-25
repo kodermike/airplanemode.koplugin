@@ -1,7 +1,10 @@
 # Changelog
 
-## [v1.9.3]
+## [v1.9.3] (IN DEVELOPMENT)
 
+### Housekeeping
+
+- Fix `About` information to show the branch information if running a dev branch instead of a release
 - Added missing call to check for updates if the check on wake toggle is checked
 
 ## [v1.9.2] 🔥
