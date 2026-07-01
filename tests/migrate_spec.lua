@@ -34,6 +34,39 @@ describe("Migration flows: migrateconfig and migratesettings", function()
     assert.is_false(package.loaded["utils/flight_helpers"].isFile(settings.prev_config))
   end)
 
+  local i, t, popen = 0, {}, io.popen
+  local pfile = popen('ls "' .. "tests/samples/" .. '"')
+  for filename in pfile:lines() do
+    if filename ~= ".." then
+      local file = string.gsub(filename, ".lua", "")
+      i = i + 1
+      t[i] = file
+    end
+  end
+  pfile:close()
+  for _, file in pairs(t) do
+    it("migrateconfig 2 moves disabled_plugins from prev_config to airplanemode and removes prev_config file", function()
+      local AP = require("main")
+      local settings = require("flight_config"):init()
+
+      settings.prev_config = require("tests.samples." .. file)
+      -- run migration
+      AP.migrateconfig()
+
+      -- version should be set in new file
+      local ver = U:readFlightSetting("version", settings.airplanemode)
+      assert.are.equal(settings.version, ver)
+
+      -- plugins_disabled should have moved, and calibre removed
+      local moved = U:readFlightSetting(settings.koreader_plugins, settings.airplanemode)
+      assert.is_table(moved)
+      assert.is_nil(moved["calibre"]) -- calibre should be removed
+      assert.is_true(moved["newsdownloader"])
+
+      -- prev_config file should be removed
+      assert.is_false(package.loaded["utils/flight_helpers"].isFile("tests/samples/" .. file))
+    end)
+  end
   it("migratesettings moves 'airplanemode' boolean and footer setting, and cleans old keys", function()
     local AP = require("main")
     local settings = require("flight_config"):init()
