@@ -34,14 +34,17 @@ describe("Migration flows: migrateconfig and migratesettings", function()
     assert.is_false(package.loaded["utils/flight_helpers"].isFile(settings.prev_config))
   end)
 
-  -- create a prev_config file and populate previous disabled_plugins
-  -- local fh = io.open(settings.prev_config, "w")
-  -- assert(fh)
-  -- fh:write("old")
-  -- fh:close()
-  -- U:saveFlightSetting("disabled_plugins", { calibre = true, newsdownloader = true }, settings.prev_config)
-  local files = { "airplane_plugins_v004", "airplanemode_v110", "airplanemode_v120", "airplanemode_v190", "airplanemode_v192" }
-  for _, file in ipairs(files) do
+  local i, t, popen = 0, {}, io.popen
+  local pfile = popen('ls "' .. "tests/samples/" .. '"')
+  for filename in pfile:lines() do
+    if filename ~= ".." then
+      local file = string.gsub(filename, ".lua", "")
+      i = i + 1
+      t[i] = file
+    end
+  end
+  pfile:close()
+  for _, file in pairs(t) do
     it("migrateconfig 2 moves disabled_plugins from prev_config to airplanemode and removes prev_config file", function()
       local AP = require("main")
       local settings = require("flight_config"):init()
@@ -61,30 +64,28 @@ describe("Migration flows: migrateconfig and migratesettings", function()
       assert.is_true(moved["newsdownloader"])
 
       -- prev_config file should be removed
-      -- assert.is_false(package.loaded["utils/flight_helpers"].isFile(settings.prev_config))
-    end)
-
-    it("migratesettings moves 'airplanemode' boolean and footer setting, and cleans old keys", function()
-      local AP = require("main")
-      local settings = require("flight_config"):init()
-
-      -- set old koreader settings
-      U:saveFlightSetting("airplanemode", true, settings.koreader)
-      U:saveFlightSetting("plugins_disabled", { a = true }, settings.airplanemode)
-      U:saveFlightSetting("airplanemode_in_footer", true, settings.koreader)
-
-      -- call migratesettings on an instance
-      local inst = AP:new({ name = "airplanemode" })
-      inst:migratesettings()
-
-      -- airplanemode should now be under settings.airplanemode as airplanemode_enabled
-      assert.is_true(U:FlightIsTrue("airplanemode_enabled", settings.airplanemode))
-      -- old koreader key should be removed
-      assert.is_false(U:FlightHas("airplanemode", settings.koreader))
-      -- footer moved
-      assert.is_true(U:FlightHas("airplanemode_in_footer", settings.airplanemode))
-      assert.is_false(U:FlightHas("airplanemode_in_footer", settings.koreader))
+      assert.is_false(package.loaded["utils/flight_helpers"].isFile("tests/samples/" .. file))
     end)
   end
-  --TODO: Another loop, this this time loading a "CURRENT" config to compare the migrations to.
+  it("migratesettings moves 'airplanemode' boolean and footer setting, and cleans old keys", function()
+    local AP = require("main")
+    local settings = require("flight_config"):init()
+
+    -- set old koreader settings
+    U:saveFlightSetting("airplanemode", true, settings.koreader)
+    U:saveFlightSetting("plugins_disabled", { a = true }, settings.airplanemode)
+    U:saveFlightSetting("airplanemode_in_footer", true, settings.koreader)
+
+    -- call migratesettings on an instance
+    local inst = AP:new({ name = "airplanemode" })
+    inst:migratesettings()
+
+    -- airplanemode should now be under settings.airplanemode as airplanemode_enabled
+    assert.is_true(U:FlightIsTrue("airplanemode_enabled", settings.airplanemode))
+    -- old koreader key should be removed
+    assert.is_false(U:FlightHas("airplanemode", settings.koreader))
+    -- footer moved
+    assert.is_true(U:FlightHas("airplanemode_in_footer", settings.airplanemode))
+    assert.is_false(U:FlightHas("airplanemode_in_footer", settings.koreader))
+  end)
 end)
