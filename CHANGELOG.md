@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.9.3] 🔥
+
+- Issue #98 - double popup appearing when disabling the plugin from the KOReader plugin manager.
+  - Added check that AirPlaneMode is running before trying to run stop for stopPlugin
+  - Added boolean interactive, default true, to determine if we need to display the restart
+
 ## [v1.9.2] 🔥
 
 - Other issue identified in issue #77 - the old restore where you left off code assumed there were only two options - in the reader or in the filebrowser. But with the use of new plugins to override the filebrowser (simpleui, etc.) that is no longer the fallback if not in reader. Fixed.
