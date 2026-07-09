@@ -234,12 +234,16 @@ function AirPlaneMode:migratesettings()
     U:delFlightSetting("airplanemode_in_footer", settings.koreader)
   end
 end
+
 ---Hook for stopPlugin support
 ---@return nil
 function AirPlaneMode:stopPlugin()
   local funcname = debug.getinfo(1, "n").name
   logger.dbg(funcname, "stopPlugin called at ", os.time())
-  self:Disable()
+  if U:getFlightStatus() then
+    local interactive = false
+    self:Disable(interactive)
+  end
 end
 -- expose non-method API (some callers invoke stopPlugin() without a self)
 local _method_stopPlugin = AirPlaneMode.stopPlugin
@@ -371,8 +375,13 @@ function AirPlaneMode:Enable()
 end
 
 ---Disable AirPlaneMode
+---@param interactive? boolean
 ---@return nil
-function AirPlaneMode:Disable()
+function AirPlaneMode:Disable(interactive)
+  if type(interactive) ~= "boolean" then
+    interactive = true
+  end
+
   if settings.debug_is_on then
     local funcname = debug.getinfo(1, "n").name
     logger.dbg(funcname, "Disabling AirPlaneMode")
@@ -466,36 +475,38 @@ function AirPlaneMode:Disable()
     self.ui:saveSettings()
   end
   UIManager:unschedule(self.update_status_bars, self)
-  if Device:canRestart() then
-    if settings.debug_is_on then
-      local funcname = debug.getinfo(1, "n").name
-      logger.dbg(funcname, "device can restart, checking restart options and restarting")
-    end
-    if U:FlightIsTrue("restoreopt") then
+  if interactive then
+    if Device:canRestart() then
       if settings.debug_is_on then
         local funcname = debug.getinfo(1, "n").name
-        logger.dbg(funcname, "saving state name")
+        logger.dbg(funcname, "device can restart, checking restart options and restarting")
       end
-      saveState(self.name)
-    end
-    if U:FlightNilOrFalse("silentmode") then
-      UIManager:askForRestart(_("KOReader needs to restart to finish disabling plugins for AirPlaneMode."))
+      if U:FlightIsTrue("restoreopt") then
+        if settings.debug_is_on then
+          local funcname = debug.getinfo(1, "n").name
+          logger.dbg(funcname, "saving state name")
+        end
+        saveState(self.name)
+      end
+      if U:FlightNilOrFalse("silentmode") then
+        UIManager:askForRestart(_("KOReader needs to restart to finish disabling plugins for AirPlaneMode."))
+      else
+        UIManager:restartKOReader()
+      end
     else
-      UIManager:restartKOReader()
+      if settings.debug_is_on then
+        local funcname = debug.getinfo(1, "n").name
+        logger.dbg(funcname, "device cannot restart, showing confirm box")
+      end
+      UIManager:show(ConfirmBox:new({
+        dismissable = false,
+        text = _("You will need to restart KOReader to finish disabling AirPlaneMode."),
+        ok_text = _("OK"),
+        ok_callback = function()
+          UIManager:quit()
+        end,
+      }))
     end
-  else
-    if settings.debug_is_on then
-      local funcname = debug.getinfo(1, "n").name
-      logger.dbg(funcname, "device cannot restart, showing confirm box")
-    end
-    UIManager:show(ConfirmBox:new({
-      dismissable = false,
-      text = _("You will need to restart KOReader to finish disabling AirPlaneMode."),
-      ok_text = _("OK"),
-      ok_callback = function()
-        UIManager:quit()
-      end,
-    }))
   end
 end
 
