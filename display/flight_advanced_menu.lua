@@ -7,6 +7,7 @@
 local BD = require("ui/bidi")
 local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
+local ConfirmBox = require("ui/widget/confirmbox")
 
 local ffiutil = require("ffi/util")
 local T = ffiutil.template
@@ -79,6 +80,25 @@ function FlightAdvancedMenu:menu()
     table.insert(airplane_specs, generic_entry(text))
   end
 
+  -- Give the option to reset all settings
+  table.insert(airplane_specs, {
+    text = _("Reset settings"),
+    callback = function()
+      UIManager:show(ConfirmBox:new({
+        text = _("Remove and reset AirPlaneMode settings?"),
+        ok_text = _("Reset"),
+        cancel_text = "Cancel",
+        ok_callback = function()
+          local FlightControl = require("utils.flight_control")
+          if U:getFlightStatus() then
+            -- disable airplanemode
+            FlightControl.Disable()
+          end
+          FlightControl.deletePluginSettings()
+        end,
+      }))
+    end,
+  })
   -- Dev mode toggle for showing in-progress features
   table.insert(airplane_specs, {
     text = _("Developer Mode"),

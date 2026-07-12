@@ -14,6 +14,8 @@ local _ = require("gettext")
 local FlightConfig = require("flight_config")
 local settings = FlightConfig:init()
 
+local FlightControl = require("utils/flight_control")
+
 local FlightAdvancedMenu = require("display/flight_advanced_menu")
 
 local U = require("utils/flight_utilities")
@@ -64,10 +66,10 @@ function FlightMenu:getMenuItems()
     callback = function()
       if airmode then
         --airplanemode = true
-        self.apm:Disable()
+        FlightControl:Disable()
       else
         --airplanemode = false
-        self.apm:Enable()
+        FlightControl:Enable()
       end
     end,
   })
