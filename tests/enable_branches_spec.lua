@@ -81,6 +81,8 @@ describe("Enable/Disable branches and edge conditions", function()
     }
     -- reload main so it picks up the new device implementation
     package.loaded["main"] = nil
+    package.loaded["utils.flight_control"] = nil
+    package.loaded["utils/flight_control"] = nil
     AP = require("main")
 
     local inst = AP:new({ name = "airplanemode" })

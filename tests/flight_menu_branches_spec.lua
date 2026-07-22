@@ -29,7 +29,7 @@ describe("display/flight_menu deep branches", function()
     local apm = { name = "airplanemode" }
     FM.apm = apm
 
-    local items = FM:getMenuItems()
+    local items = FM:getMenuItems(apm)
     assert.is_table(items)
 
     -- find suspended plugin management entry
@@ -69,7 +69,7 @@ describe("display/flight_menu deep branches", function()
     }
     FM.apm = apm
 
-    local items = FM:getMenuItems()
+    local items = FM:getMenuItems(apm)
     assert.is_table(items)
 
     -- there should be an entry with a sub_item_table_func for builtin plugins
@@ -159,14 +159,15 @@ describe("display/flight_menu deep branches", function()
     end
 
     -- apm
-    FM.apm = {
+    local apm = {
       name = "airplanemode",
       getPlugins = function()
         return {}
       end,
     }
+    FM.apm = apm
 
-    local items = FM:getMenuItems()
+    local items = FM:getMenuItems(apm)
     -- find 'Restore session after restart' item and ensure it's not present or disabled when device cannot restart
     local found = false
     for _, it in ipairs(items) do
