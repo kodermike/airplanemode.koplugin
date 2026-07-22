@@ -17,7 +17,7 @@ local _ = require("gettext")
 
 local FlightConfig = require("flight_config")
 local settings = FlightConfig:init()
-local FlightControl = require("utils/flight_control")
+local FlightControl = require("utils.flight_control")
 
 local H = require("utils/flight_helpers")
 local U = require("utils/flight_utilities")
@@ -52,19 +52,6 @@ local AirPlaneMode = WidgetContainer:extend({
   is_doc_only = false
 })
 
-local PluginManager = require("flight_plugins")
-if type(PluginManager) == "function" then
-  PluginManager(AirPlaneMode)
-elseif type(PluginManager) == "table" then
-  -- wrap functions from the mocked module so tests can replace them after requiring main
-  for k, v in pairs(PluginManager) do
-    if type(v) == "function" and AirPlaneMode[k] == nil then
-      AirPlaneMode[k] = function (...)
-        return PluginManager[k](...)
-      end
-    end
-  end
-end
 local Flightfooter = require("flight_footer")
 if type(Flightfooter) == "function" then
   Flightfooter(AirPlaneMode)
@@ -73,34 +60,25 @@ end
 --- Register actions with dispatcher
 ---@return nil
 function AirPlaneMode.onDispatcherRegisterActions()
-  Dispatcher:registerAction(
-    "airplanemode_enable",
-    {
-      category = "none",
-      event = "Enable",
-      title = _("AirPlaneMode Enable"),
-      device = true
-    }
-  )
-  Dispatcher:registerAction(
-    "airplanemode_disable",
-    {
-      category = "none",
-      event = "Disable",
-      title = _("AirPlaneMode Disable"),
-      device = true
-    }
-  )
-  Dispatcher:registerAction(
-    "airplanemode_toggle",
-    {
-      category = "none",
-      event = "Toggle",
-      title = _("AirPlaneMode Toggle"),
-      device = true,
-      separator = true
-    }
-  )
+  Dispatcher:registerAction("airplanemode_enable", {
+    category = "none",
+    event = "Enable",
+    title = _("AirPlaneMode Enable"),
+    device = true
+  })
+  Dispatcher:registerAction("airplanemode_disable", {
+    category = "none",
+    event = "Disable",
+    title = _("AirPlaneMode Disable"),
+    device = true
+  })
+  Dispatcher:registerAction("airplanemode_toggle", {
+    category = "none",
+    event = "Toggle",
+    title = _("AirPlaneMode Toggle"),
+    device = true,
+    separator = true
+  })
 end
 
 --- Initialize plugin
@@ -113,7 +91,7 @@ function AirPlaneMode:init()
   if U:FlightHas("disabled_plugins") then
     self:migratesettings()
   end
-  self.additional_footer_content_func = function ()
+  self.additional_footer_content_func = function()
     local item_prefix = self.ui.view.footer.settings.item_prefix
     if item_prefix == "icons" then
       if U:getFlightStatus() then
@@ -191,35 +169,61 @@ end
 function AirPlaneMode:stopPlugin()
   local funcname = debug.getinfo(1, "n").name
   logger.dbg(funcname, "stopPlugin called at ", os.time())
-  FlightControl:Disable()
+  if U:getFlightStatus() then
+    local interactive = false
+    FlightControl:Disable(self, interactive)
+  end
 end
+
 -- expose non-method API (some callers invoke stopPlugin() without a self)
 local _method_stopPlugin = AirPlaneMode.stopPlugin
 if type(_method_stopPlugin) == "function" then
-  AirPlaneMode.stopPlugin = function ()
+  AirPlaneMode.stopPlugin = function()
     return _method_stopPlugin(AirPlaneMode)
   end
+end
+
+-- Expose FlightControl methods on AirPlaneMode for test compatibility and direct access
+AirPlaneMode.deletePluginSettings = function()
+  return FlightControl.deletePluginSettings()
+end
+
+AirPlaneMode.initSettingsFile = function(airplanemode_file, version)
+  if not airplanemode_file then
+    local cfg = FlightConfig:init()
+    airplanemode_file = cfg.airplanemode
+    version = cfg.version
+  end
+  return FlightConfig.initSettingsFile(airplanemode_file, version)
+end
+
+function AirPlaneMode:Enable()
+  return FlightControl:Enable(self)
+end
+
+function AirPlaneMode:Disable()
+  return FlightControl:Disable(self)
 end
 
 --- Handle Enable gesture
 ---@return nil
 function AirPlaneMode:onEnable()
-  FlightControl:Enable()
+  self:Enable()
 end
 
 --- Handle disable gesture
 ---@return nil
 function AirPlaneMode:onDisable()
-  FlightControl:Disable()
+  self:Disable()
 end
 
 --- Handle toggle events from gestures
 ---@return nil
 function AirPlaneMode:onToggle()
   if U:getFlightStatus() then
-    FlightControl:Disable()
+    self:Disable()
   else
-    FlightControl:Enable()
+    self:Enable()
   end
 end
 

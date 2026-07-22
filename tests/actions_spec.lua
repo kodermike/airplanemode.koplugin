@@ -2,7 +2,7 @@ local helper = require("tests/spec_helper")
 local U = helper.U
 local Dispatcher = helper.Dispatcher
 local UIManager = helper.UIManager
-local PluginManager = package.loaded["flight_plugins"]
+local PluginManager = package.loaded["utils/flight_plugins"]
 
 describe("AirPlaneMode actions - stop, delete, enable/disable", function()
   setup(function()
@@ -13,7 +13,7 @@ describe("AirPlaneMode actions - stop, delete, enable/disable", function()
     local AP = require("main")
     local restored = false
     -- spy on PluginManager.restorePluginSettings
-    package.loaded["flight_plugins"].restorePluginSettings = function()
+    package.loaded["utils/flight_plugins"].restorePluginSettings = function()
       restored = true
     end
 
@@ -22,7 +22,7 @@ describe("AirPlaneMode actions - stop, delete, enable/disable", function()
     assert.is_true(U:getFlightStatus())
 
     -- call stopPlugin
-    AP.stopPlugin()
+    AP:stopPlugin()
 
     assert.is_true(restored)
     assert.is_false(U:getFlightStatus())

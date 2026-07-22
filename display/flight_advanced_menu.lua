@@ -67,7 +67,7 @@ end
 ---FlightAdvancedMenu:menu()
 ---Genrates the advance details menu
 ---@return table
-function FlightAdvancedMenu:menu()
+function FlightAdvancedMenu:menu(AirPlaneMode_Self)
   local airplane_specs = {}
   -- Generate information buttons - all use the same popup for displaying About
   local button_list = {
@@ -92,7 +92,7 @@ function FlightAdvancedMenu:menu()
           local FlightControl = require("utils.flight_control")
           if U:getFlightStatus() then
             -- disable airplanemode
-            FlightControl.Disable()
+            FlightControl.Disable(AirPlaneMode_Self)
           end
           FlightControl.deletePluginSettings()
         end,

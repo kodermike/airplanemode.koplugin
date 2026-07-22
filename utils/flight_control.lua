@@ -1,5 +1,5 @@
 ---@class FlightControl
----@field Enable fun(self): nil
+---@field Enable  fun(self): nil
 ---@field Disable fun(self): nil
 
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -9,6 +9,7 @@ local Event = require("ui/event")
 local NetworkMgr = require("ui/network/manager")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
+local _ = require("gettext")
 local logger = require("utils/flight_log")
 
 local FlightConfig = require("flight_config")
@@ -17,6 +18,7 @@ local settings = FlightConfig:init()
 local H = require("utils/flight_helpers")
 local U = require("utils/flight_utilities")
 local A = require("flight_network")
+local P = require("utils/flight_plugins")
 
 local FlightControl = {}
 
@@ -49,7 +51,7 @@ local function saveState(name)
     U:saveFlightSetting("start_with", ui_mode, settings.koreader)
   end
 end
----Hook for deleteplugin calls
+--- Hook for deleteplugin calls
 ---@return nil
 function FlightControl.deletePluginSettings()
   if settings.debug_is_on then
@@ -58,8 +60,10 @@ function FlightControl.deletePluginSettings()
   end
   if U:readFlightSetting("airplanemode") then
     UIManager:show(InfoMessage:new({
-      text = _("Removing AirPlaneMode while still running. Plugins and networking will not be automatically restored."),
-      timeout = 3,
+      text = _(
+        "Removing AirPlaneMode while still running. Plugins and networking will not be automatically restored."
+      ),
+      timeout = 3
     }))
   end
   if U:FlightHas("airplanemode") then
@@ -84,9 +88,12 @@ function FlightControl.deletePluginSettings()
   end
 end
 
----Disable AirPlaneMode
+--- Disable AirPlaneMode
 ---@return nil
-function FlightControl:Disable()
+function FlightControl:Disable(AirPlaneMode_Self, interactive)
+  if type(interactive) ~= "boolean" then
+    interactive = true
+  end
   if settings.debug_is_on then
     local funcname = debug.getinfo(1, "n").name
     logger.dbg(funcname, "Disabling AirPlaneMode")
@@ -99,7 +106,8 @@ function FlightControl:Disable()
     logger.dbg(funcname, "re-enabled, restoring network next")
   end
   -- If managing wifi, revert settingss
-  if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator()) and ((U:FlightHasNot("managewifi")) or (U:FlightHas("managewifi") and U:FlightNilOrFalse("managewifi"))) then
+  if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator())
+      and ((U:FlightHasNot("managewifi")) or (U:FlightHas("managewifi") and U:FlightNilOrFalse("managewifi"))) then
     if settings.debug_is_on then
       local funcname = debug.getinfo(1, "n").name
       logger.dbg(funcname, "re-enabling wifi")
@@ -107,8 +115,7 @@ function FlightControl:Disable()
     A:reenableWifi()
   end
 
-  --FIX: need to move this where it can be used
-  self:enableCalibre(settings)
+  P:enableCalibre(settings)
 
   if settings.debug_is_on then
     local funcname = debug.getinfo(1, "n").name
@@ -161,7 +168,7 @@ function FlightControl:Disable()
     local funcname = debug.getinfo(1, "n").name
     logger.dbg(funcname, "restoring plugin settings")
   end
-  self:restorePluginSettings(settings)
+  P:restorePluginSettings(settings)
   -- remove the backup settings file
 
   if settings.debug_is_on then
@@ -172,51 +179,53 @@ function FlightControl:Disable()
     H.removeFile(settings.backup)
   end
 
-  if string.match(self.name, "reader") then
+  if string.match(AirPlaneMode_Self.name, "reader") then
     -- regardless of options, if we're in a document then save our position
     if settings.debug_is_on then
       local funcname = debug.getinfo(1, "n").name
       logger.dbg(funcname, "saving settings for reader")
     end
-    self.ui:saveSettings()
+    AirPlaneMode_Self.ui:saveSettings()
   end
-  UIManager:unschedule(self.update_status_bars, self)
-  if Device:canRestart() then
-    if settings.debug_is_on then
-      local funcname = debug.getinfo(1, "n").name
-      logger.dbg(funcname, "device can restart, checking restart options and restarting")
-    end
-    if U:FlightIsTrue("restoreopt") then
+  UIManager:unschedule(AirPlaneMode_Self.update_status_bars, AirPlaneMode_Self)
+  if interactive then
+    if Device:canRestart() then
       if settings.debug_is_on then
         local funcname = debug.getinfo(1, "n").name
-        logger.dbg(funcname, "saving state name")
+        logger.dbg(funcname, "device can restart, checking restart options and restarting")
       end
-      saveState(self.name)
-    end
-    if U:FlightNilOrFalse("silentmode") then
-      UIManager:askForRestart(_("KOReader needs to restart to finish disabling plugins for AirPlaneMode."))
+      if U:FlightIsTrue("restoreopt") then
+        if settings.debug_is_on then
+          local funcname = debug.getinfo(1, "n").name
+          logger.dbg(funcname, "saving state name")
+        end
+        saveState(AirPlaneMode_Self.name)
+      end
+      if U:FlightNilOrFalse("silentmode") then
+        UIManager:askForRestart(_("KOReader needs to restart to finish disabling plugins for AirPlaneMode."))
+      else
+        UIManager:restartKOReader()
+      end
     else
-      UIManager:restartKOReader()
+      if settings.debug_is_on then
+        local funcname = debug.getinfo(1, "n").name
+        logger.dbg(funcname, "device cannot restart, showing confirm box")
+      end
+      UIManager:show(ConfirmBox:new({
+        dismissable = false,
+        text = _("You will need to restart KOReader to finish disabling AirPlaneMode."),
+        ok_text = _("OK"),
+        ok_callback = function()
+          UIManager:quit()
+        end
+      }))
     end
-  else
-    if settings.debug_is_on then
-      local funcname = debug.getinfo(1, "n").name
-      logger.dbg(funcname, "device cannot restart, showing confirm box")
-    end
-    UIManager:show(ConfirmBox:new({
-      dismissable = false,
-      text = _("You will need to restart KOReader to finish disabling AirPlaneMode."),
-      ok_text = _("OK"),
-      ok_callback = function()
-        UIManager:quit()
-      end,
-    }))
   end
 end
 
----Enable AirPlaneMode
+--- Enable AirPlaneMode
 ---@return nil
-function FlightControl:Enable()
+function FlightControl:Enable(AirPlaneMode_Self)
   if settings.debug_is_on then
     local funcname = debug.getinfo(1, "n").name
     logger.dbg(funcname, "enabling")
@@ -240,9 +249,10 @@ function FlightControl:Enable()
       local funcname = debug.getinfo(1, "n").name
       logger.dbg(funcname, "disabling plugins")
     end
-    self:disablePlugins(settings)
+    P:disablePlugins(AirPlaneMode_Self, settings)
     -- exclude anything without getNetworkInterfaceName - like android - since we can't control their wifi
-    if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator()) and ((U:FlightHasNot("managewifi")) or (U:FlightHas("managewifi") and U:FlightNilOrFalse("managewifi"))) then
+    if (NetworkMgr:getNetworkInterfaceName() or Device:isEmulator())
+        and ((U:FlightHasNot("managewifi")) or (U:FlightHas("managewifi") and U:FlightNilOrFalse("managewifi"))) then
       if settings.debug_is_on then
         local funcname = debug.getinfo(1, "n").name
         logger.dbg(funcname, "disabling wifi")
@@ -252,12 +262,12 @@ function FlightControl:Enable()
     -- mark airplane as active
     U:toggleAirPlaneMode(true)
     -- Only attempt to save reading state if we are in the reader
-    if string.match(self.name, "reader") then
+    if string.match(AirPlaneMode_Self.name, "reader") then
       if settings.debug_is_on then
         local funcname = debug.getinfo(1, "n").name
         logger.dbg(funcname, "saving settings for reader")
       end
-      self.ui:saveSettings()
+      AirPlaneMode_Self.ui:saveSettings()
     end
 
     if Device:canRestart() then
@@ -268,9 +278,9 @@ function FlightControl:Enable()
       if U:FlightIsTrue("restoreopt") then
         if settings.debug_is_on then
           local funcname = debug.getinfo(1, "n").name
-          logger.dbg(funcname, "restoreopt is true, saving state of", self.name)
+          logger.dbg(funcname, "restoreopt is true, saving state of", AirPlaneMode_Self.name)
         end
-        saveState(self.name)
+        saveState(AirPlaneMode_Self.name)
       end
       if U:FlightNilOrFalse("silentmode") then
         UIManager:show(ConfirmBox:new({
@@ -279,7 +289,7 @@ function FlightControl:Enable()
           cancel_text = _("Later"),
           ok_callback = function()
             UIManager:broadcastEvent(Event:new("Restart"))
-          end,
+          end
         }))
       else
         UIManager:restartKOReader()
@@ -291,7 +301,7 @@ function FlightControl:Enable()
         ok_text = _("OK"),
         ok_callback = function()
           UIManager:quit()
-        end,
+        end
       }))
     end
   else
