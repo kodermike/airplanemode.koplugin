@@ -29,7 +29,7 @@ function Utilities:readFlightPlugins(listname, settings_file)
   settings_file = settings_file or settings.airplanemode
   if settings.debug_is_on then
     local funcname = debug.getinfo(1, "n").name
-    logger.dbg(funcname, "reading plugins from ", settings_file)
+    logger.dbg(funcname, "reading plugins file: ", settings_file)
   end
   local config = sethandler(settings_file)
   local disabled_plugins = config:readSetting(listname) or {}
