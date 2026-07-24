@@ -24,7 +24,6 @@ local _check_in_flight = false
 local CHECK_INTERVAL = 3600 -- 1 hour
 
 local FlightConfig = require("flight_config")
-local settings = FlightConfig:init()
 
 local function parseVersion(v)
   local parts = {}
@@ -148,6 +147,7 @@ end
 -- Results available via getAvailableUpdate().
 ---@param on_update_found? fun(version: string)
 function FlightUpdater.checkBackground(on_update_found)
+  local settings = FlightConfig:init()
   if _check_in_flight then
     return
   end
@@ -204,6 +204,7 @@ end
 --- Check for updates and show a message if a new version is available.
 ---@param on_success? fun()
 function FlightUpdater.check(on_success)
+  local settings = FlightConfig:init()
   local NetworkMgr = require("ui/network/manager")
   NetworkMgr:runWhenOnline(function()
     UIManager:show(InfoMessage:new({
@@ -432,6 +433,7 @@ end
 ---@param on_success? fun()
 -- Same install pipeline as the release path; just composes a different URL.
 function FlightUpdater.installBranch(branch, on_success)
+  local settings = FlightConfig:init()
   local NetworkMgr = require("ui/network/manager")
   NetworkMgr:runWhenOnline(function()
     local zip_url = FlightUpdater.composeBranchUrl(branch)
@@ -446,6 +448,7 @@ end
 -- _meta.lua reports a higher version than the current release, we still want to
 -- pull the release zip and re-stamp last_install_source = "release".
 function FlightUpdater.installLatestStable(on_success)
+  local settings = FlightConfig:init()
   local NetworkMgr = require("ui/network/manager")
   NetworkMgr:runWhenOnline(function()
     UIManager:show(InfoMessage:new({

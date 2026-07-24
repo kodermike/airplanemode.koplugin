@@ -12,7 +12,6 @@ local T = ffiutil.template
 local _ = require("gettext")
 
 local FlightConfig = require("flight_config")
-local settings = FlightConfig:init()
 
 local FlightAdvancedMenu = require("display/flight_advanced_menu")
 
@@ -28,6 +27,7 @@ local FlightMenu = {}
 ---@param AirPlaneMode table
 ---@return nil
 function FlightMenu:init(menu_items, AirPlaneMode)
+  local settings = FlightConfig:init()
   local airmode = U:getFlightStatus()
   self.apm = AirPlaneMode
   menu_items.airplanemode = {
@@ -49,6 +49,7 @@ end
 ---Get configuration menu items
 ---@return table
 function FlightMenu:getMenuItems()
+  local settings = FlightConfig:init()
   local airplane_config_table = {}
   local airmode = U:getFlightStatus()
 
@@ -92,7 +93,7 @@ function FlightMenu:getMenuItems()
         text = _("User Added Plugins to Disable"),
         help_text = _("Checked plugins will be disabled when AirPlaneMode is enabled."),
         sub_item_table_func = function()
-          return user_list
+          return self:PluginMenu(false)
         end,
       })
     end
@@ -206,6 +207,7 @@ end
 ---@param plugin_list table
 ---@return table
 function FlightMenu:menuBuilder(builtin, plugin_list)
+  local settings = FlightConfig:init()
   local airplane_plugin_table = {}
   -- Since we're in AirPlaneMode, and we skip AirPlaneMode, then a list of 0 is an empty list in this context
   if builtin == false and #plugin_list == 0 then
@@ -273,6 +275,7 @@ end
 ---@param builtin boolean
 ---@return table
 function FlightMenu:PluginMenu(builtin)
+  local settings = FlightConfig:init()
   if settings.debug_is_on then
     local funcname = debug.getinfo(1, "n").name
     logger.dbg(funcname, "PluginMenu - builtin: ", builtin)

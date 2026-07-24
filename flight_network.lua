@@ -7,7 +7,6 @@ local Device = require("device")
 local NetworkMgr = require("ui/network/manager")
 
 local FlightConfig = require("flight_config")
-local settings = FlightConfig:init()
 local U = require("utils/flight_utilities")
 
 local FlightNetwork = {}
@@ -15,6 +14,7 @@ local FlightNetwork = {}
 ---Re-enable WiFi and restore related settings from backup
 ---@return nil
 function FlightNetwork:reenableWifi()
+  local settings = FlightConfig:init()
   if Device:hasWifiRestore() and U:readFlightSetting("auto_restore_wifi", settings.koreader) then
     if settings.debug_is_on then
       local funcname = debug.getinfo(1, "n").name
@@ -105,6 +105,7 @@ end
 ---Disable WiFi and adjust related settings for airplane mode
 ---@return nil
 function FlightNetwork:disableWifi()
+  local settings = FlightConfig:init()
   --set this regardless of original setting to ensure no resumes
   if Device:hasWifiRestore() then
     if settings.debug_is_on then

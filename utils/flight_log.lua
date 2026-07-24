@@ -3,8 +3,6 @@
 local logger = require("logger")
 
 local FlightConfig = require("flight_config")
-local settings = FlightConfig:init()
-local FlightName = string.upper(settings.fullname)
 local serpent = require("ffi/serpent")
 
 local FlightLog = {}
@@ -62,20 +60,22 @@ local function make_entry(...)
 end
 
 local function safe_call_logger(method, msg)
-  if type(logger[method]) == "function" then
-    logger[method](msg)
-  else
-    -- fallback to info if specific level not available
-    if type(logger.info) == "function" then
-      logger.info(msg)
-    end
-  end
+  -- if type(logger[method]) == "function" then
+  --   logger[method](msg)
+  -- else
+  --   -- fallback to info if specific level not available
+  --   if type(logger.info) == "function" then
+  logger.info(msg)
+  --   end
+  -- end
 end
 
 -- log info messages
 ---@param function_name string
 ---@param ... any
 function FlightLog.info(function_name, ...)
+  local settings = FlightConfig:init()
+  local FlightName = string.upper(settings.fullname)
   function_name = function_name or "?"
   local entry = make_entry(...)
   safe_call_logger("info", FlightName .. " [" .. function_name .. "] " .. entry)
@@ -85,6 +85,8 @@ end
 ---@param function_name string
 ---@param ... any
 function FlightLog.warn(function_name, ...)
+  local settings = FlightConfig:init()
+  local FlightName = string.upper(settings.fullname)
   function_name = function_name or "?"
   local entry = make_entry(...)
   safe_call_logger("warn", FlightName .. " [" .. function_name .. "] " .. entry)
@@ -94,6 +96,8 @@ end
 ---@param function_name string
 ---@param ... any
 function FlightLog.dbg(function_name, ...)
+  local settings = FlightConfig:init()
+  local FlightName = string.upper(settings.fullname)
   function_name = function_name or "?"
   local entry = make_entry(...)
   safe_call_logger("dbg", FlightName .. " [" .. function_name .. "] " .. entry)
@@ -103,6 +107,8 @@ end
 ---@param function_name string
 ---@param ... any
 function FlightLog.err(function_name, ...)
+  local settings = FlightConfig:init()
+  local FlightName = string.upper(settings.fullname)
   function_name = function_name or "?"
   local entry = make_entry(...)
   safe_call_logger("err", FlightName .. " [" .. function_name .. "] " .. entry)

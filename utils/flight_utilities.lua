@@ -5,7 +5,6 @@ local logger = require("utils/flight_log")
 local ffiutil = require("ffi/util")
 
 local FlightConfig = require("flight_config")
-local settings = FlightConfig:init()
 local H = require("utils/flight_helpers")
 
 local Utilities = {}
@@ -26,6 +25,7 @@ end
 ---@param settings_file? string
 ---@return table<string, boolean>
 function Utilities:readFlightPlugins(listname, settings_file)
+  local settings = FlightConfig:init()
   settings_file = settings_file or settings.airplanemode
   if settings.debug_is_on then
     local funcname = debug.getinfo(1, "n").name
@@ -42,6 +42,7 @@ end
 ---@param settings_file? string
 ---@return boolean
 function Utilities:saveFlightPlugins(plugin_list, settings_file)
+  local settings = FlightConfig:init()
   settings_file = settings_file or settings.airplanemode
   if not plugin_list or type(plugin_list) ~= "table" then
     local funcname = debug.getinfo(1, "n").name
@@ -60,6 +61,7 @@ end
 ---@param settings_file? string
 ---@return any
 function Utilities:readFlightSetting(object, settings_file)
+  local settings = FlightConfig:init()
   settings_file = settings_file or settings.airplanemode
   if not object then
     local funcname = debug.getinfo(1, "n").name
@@ -82,6 +84,7 @@ end
 ---@param settings_file? string
 ---@return boolean
 function Utilities:saveFlightSetting(object, value, settings_file)
+  local settings = FlightConfig:init()
   settings_file = settings_file or settings.airplanemode
   if not object then
     local funcname = debug.getinfo(1, "n").name
@@ -125,6 +128,7 @@ end
 ---@param settings_file? string
 ---@return boolean
 function Utilities:delFlightSetting(object, settings_file)
+  local settings = FlightConfig:init()
   settings_file = settings_file or settings.airplanemode
   if not object then
     local funcname = debug.getinfo(1, "n").name
@@ -149,6 +153,7 @@ end
 ---@param settings_file? string
 ---@return boolean
 function Utilities:FlightHas(object, settings_file)
+  local settings = FlightConfig:init()
   settings_file = settings_file or settings.airplanemode
   if not object then
     local funcname = debug.getinfo(1, "n").name
@@ -170,6 +175,7 @@ end
 ---@param settings_file? string
 ---@return boolean
 function Utilities:FlightHasNot(object, settings_file)
+  local settings = FlightConfig:init()
   settings_file = settings_file or settings.airplanemode
   if not object then
     local funcname = debug.getinfo(1, "n").name
@@ -187,6 +193,7 @@ end
 ---@param settings_file? string
 ---@return boolean
 function Utilities:FlightToggle(object, settings_file)
+  local settings = FlightConfig:init()
   settings_file = settings_file or settings.airplanemode
   if not object then
     local funcname = debug.getinfo(1, "n").name
@@ -205,6 +212,7 @@ end
 ---@param settings_file? string
 ---@return boolean
 function Utilities:FlightIsTrue(object, settings_file)
+  local settings = FlightConfig:init()
   settings_file = settings_file or settings.airplanemode
   if not object then
     local funcname = debug.getinfo(1, "n").name
@@ -228,6 +236,7 @@ end
 ---@param settings_file? string
 ---@return boolean
 function Utilities:FlightIsFalse(object, settings_file)
+  local settings = FlightConfig:init()
   settings_file = settings_file or settings.airplanemode
   if not object then
     local funcname = debug.getinfo(1, "n").name
@@ -250,6 +259,7 @@ end
 ---@param object string
 ---@param settings_file? string
 function Utilities:FlightMakeTrue(object, settings_file)
+  local settings = FlightConfig:init()
   settings_file = settings_file or settings.airplanemode
   if not object then
     local funcname = debug.getinfo(1, "n").name
@@ -273,6 +283,7 @@ end
 ---@param object string
 ---@param settings_file? string
 function Utilities:FlightMakeFalse(object, settings_file)
+  local settings = FlightConfig:init()
   settings_file = settings_file or settings.airplanemode
   if not object then
     local funcname = debug.getinfo(1, "n").name
@@ -297,6 +308,7 @@ end
 ---@param settings_file? string
 ---@return boolean
 function Utilities:FlightNilOrFalse(object, settings_file)
+  local settings = FlightConfig:init()
   settings_file = settings_file or settings.airplanemode
   local funcname = debug.getinfo(1, "n").name
   if not object then
@@ -322,6 +334,7 @@ end
 ---@param settings_file? string
 ---@return boolean
 function Utilities:FlightNilOrTrue(object, settings_file)
+  local settings = FlightConfig:init()
   settings_file = settings_file or settings.airplanemode
   if not object then
     local funcname = debug.getinfo(1, "n").name
@@ -346,6 +359,7 @@ end
 ---@param settings_file? string
 ---@return boolean
 function Utilities:FlightFlipNilOrFalse(object, settings_file)
+  local settings = FlightConfig:init()
   settings_file = settings_file or settings.airplanemode
   if not object then
     local funcname = debug.getinfo(1, "n").name
@@ -373,6 +387,7 @@ end
 ---@param settings_file? string
 ---@param backup_file? string
 function Utilities:backupFlight(settings_file, backup_file)
+  local settings = FlightConfig:init()
   settings_file = settings_file or settings.airplanemode
   backup_file = backup_file or settings.backup
   local funcname = debug.getinfo(1, "n").name
@@ -397,6 +412,7 @@ end
 ---Get current AirPlaneMode status
 ---@return boolean
 function Utilities:getFlightStatus()
+  local settings = FlightConfig:init()
   -- test we can see the real settings file.
   if not H.isFile(settings.airplanemode) then
     local funcname = debug.getinfo(1, "n").name
@@ -418,6 +434,7 @@ end
 ---@param toggle boolean
 ---@return nil
 function Utilities:toggleAirPlaneMode(toggle)
+  local settings = FlightConfig:init()
   local funcname = debug.getinfo(1, "n").name
   logger.dbg(funcname, "desired state:", toggle)
   if toggle == true then
@@ -450,6 +467,7 @@ end
 ---Dump current on-disk airplanemode settings for debugging
 ---@return nil
 function Utilities:dumpSettings()
+  local settings = FlightConfig:init()
   -- Short-lived verification: read on-disk file contents and log them
   local fh = io.open(settings.airplanemode, "r")
   if fh then

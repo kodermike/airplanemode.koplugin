@@ -12,6 +12,7 @@ PluginManager module for AirplaneMode
 local PluginLoader = require("pluginloader")
 
 local U = require("utils/flight_utilities")
+local FlightConfig = require("flight_config")
 
 local logger = require("utils/flight_log")
 local _ = require("gettext")
@@ -80,7 +81,6 @@ return function(AirPlaneMode)
   ---@return nil
   local function stopOtherPlugins(stopPluginMethod, modcheck, plugin)
     -- try to run stopPlugin if available since it's cleaner
-    local FlightConfig = require("flight_config")
     local settings = FlightConfig:init()
     if settings.debug_is_on then
       local funcname = debug.getinfo(1, "n").name

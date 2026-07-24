@@ -13,7 +13,6 @@ local T = ffiutil.template
 local _ = require("gettext")
 
 local FlightConfig = require("flight_config")
-local settings = FlightConfig:init()
 local H = require("utils/flight_helpers")
 local U = require("utils/flight_utilities")
 local FM = require("utils/flight_deviceinfo")
@@ -41,6 +40,7 @@ function FlightAdvancedMenu.getKOReaderVersion()
 end
 
 local function generic_entry(t)
+  local settings = FlightConfig:init()
   local icon = U:getFlightStatus() and settings.icon_on or settings.icon_off
   return {
     text = _(t),
@@ -57,6 +57,7 @@ end
 ---Genrates the advance details menu
 ---@return table
 function FlightAdvancedMenu:menu()
+  local settings = FlightConfig:init()
   local airplane_specs = {}
   -- Generate information buttons - all use the same popup for displaying About
   local button_list = {
@@ -76,6 +77,10 @@ function FlightAdvancedMenu:menu()
       if settings.dev_mode then
         U:FlightMakeFalse("dev_mode")
         settings.dev_mode = false
+        if U:FlightIsTrue("debug_is_on") then
+          U:FlightMakeFalse("debug_is_on")
+        end
+        settings = FlightConfig:init()
       else
         U:FlightMakeTrue("dev_mode")
         UIManager:show(InfoMessage:new({
@@ -111,24 +116,26 @@ function FlightAdvancedMenu:menu()
 
   -- Add debug logging enabled/disabled
   table.insert(airplane_specs, {
-    text = _("Debug logging"),
+    text = _("Toggle logging"),
     callback = function()
       if U:FlightHas("debug_is_on") and U:FlightIsTrue("debug_is_on") then
-        U:FlightMakeFalse("debug_is_on")
-        settings.debug_is_on = false
-        local logger = require("logger")
-        local LvDEBUG = logger.LvDEBUG
-        if LvDEBUG == "dbg" then
-          logger:setLevel(logger.levels.info)
-        end
+        U:delFlightSetting("debug_is_on")
+        settings.debug_is_on = nil
+        settings = FlightConfig:init()
+        -- local logger = require("logger")
+        -- local LvDEBUG = logger.LvDEBUG
+        -- if LvDEBUG == "dbg" then
+        --   logger:setLevel(logger.levels.info)
+        -- end
       else
         U:FlightMakeTrue("debug_is_on")
         settings.debug_is_on = true
-        local logger = require("logger")
-        local LvDEBUG = logger.LvDEBUG
-        if LvDEBUG ~= "dbg" then
-          logger:setLevel(logger.levels.dbg)
-        end
+        settings = FlightConfig:init()
+        -- local logger = require("logger")
+        -- local LvDEBUG = logger.LvDEBUG
+        -- if LvDEBUG ~= "dbg" then
+        -- logger:setLevel(logger.levels.dbg)
+        -- end
       end
     end,
     checked_func = function()

@@ -25,6 +25,7 @@ local logger = require("utils/flight_log")
 local _ = require("gettext")
 
 local FlightConfig = require("flight_config")
+local settings = FlightConfig:init()
 
 local H = require("utils/flight_helpers")
 local U = require("utils/flight_utilities")
@@ -32,7 +33,6 @@ local A = require("flight_network")
 local M = require("display/flight_menu")
 
 local function restoreState()
-  local settings = FlightConfig:init()
   -- we just rebooted to change apm states, now switch pref back
   if U:FlightHas("restoreopt") and U:FlightIsTrue("restoreopt") then
     if settings.debug_is_on then
@@ -55,7 +55,6 @@ local function restoreState()
 end
 
 local function saveState(name)
-  local settings = FlightConfig:init()
   -- grab the current startup mode
   if settings.debug_is_on then
     local funcname = debug.getinfo(1, "n").name
@@ -121,7 +120,6 @@ end
 ---Initialize plugin
 ---@return nil
 function AirPlaneMode:init()
-  local settings = FlightConfig:init()
   self:onDispatcherRegisterActions()
   if H.isFile(settings.prev_config) then
     self:migrateconfig()
@@ -144,6 +142,10 @@ function AirPlaneMode:init()
     end
   end
 
+  if U:FlightHas("check_updates") and U:FlightIsTrue("check_updates") then
+    local UP = require("utils/flight_updater")
+    UP:checkForUpdates()
+  end
   self.show_value_in_footer = U:readFlightSetting("airplanemode_in_footer")
   if self.show_value_in_footer then
     self:addAdditionalFooterContent()
@@ -158,7 +160,6 @@ end
 ---Settings initialized
 ---@return nil
 function AirPlaneMode.initSettingsFile()
-  local settings = FlightConfig:init()
   -- If the file already exists, bail out early
   if H.isFile(settings.airplanemode) == true then
     if settings.debug_is_on then
@@ -194,7 +195,6 @@ end
 --- Migrate old config to new format if necessary
 ---@return nil
 function AirPlaneMode.migrateconfig()
-  local settings = FlightConfig:init()
   local funcname = debug.getinfo(1, "n").name
   logger.dbg(funcname, "migrating config from ", settings.prev_config, " to ", settings.airplanemode)
   U:saveFlightSetting("version", settings.version)
@@ -210,7 +210,6 @@ function AirPlaneMode.migrateconfig()
 end
 
 function AirPlaneMode:migratesettings()
-  local settings = FlightConfig:init()
   if settings.debug_is_on then
     local funcname = debug.getinfo(1, "n").name
     logger.dbg(funcname, "koreader config found, migrating to new layout")
@@ -261,7 +260,6 @@ end
 ---Hook for deleteplugin calls
 ---@return nil
 function AirPlaneMode.deletePluginSettings()
-  local settings = FlightConfig:init()
   if settings.debug_is_on then
     local funcname = debug.getinfo(1, "n").name
     logger.dbg(funcname, "called at ", os.time(), "\nstack:\n", debug.traceback())
@@ -297,7 +295,6 @@ end
 ---Enable AirPlaneMode
 ---@return nil
 function AirPlaneMode:Enable()
-  local settings = FlightConfig:init()
   if settings.debug_is_on then
     local funcname = debug.getinfo(1, "n").name
     logger.dbg(funcname, "enabling")
@@ -385,7 +382,6 @@ end
 ---@param interactive? boolean
 ---@return nil
 function AirPlaneMode:Disable(interactive)
-  local settings = FlightConfig:init()
   if type(interactive) ~= "boolean" then
     interactive = true
   end
