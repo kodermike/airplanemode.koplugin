@@ -49,7 +49,7 @@ restoreState()
 
 local AirPlaneMode = WidgetContainer:extend({
   name = "airplanemode",
-  is_doc_only = false
+  is_doc_only = false,
 })
 
 local Flightfooter = require("flight_footer")
@@ -64,20 +64,20 @@ function AirPlaneMode.onDispatcherRegisterActions()
     category = "none",
     event = "Enable",
     title = _("AirPlaneMode Enable"),
-    device = true
+    device = true,
   })
   Dispatcher:registerAction("airplanemode_disable", {
     category = "none",
     event = "Disable",
     title = _("AirPlaneMode Disable"),
-    device = true
+    device = true,
   })
   Dispatcher:registerAction("airplanemode_toggle", {
     category = "none",
     event = "Toggle",
     title = _("AirPlaneMode Toggle"),
     device = true,
-    separator = true
+    separator = true,
   })
 end
 

@@ -67,6 +67,9 @@ jobs:
           set -e
           [[ -d tests ]] && rm -rf tests
           [[ -d lua_stubs ]] && rm -rf lua_stubs
+          for file in $(find . -type f -name "*.lua"); do
+            sed -i '/if settings.debug/,/end$/d' "${file}"
+          done
 
       - name: Create Release Setup
         run: |
