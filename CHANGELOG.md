@@ -5,7 +5,7 @@
 ### Housekeeping
 
 - Fix `About` information to show the branch information if running a dev branch instead of a release
-- Added missing call to check for updates if the check on wake toggle is checked
+- Housekeeping: cleaned up menu displays, reordered options section
 
 ## [v1.9.2] 🔥
 
