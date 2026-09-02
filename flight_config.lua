@@ -12,7 +12,7 @@
 ---@field description string
 ---@field fullname string
 ---@field debug_is_on boolean
----@field dev_mode boolean
+---@field release boolean
 
 local DataStorage = require("datastorage")
 local meta = require("_meta")
@@ -29,10 +29,10 @@ local FlightConfig = {
   icon_on = nil,
   icon_off = nil,
   version = nil,
-  description = nil,
-  fullname = nil,
-  debug_is_on = nil,
-  dev_mode = nil,
+  description = "",
+  fullname = "",
+  debug_is_on = false,
+  release = true,
 }
 
 ---Return base config file locations
@@ -51,6 +51,9 @@ function FlightConfig:init()
   self.version = meta.version or "9.9.9"
   self.icon_on = "\u{F1D8}"
   self.icon_off = "\u{F1D9}"
+  if meta.release != nil then self.release = meta.release else self.release = true end
+  print("RELEASE IS", meta.release, "\n\n\n")
+  print("VSRELEASE IS", self.release, "\n\n\n")
 
   if not H.isFile(self.airplanemode) then
     self.initSettingsFile(self.airplanemode, self.version)
@@ -68,11 +71,6 @@ function FlightConfig:init()
         self.debug_is_on = cfg:readSetting("debug_is_on")
       else
         self.debug_is_on = false
-      end
-      if cfg:has("dev_mode") then
-        self.dev_mode = cfg:readSetting("dev_mode")
-      else
-        self.dev_mode = false
       end
       cfg:close()
     end
@@ -92,7 +90,7 @@ function FlightConfig:init()
     description = self.description,
     fullname = self.fullname,
     debug_is_on = self.debug_is_on,
-    dev_mode = self.dev_mode,
+    release = self.release,
   }
 end
 

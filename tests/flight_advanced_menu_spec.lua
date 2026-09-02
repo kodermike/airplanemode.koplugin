@@ -1,6 +1,18 @@
 local helper = require("tests/spec_helper")
 local U = helper.U
 
+local function find_item_by_text(tbl, text)
+  for _, it in ipairs(tbl) do
+    if it.text and it.text == text then
+      return it
+    end
+    if it.text_func and it.text_func() == text then
+      return it
+    end
+  end
+  return nil
+end
+
 describe("display/flight_advanced_menu - KOReader version and menu entries", function()
   setup(function()
     helper.reset()
@@ -72,26 +84,61 @@ describe("display/flight_advanced_menu - KOReader version and menu entries", fun
     rawset(_G, "KOREADER_VERSION", nil)
   end)
 
-  it("menu generic entries show an InfoMessage via UIManager when invoked", function()
-    -- ensure FM provides device info used in menu
-    package.loaded["utils/flight_deviceinfo"] = {
-      get_device_model_name = function()
-        return "ModelX"
+  it("getMenuItems includes builtin plugin submenu when airmode false", function()
+    local FD = require("display.flight_advanced_menu")
+    local settings = require("flight_config"):init()
+
+    -- ensure airmode inactive
+    U:FlightMakeFalse("airplanemode_enabled", settings.airplanemode)
+
+    -- provide apm with getPlugins returning non-empty builtin list
+    local apm = {
+      name = "airplanemode",
+      getPlugins = function(builtin)
+        return { { name = "p_builtin", fullname = "PBuilt", description = "d" } }
       end,
-      get_device_firmware_info = function()
-        return "FW1"
+      plugin_list = function()
+        return { p_builtin = true }
+      end,
+      addAdditionalFooterContent = function()
+        helper.UIManager.footer_added = true
+      end,
+      removeAdditionalFooterContent = function()
+        helper.UIManager.footer_removed = true
       end,
     }
-    local FD = require("display.flight_advanced_menu")
-    local menu = FD:menu()
-    assert.is_table(menu)
-    -- pick first entry and invoke callback which should call UIManager:show
-    local first = menu[1]
-    assert.is_table(first)
-    -- spy on UIManager.show (mock records shown table)
-    local UIManager = helper.UIManager
-    UIManager.shown = UIManager.shown or {}
-    first.callback()
-    assert.is_true(#UIManager.shown > 0)
+    FD.apm = apm
+
+    local items = FD:menu(apm)
+    assert.is_table(items)
+
+    -- there should be an entry with a sub_item_table_func for builtin plugins
+    local found = false
+    for _, it in ipairs(items) do
+      if type(it.sub_item_table_func) == "function" then
+        found = true
+        break
+      end
+    end
+    assert.is_true(found)
+
+    -- test the footer toggle item: find it and call callback to toggle
+    local footer_item = find_item_by_text(items, "Show AirPlaneMode in reader footer")
+    assert(footer_item)
+    -- initial show_value_in_footer may be nil; set to false
+    FD.show_value_in_footer = false
+    U:delFlightSetting("airplanemode_in_footer", settings.airplanemode)
+
+    -- call callback to toggle on
+    footer_item.callback()
+    assert.is_true(U:FlightIsTrue("airplanemode_in_footer"))
+    assert.is_true(FD.show_value_in_footer)
+    -- ensure apm:addAdditionalFooterContent was called (our apm writes to helper.UIManager)
+    assert.is_true(helper.UIManager.footer_added)
+
+    -- call callback again to toggle off
+    footer_item.callback()
+    assert.is_false(U:FlightIsTrue("airplanemode_in_footer"))
+    assert.is_false(FD.show_value_in_footer)
   end)
 end)

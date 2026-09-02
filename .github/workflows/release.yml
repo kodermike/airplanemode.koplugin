@@ -70,6 +70,7 @@ jobs:
           for file in $(find . -type f -name "*.lua"); do
             sed -i '/if settings.debug/,/end$/d' "${file}"
           done
+          sed -i "s/.*release.*//" _meta.lua
 
       - name: Create Release Setup
         run: |
