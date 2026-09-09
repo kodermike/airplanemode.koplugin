@@ -51,9 +51,11 @@ function FlightConfig:init()
   self.version = meta.version or "9.9.9"
   self.icon_on = "\u{F1D8}"
   self.icon_off = "\u{F1D9}"
-  if meta.release != nil then self.release = meta.release else self.release = true end
-  print("RELEASE IS", meta.release, "\n\n\n")
-  print("VSRELEASE IS", self.release, "\n\n\n")
+  if meta.release != nil then
+    self.release = meta.release
+  else
+    self.release = true
+  end
 
   if not H.isFile(self.airplanemode) then
     self.initSettingsFile(self.airplanemode, self.version)
