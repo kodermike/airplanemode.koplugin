@@ -1,6 +1,6 @@
 # Changelog
 
-## [v1.9.3] (IN DEVELOPMENT)
+## [v1.9.9]
 
 ### Housekeeping
 
