@@ -51,7 +51,7 @@ function FlightConfig:init()
   self.version = meta.version or "9.9.9"
   self.icon_on = "\u{F1D8}"
   self.icon_off = "\u{F1D9}"
-  if meta.release != nil then
+  if meta.release ~= nil then
     self.release = meta.release
   else
     self.release = true
