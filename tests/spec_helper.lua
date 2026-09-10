@@ -525,6 +525,26 @@ if not use_koreader then
     }
     return s
   end
+  function FlightConfig.initSettingsFile(airplanemode_file, version)
+    -- Mock implementation: save version and plugins_disabled to storage only if file doesn't exist
+    local H_mock = package.loaded["utils/flight_helpers"]
+    local U_mock = package.loaded["utils/flight_utilities"]
+    
+    if H_mock and type(H_mock.isFile) == "function" and H_mock.isFile(airplanemode_file) then
+      -- File already exists, don't overwrite
+      return
+    end
+    
+    if U_mock and type(U_mock.saveFlightSetting) == "function" then
+      U_mock:saveFlightSetting("version", version, airplanemode_file)
+      local default_disable = {}
+      local default_disable_list = { "newsdownloader", "wallabag", "kosync", "opds", "SSH", "timesync", "httpinspector" }
+      for __, plugin in ipairs(default_disable_list) do
+        default_disable[plugin] = true
+      end
+      U_mock:saveFlightSetting("plugins_disabled", default_disable, airplanemode_file)
+    end
+  end
   package.loaded["flight_config"] = FlightConfig
 
   -- helpers module
@@ -657,16 +677,35 @@ if not use_koreader then
   }
   package.loaded["flight_network"] = FlightNetwork
 
+  -- PluginLoader mock
+  local PluginLoader = {
+    loadPlugins = function(self)
+      return {}, {}
+    end,
+  }
+  package.loaded["pluginloader"] = PluginLoader
+
   -- PluginManager mock
-  local AirPlaneMode = {
+  local FlightPlugins = {
     _disabled = {},
     disablePlugins = function(self, settings)
       self._disabled = true
     end,
     enableCalibre = function() end,
     restorePluginSettings = function() end,
+    default_plugins = function(self)
+      return {
+        ["archiveviewer"] = true,
+        ["autodim"] = true,
+        ["airplanemode"] = true,
+        ["p2"] = true,
+      }
+    end,
+    getPlugins = function(self, builtin, settings)
+      return {}
+    end,
   }
-  package.loaded["flight_plugins"] = AirPlaneMode
+  package.loaded["utils/flight_plugins"] = FlightPlugins
 
   -- FlightMenu mock
   package.loaded["flight_menu"] = { init = function(_, _) end }

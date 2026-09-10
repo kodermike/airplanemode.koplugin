@@ -16,6 +16,9 @@ describe("flight_plugins:disablePlugins - stopping plugins and saving disabled l
       end,
     }
 
+    -- Clear flight_plugins from cache so it reloads with the new pluginloader
+    package.loaded["utils/flight_plugins"] = nil
+    
     local settings = require("flight_config"):init()
     -- set check_plugins to include p1
     U:saveFlightPlugins({ p1 = true })
@@ -35,14 +38,11 @@ describe("flight_plugins:disablePlugins - stopping plugins and saving disabled l
       end,
     }
 
-    -- load flight_plugins fresh and apply to dummyAPM
-    local fp_chunk = assert(loadfile("./flight_plugins.lua"))
-    local fp_fn = fp_chunk()
-    fp_fn(dummyAPM)
-    local AP = dummyAPM
-
+    -- load flight_plugins fresh
+    local FlightPlugins = require("utils/flight_plugins")
+    
     -- call disablePlugins
-    AP:disablePlugins(settings)
+    FlightPlugins:disablePlugins(dummyAPM, settings)
 
     -- plugins_disabled should include p1
     local saved = U:readFlightSetting("plugins_disabled", settings.koreader)

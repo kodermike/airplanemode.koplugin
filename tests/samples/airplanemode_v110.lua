@@ -1,0 +1,25 @@
+-- ./settings/airplanemode.lua
+return {
+  ["disabled_plugins"] = {
+    ["SSH"] = true,
+    ["archiveviewer"] = true,
+    ["autodim"] = true,
+    ["autosuspend"] = true,
+    ["autoturn"] = true,
+    ["bookshelf"] = true,
+    ["bookshortcuts"] = true,
+    ["calibre"] = true,
+    ["cloudstorage"] = true,
+    ["httpinspector"] = true,
+    ["kosync"] = true,
+    ["newsdownloader"] = true,
+    ["opds"] = true,
+    ["simpleui"] = true,
+    ["timesync"] = true,
+    ["wallabag"] = true,
+  },
+  ["managewifi"] = true,
+  ["restoreopt"] = true,
+  ["silentmode"] = true,
+  ["version"] = "1.1.0",
+}

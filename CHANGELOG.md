@@ -1,10 +1,11 @@
 # Changelog
 
-## [v1.9.3] 🔥
+## [v1.9.3] (IN DEVELOPMENT)
 
-- Issue #98 - double popup appearing when disabling the plugin from the KOReader plugin manager.
-  - Added check that AirPlaneMode is running before trying to run stop for stopPlugin
-  - Added boolean interactive, default true, to determine if we need to display the restart
+### Housekeeping
+
+- Fix `About` information to show the branch information if running a dev branch instead of a release
+- Housekeeping: cleaned up menu displays, reordered options section
 
 ## [v1.9.2] 🔥
 

@@ -12,10 +12,11 @@
 ---@field description string
 ---@field fullname string
 ---@field debug_is_on boolean
----@field dev_mode boolean
+---@field release boolean
 
 local DataStorage = require("datastorage")
 local meta = require("_meta")
+local H = require("utils/flight_helpers")
 
 local FlightConfig = {
   koreader = nil,
@@ -28,10 +29,10 @@ local FlightConfig = {
   icon_on = nil,
   icon_off = nil,
   version = nil,
-  description = nil,
-  fullname = nil,
-  debug_is_on = nil,
-  dev_mode = nil,
+  description = "",
+  fullname = "",
+  debug_is_on = false,
+  release = true,
 }
 
 ---Return base config file locations
@@ -50,7 +51,15 @@ function FlightConfig:init()
   self.version = meta.version or "9.9.9"
   self.icon_on = "\u{F1D8}"
   self.icon_off = "\u{F1D9}"
+  if meta.release ~= nil then
+    self.release = meta.release
+  else
+    self.release = true
+  end
 
+  if not H.isFile(self.airplanemode) then
+    self.initSettingsFile(self.airplanemode, self.version)
+  end
   -- Read optional debug flag from the AirPlaneMode settings file if present
   -- Can't use existing config handler because it would create a depenency loop
   self.debug_is_on = false
@@ -64,11 +73,6 @@ function FlightConfig:init()
         self.debug_is_on = cfg:readSetting("debug_is_on")
       else
         self.debug_is_on = false
-      end
-      if cfg:has("dev_mode") then
-        self.dev_mode = cfg:readSetting("dev_mode")
-      else
-        self.dev_mode = false
       end
       cfg:close()
     end
@@ -88,8 +92,34 @@ function FlightConfig:init()
     description = self.description,
     fullname = self.fullname,
     debug_is_on = self.debug_is_on,
-    dev_mode = self.dev_mode,
+    release = self.release,
   }
 end
 
+---Settings initialized
+---@return nil
+function FlightConfig.initSettingsFile(airplanemode_file, version)
+  -- If the file already exists, bail out early
+  if H.isFile(airplanemode_file) == true then
+    return
+  else
+    -- Only write defaults if the setting is not already present (avoid clobbering)
+    local default_disable = {}
+    local default_disable_list = { "newsdownloader", "wallabag", "kosync", "opds", "SSH", "timesync", "httpinspector" }
+    for __, plugin in ipairs(default_disable_list) do
+      default_disable[plugin] = true
+    end
+    local ok, LuaSettings = pcall(require, "luasettings")
+    if ok and LuaSettings then
+      local status, cfg = pcall(function()
+        return LuaSettings:open(airplanemode_file)
+      end)
+      if status and cfg then
+        cfg:saveSetting("version", version)
+        cfg:saveSetting("plugins_disabled", default_disable)
+        cfg:close()
+      end
+    end
+  end
+end
 return FlightConfig

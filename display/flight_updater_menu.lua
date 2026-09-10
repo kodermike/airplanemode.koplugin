@@ -13,18 +13,7 @@ local FlightUpdaterMenu = {}
 --- Show the flight plan menu.
 ---@return table
 function FlightUpdaterMenu:showMenu()
-  local check_updates = U:readFlightSetting("check_updates") or false
   return {
-    {
-      text = _("Notify on wake when update available"),
-      checked_func = function()
-        return check_updates
-      end,
-      callback = function()
-        check_updates = not check_updates
-        U:saveFlightSetting("check_updates", check_updates)
-      end,
-    },
     {
       text_func = function()
         local available = Updater.getAvailableUpdate()
@@ -37,7 +26,7 @@ function FlightUpdaterMenu:showMenu()
         if available then
           return _("Update available") .. ": v" .. settings.version .. source_suffix .. " \xE2\x86\x92 v" .. available
         end
-        return _("Installed version") .. ": v" .. settings.version .. source_suffix
+        return _("On latest version") .. ": v" .. settings.version .. source_suffix
       end,
       keep_menu_open = true,
       callback = function()

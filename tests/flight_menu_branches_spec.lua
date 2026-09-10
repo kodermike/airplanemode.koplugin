@@ -1,18 +1,6 @@
 local helper = require("tests/spec_helper")
 local U = helper.U
 
-local function find_item_by_text(tbl, text)
-  for _, it in ipairs(tbl) do
-    if it.text and it.text == text then
-      return it
-    end
-    if it.text_func and it.text_func() == text then
-      return it
-    end
-  end
-  return nil
-end
-
 describe("display/flight_menu deep branches", function()
   setup(function()
     helper.reset()
@@ -29,7 +17,7 @@ describe("display/flight_menu deep branches", function()
     local apm = { name = "airplanemode" }
     FM.apm = apm
 
-    local items = FM:getMenuItems()
+    local items = FM:getMenuItems(apm)
     assert.is_table(items)
 
     -- find suspended plugin management entry
@@ -42,64 +30,6 @@ describe("display/flight_menu deep branches", function()
       end
     end
     assert.is_true(found)
-  end)
-
-  it("getMenuItems includes builtin plugin submenu when airmode false", function()
-    local FM = require("display/flight_menu")
-    local settings = require("flight_config"):init()
-
-    -- ensure airmode inactive
-    U:FlightMakeFalse("airplanemode_enabled", settings.airplanemode)
-
-    -- provide apm with getPlugins returning non-empty builtin list
-    local apm = {
-      name = "airplanemode",
-      getPlugins = function(builtin)
-        return { { name = "p_builtin", fullname = "PBuilt", description = "d" } }
-      end,
-      plugin_list = function()
-        return { p_builtin = true }
-      end,
-      addAdditionalFooterContent = function()
-        helper.UIManager.footer_added = true
-      end,
-      removeAdditionalFooterContent = function()
-        helper.UIManager.footer_removed = true
-      end,
-    }
-    FM.apm = apm
-
-    local items = FM:getMenuItems()
-    assert.is_table(items)
-
-    -- there should be an entry with a sub_item_table_func for builtin plugins
-    local found = false
-    for _, it in ipairs(items) do
-      if type(it.sub_item_table_func) == "function" then
-        found = true
-        break
-      end
-    end
-    assert.is_true(found)
-
-    -- test the footer toggle item: find it and call callback to toggle
-    local footer_item = find_item_by_text(items, "Show AirPlaneMode in reader footer")
-    assert(footer_item)
-    -- initial show_value_in_footer may be nil; set to false
-    FM.show_value_in_footer = false
-    U:delFlightSetting("airplanemode_in_footer", settings.airplanemode)
-
-    -- call callback to toggle on
-    footer_item.callback()
-    assert.is_true(U:FlightIsTrue("airplanemode_in_footer"))
-    assert.is_true(FM.show_value_in_footer)
-    -- ensure apm:addAdditionalFooterContent was called (our apm writes to helper.UIManager)
-    assert.is_true(helper.UIManager.footer_added)
-
-    -- call callback again to toggle off
-    footer_item.callback()
-    assert.is_false(U:FlightIsTrue("airplanemode_in_footer"))
-    assert.is_false(FM.show_value_in_footer)
   end)
 
   it("menuBuilder builds plugin entries with checked/enabled/callback behavior", function()
@@ -159,14 +89,15 @@ describe("display/flight_menu deep branches", function()
     end
 
     -- apm
-    FM.apm = {
+    local apm = {
       name = "airplanemode",
       getPlugins = function()
         return {}
       end,
     }
+    FM.apm = apm
 
-    local items = FM:getMenuItems()
+    local items = FM:getMenuItems(apm)
     -- find 'Restore session after restart' item and ensure it's not present or disabled when device cannot restart
     local found = false
     for _, it in ipairs(items) do

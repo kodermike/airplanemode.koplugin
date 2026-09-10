@@ -28,6 +28,14 @@
 
 _On devices where network hardware cannot be managed, Wi‑Fi actions are skipped._
 
+## A Note
+
+When I first created this plugin, it was because I wanted a way to disable all Wi-Fi accessing applications at once. I was travelling at the time, and the pain of opening KOReader and then being stuck waiting on the Wi-Fi timeout because `progress sync` had run made it almost impossible to use. I tried to use the `profiles` plugin, but found it couldn't handle all of what I wanted to pack into it. AirPlaneMode was a way for me to easily disable everything that needed a network connection in a single swipe, but it attacks the problem from only one direction. It lets you disable anything that might trigger Wi-Fi, but can't actually do anything to _disable_ your wireless device.
+
+Recently I came across the [wifiindicator.koplugin](https://github.com/asxelot/wifiindicator.koplugin) and would like to suggest that if part of the reason you are using AirPlaneMode is to to try and not be blocked by the Wi-Fi pop-up before you can disable anything, @asxelot's plugin is an amazing companion to this one. While `wifiindicator.koplugin` (or the [patch](https://github.com/asxelot/koreader-nonblocking-wifi) version) doesn't disable your Wi-Fi device, it does move it out of the way so connecting - and failing to connect - aren't a blocker to being able to use KOReader.
+
+Either way, good luck, and happy reading!
+
 ---
 
 ## 📥 Installation
@@ -35,21 +43,21 @@ _On devices where network hardware cannot be managed, Wi‑Fi actions are skippe
 #### Installing using a release archive file
 
 1. Download the latest release from [Releases](https://github.com/kodermike/airplanemode.koplugin/releases)
-1. Connect your device with USB
-1. You can either:
+2. Connect your device with USB
+3. You can either:
    1. Unpack the release file locally, then copy the `airplanemode.koplugin` directory to `plugins/` or
-   1. unpack a release file in your plugins directory. For example,
+   2. unpack a release file in your plugins directory. For example,
    - On Kobo, this would be in `.adds/koreader/plugins`
    - On Kindle's it is in `/mnt/us/koreader/plugins`
-1. Disconnect your device and restart KOReader. You should be all set!
+4. Disconnect your device and restart KOReader. You should be all set!
 
 #### Alternate installation for Kobo's
 
 1. On the [Releases](https://github.com/kodermike/airplanemode.koplugin/releases) page, download `KoboRoot.tgz`.
-1. Connect your device with USB
-1. Copy the the `KoboRoot.tgz` file to the `.kobo` directory on your mounted kobo.
-1. Disconnect USB, then reboot your reader. In order for the `KoboRoot.tgz` file to be unpacked, you will need to exit KOReader completely and restart your Kobo so that the native Kobo manager can unpack the `KoboRoot.tgz` file
-1. Once your Kobo is back up, start KOReader again
+2. Connect your device with USB
+3. Copy the `KoboRoot.tgz` file to the `.kobo` directory on your mounted kobo.
+4. Disconnect USB, then reboot your reader. In order for the `KoboRoot.tgz` file to be unpacked, you will need to exit KOReader completely and restart your Kobo so that the native Kobo manager can unpack the `KoboRoot.tgz` file
+5. Once your Kobo is back up, start KOReader again
 
 #### For users of AirPlaneMode >=2.0
 
