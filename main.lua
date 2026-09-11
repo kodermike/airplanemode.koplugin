@@ -102,10 +102,11 @@ function AirPlaneMode:init()
     end
   end
 
-  if U:FlightHas("check_updates") and U:FlightIsTrue("check_updates") then
-    local UP = require("utils/flight_updater")
-    UP:checkForUpdates()
-  end
+  -- Disabled since we don't offer control of how often or whether this runs currently
+  -- if U:FlightHas("check_updates") and U:FlightIsTrue("check_updates") then
+  --   local UP = require("utils/flight_updater")
+  --   UP:checkForUpdates()
+  -- end
   self.show_value_in_footer = U:readFlightSetting("airplanemode_in_footer")
   if self.show_value_in_footer then
     self:addAdditionalFooterContent()
