@@ -316,6 +316,38 @@ function FlightUpdater.check(on_success)
   end)
 end
 
+-- Issue 107 - we were using the upstream function for unpacking packages like
+-- the dictionary module was, but that has changed enough that it is cleaner
+-- to reimplement using direct calls to ffi/archiver.
+---@param pkg_path string
+---@param target_path string
+local function unpackPackage(pkg_path, target_path)
+  local ok_req, FlightCargo = pcall(require, "ffi/archiver")
+  if not (ok_req and FlightCargo and FlightCargo.Reader) then
+    return false, "no archiver available"
+  end
+  local pkg = FlightCargo.Reader:new()
+  if not pkg:open(pkg_path) then
+    local error = pkg.err
+    pkg:close()
+    return false, error or "could not open package"
+  end
+  local extract_err
+  for entry in pkg:iterate() do
+    local rel = entry.path and entry.path:match("^[^/]+/(.+)$")
+    if rel and rel ~= "" then
+      if not pkg:extractToPath(entry.path, target_path .. "/" .. rel) then
+        extract_err = pkg.err or "extract failed"
+        break
+      end
+    end
+  end
+  pkg:close()
+  if extract_err ~= nil then
+    return false, extract_err
+  end
+  return true
+end
 --- Install a new version from a ZIP URL.
 ---@param zip_url string
 ---@param old_version string
@@ -396,7 +428,7 @@ function FlightUpdater.install(zip_url, old_version, new_version, on_success, er
 
     -- Extract to plugin directory (strip root folder from ZIP)
     local plugin_path = DataStorage:getDataDir() .. "/plugins/airplanemode.koplugin"
-    local ok, err = Device:unpackArchive(zip_path, plugin_path, true)
+    local ok, err = unpackPackage(zip_path, plugin_path)
     pcall(os.remove, zip_path)
 
     if not ok then
