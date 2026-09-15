@@ -1,5 +1,9 @@
 # Changelog
 
+## [v2.0.0] (status: pre-release)
+
+- Fix for updater unarchive crashing koreader, introduced in 1.9.9
+
 ## [v1.9.9]
 
 ### Housekeeping
