@@ -17,6 +17,7 @@
 local DataStorage = require("datastorage")
 local meta = require("_meta")
 local H = require("utils/flight_helpers")
+local _ = require("gettext")
 
 local FlightConfig = {
   koreader = nil,
@@ -46,7 +47,7 @@ function FlightConfig:init()
   self.koreader_plugins = "plugins_disabled"
   ---@deprecated Use koreader_plugins instead
   self.airplane_plugins = "disabled_plugins"
-  self.description = meta.description or "Toggleing all your networking apps at once"
+  self.description = meta.description or _("Toggling all your networking apps at once")
   self.fullname = meta.fullname or "AirPlaneMode"
   self.version = meta.version or "9.9.9"
   self.icon_on = "\u{F1D8}"

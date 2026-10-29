@@ -124,4 +124,28 @@ Find a bug 🐛? Want to contribute 🤝? Please see [CONTRIBUTING](CONTRIBUTING
 - The `dev` branch is suitable for testing against nightly KOReader builds. The `main` branch is intended to work with stable releases.
 - For more detailed information on contributing, please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
+### Translations
+
+Every user-facing string is written as `_("English source")`. KOReader translates
+its own strings, but it has no per-plugin locale loading, so `airplanemode_i18n.lua`
+reads `locales/<language>.po` from the plugin directory and layers it over
+gettext. Strings the catalog does not contain still fall through to KOReader's
+own translations.
+
+To add a language, copy `locales/pt_BR.po`, translate the `msgstr` lines, and
+name the file after the KOReader language code (`pt_BR`, `de`, `ja`, ...). Keep
+the file in UTF-8, keep the `%1`/`%s` placeholders, and set the language in
+KOReader to check it; the plugin reads KOReader's `language` setting, then the
+POSIX locale, and stays in English when neither matches a catalog.
+
+KOReader ships translations separately from its releases, so a catalog may be
+incomplete for a given KOReader version. Shared vocabulary (`Cancel`, `Save`,
+`Restart`, ...) is therefore duplicated in the plugin's catalog to keep the
+dialog buttons identical no matter which KOReader build is installed. While the
+plugin is disabled, KOReader loads only `_meta.lua`, so the plugin manager
+shows its English name until it is enabled again.
+
+Changing the UI language needs the same KOReader restart KOReader itself asks
+for; the catalog is read once at plugin load.
+
 ###### Updated 2026.06.20

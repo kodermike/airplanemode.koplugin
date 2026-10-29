@@ -239,7 +239,7 @@ function FlightAdvancedMenu:menu(AirPlaneMode_Self)
       UIManager:show(ConfirmBox:new({
         text = _("Remove and reset AirPlaneMode settings?"),
         ok_text = _("Reset"),
-        cancel_text = "Cancel",
+        cancel_text = _("Cancel"),
         ok_callback = function()
           local FlightControl = require("utils.flight_control")
           -- if U:getFlightStatus() then

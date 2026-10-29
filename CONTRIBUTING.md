@@ -83,6 +83,7 @@ git commit -m "Fix plugin crashes when on actual airplane"
 - Keep functions focused; avoid adding logic to build/render functions that belongs in helpers
 - Prefer `local` variables; avoid polluting the module-level scope
 - Add a short comment explaining new blocks
+- Wrap every user-facing string in `_()`, and add a `msgstr` for it in the language files under `locales/` (see [Translations](README.md#translations))
 - Include type annotations (`@function`, `@param`, `@return`, etc.) if possible. It both helps read your new code and informs LSP helpers when editing.
 
 ### File structure
@@ -91,6 +92,7 @@ git commit -m "Fix plugin crashes when on actual airplane"
 airplanemode.koplugin/
 ├── main.lua                        — plugin entry point
 ├── _meta.lua                       — plugin meta information (version, fullname)
+├── airplanemode_i18n.lua           — per-plugin locale catalog loader
 ├── flight_config.lua               — generates global settings
 ├── flight_footer.lua               — generates the footer icon for reader mode
 ├── flight_network.lua              — wrapper for network calls
@@ -106,6 +108,9 @@ airplanemode.koplugin/
     ├── flight_updater.lua          — update code
     └── flight_utilities.lua        — utility wrapper for KOReader calls
 ```
+
+Language catalogs live in `locales/<language>.po`; the loader is described in
+[Translations](README.md#translations).
 
 ### Pull Request checklist
 

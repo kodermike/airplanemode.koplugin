@@ -1,0 +1,236 @@
+# Brazilian Portuguese translation for airplanemode.koplugin
+# Loaded by airplanemode_i18n.lua; msgids are the English source strings in the
+# plugin code. Phrasing follows KOReader's own pt_BR catalog.
+# Strings KOReader already translates (About, Cancel, Close, Later, OK, Open,
+# Reset, Restart, Save, Check for updates) are kept here too so the plugin reads
+# the same on every KOReader build, since translations ship separately from the
+# KOReader release and coverage varies between versions.
+msgid ""
+msgstr ""
+"Project-Id-Version: airplanemode.koplugin 2.0.0\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Quickly enable/disable networking and selected plugins in one action."
+msgstr "Ativa/desativa rapidamente a rede e os plugins selecionados em uma única ação."
+
+msgid "AirPlaneMode Enable"
+msgstr "AirPlaneMode: Ativar"
+
+msgid "AirPlaneMode Disable"
+msgstr "AirPlaneMode: Desativar"
+
+msgid "AirPlaneMode Toggle"
+msgstr "AirPlaneMode: Alternar"
+
+msgid "A simple plugin that helps you when you're on the go.\n\n\nv.%1"
+msgstr "Um plugin simples que ajuda quando você está a caminho.\n\n\nv.%1"
+
+msgid "Toggling all your networking apps at once"
+msgstr "Alternando todos os seus aplicativos de rede de uma vez"
+
+msgid "%1 Disable"
+msgstr "%1 Desativar"
+
+msgid "%1 Enable"
+msgstr "%1 Ativar"
+
+msgid "%1  Plugin management suspended while in flight"
+msgstr "%1  Gerenciamento de plugins suspenso durante o voo"
+
+msgid "Builtin Plugins to Disable"
+msgstr "Plugins embutidos a desativar"
+
+msgid "Checked plugins will be disabled when AirPlaneMode is enabled."
+msgstr "Plugins marcados serão desativados quando o AirPlaneMode estiver ativado."
+
+msgid "User Added Plugins to Disable"
+msgstr "Plugins adicionados pelo usuário a desativar"
+
+msgid "Advanced Settings"
+msgstr "Configurações avançadas"
+
+msgid "No user installed plugins available to manage"
+msgstr "Nenhum plugin instalado pelo usuário disponível para gerenciar"
+
+msgid "The only plugin installed is AirPlaneMode - nothing to manage"
+msgstr "O único plugin instalado é o AirPlaneMode - nada para gerenciar"
+
+msgid "%1\n\nThis plugin is already disabled in KOReader"
+msgstr "%1\n\nEste plugin já está desativado no KOReader"
+
+msgid "KOReader Version: %s"
+msgstr "Versão do KOReader: %s"
+
+msgid "Device: %s"
+msgstr "Dispositivo: %s"
+
+msgid "Firmware: %s"
+msgstr "Firmware: %s"
+
+msgid "Silence the restart message"
+msgstr "Silenciar a mensagem de reinicialização"
+
+msgid "Show AirPlaneMode in reader footer"
+msgstr "Mostrar o AirPlaneMode no rodapé do leitor"
+
+msgid "Remember to enable External Content in the status bar for AirPlaneMode to show in the footer."
+msgstr "Lembre-se de ativar o Conteúdo externo na barra de status para que o AirPlaneMode apareça no rodapé."
+
+msgid "Restore session after restart"
+msgstr "Restaurar a sessão após reiniciar"
+
+msgid "You cannot change the restore option while AirPlaneMode is in flight."
+msgstr "Você não pode alterar a opção de restauração enquanto o AirPlaneMode estiver em voo."
+
+msgid "Don't Manage WiFi"
+msgstr "Não gerenciar o WiFi"
+
+msgid "AirPlaneMode will only manage settings, not the wifi device"
+msgstr "O AirPlaneMode gerenciará apenas as configurações, não o dispositivo wifi"
+
+msgid "Debug logging"
+msgstr "Log de depuração"
+
+msgid "%1  Update management suspended while in flight"
+msgstr "%1  Gerenciamento de atualizações suspenso durante o voo"
+
+msgid "Update management"
+msgstr "Gerenciamento de atualizações"
+
+msgid "About"
+msgstr "Sobre"
+
+msgid "Clear all settings"
+msgstr "Limpar todas as configurações"
+
+msgid "Remove and reset AirPlaneMode settings?"
+msgstr "Remover e redefinir as configurações do AirPlaneMode?"
+
+msgid "Reset"
+msgstr "Redefinir"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Update available"
+msgstr "Atualização disponível"
+
+msgid "On latest version"
+msgstr "Na versão mais recente"
+
+msgid "Developer updates"
+msgstr "Atualizações de desenvolvimento"
+
+msgid "Development branch"
+msgstr "Ramo de desenvolvimento"
+
+msgid "Check for updates"
+msgstr "Verificar se há atualizações"
+
+msgid "Install branch"
+msgstr "Instalar ramo"
+
+msgid "Reset to latest stable release"
+msgstr "Redefinir para a última versão estável"
+
+msgid "Installed: v"
+msgstr "Instalado: v"
+
+msgid "Removing AirPlaneMode while still running. Plugins and networking will not be automatically restored."
+msgstr "Removendo o AirPlaneMode enquanto ainda está em execução. Os plugins e a rede não serão restaurados automaticamente."
+
+msgid "KOReader needs to restart to finish disabling plugins for AirPlaneMode."
+msgstr "O KOReader precisa ser reiniciado para concluir a desativação dos plugins do AirPlaneMode."
+
+msgid "You will need to restart KOReader to finish disabling AirPlaneMode."
+msgstr "Você precisará reiniciar o KOReader para concluir a desativação do AirPlaneMode."
+
+msgid "OK"
+msgstr "OK"
+
+msgid "KOReader needs to restart to finish applying changes for AirPlaneMode."
+msgstr "O KOReader precisa ser reiniciado para concluir a aplicação das alterações do AirPlaneMode."
+
+msgid "Later"
+msgstr "Depois"
+
+msgid "KOReader needs to be restarted to finish applying changes for AirPlane Mode."
+msgstr "O KOReader precisa ser reiniciado para concluir a aplicação das alterações do AirPlane Mode."
+
+msgid "Open the releases page in a browser?"
+msgstr "Abrir a página de versões em um navegador?"
+
+msgid "Open"
+msgstr "Abrir"
+
+msgid "Checking for updates..."
+msgstr "Verificando atualizações..."
+
+msgid "Could not check for updates."
+msgstr "Não foi possível verificar as atualizações."
+
+msgid "AirPlaneMode is up to date."
+msgstr "O AirPlaneMode está atualizado."
+
+msgid "Version: "
+msgstr "Versão: "
+
+msgid "Close"
+msgstr "Fechar"
+
+msgid "Update and restart"
+msgstr "Atualizar e reiniciar"
+
+msgid "No download available for this release."
+msgstr "Nenhum download disponível para esta versão."
+
+msgid "Update available!"
+msgstr "Atualização disponível!"
+
+msgid "Installed: "
+msgstr "Instalado: "
+
+msgid "Latest: "
+msgstr "Mais recente: "
+
+msgid "Downloading update..."
+msgstr "Baixando atualização..."
+
+msgid "Download failed."
+msgstr "Falha no download."
+
+msgid "Installation failed: "
+msgstr "Falha na instalação: "
+
+msgid "AirPlaneMode updated to v"
+msgstr "AirPlaneMode atualizado para v"
+
+msgid "Restart KOReader now?"
+msgstr "Reiniciar o KOReader agora?"
+
+msgid "Restart"
+msgstr "Reiniciar"
+
+msgid "Could not install branch:"
+msgstr "Não foi possível instalar o ramo:"
+
+msgid "Downloading latest release..."
+msgstr "Baixando a versão mais recente..."
+
+msgid "Could not fetch latest release."
+msgstr "Não foi possível obter a versão mais recente."
+
+msgid "Latest release has no downloadable zip."
+msgstr "A versão mais recente não tem um zip para download."
+
+msgid "This will clear the development branch setting and install the latest stable release of AirPlaneMode, then restart KOReader. Continue?"
+msgstr "Isso limpará a configuração do ramo de desenvolvimento e instalará a última versão estável do AirPlaneMode, reiniciando o KOReader. Continuar?"
+
+msgid "Branch name (leave empty for stable)"
+msgstr "Nome do ramo (deixe vazio para a versão estável)"
+
+msgid "Save"
+msgstr "Salvar"
