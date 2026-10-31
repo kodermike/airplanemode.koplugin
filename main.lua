@@ -10,6 +10,10 @@
 ---@field onDisable                      fun(self): nil
 ---@field getPlugins                     fun(self, builtin: boolean, settings: table): table
 
+-- Install the plugin's locale catalog before any other plugin module
+-- captures gettext, so all _() calls in this plugin resolve translations.
+require("airplanemode_i18n").install()
+
 local Dispatcher = require("dispatcher")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("utils/flight_log")

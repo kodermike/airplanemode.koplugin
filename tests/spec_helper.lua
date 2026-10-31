@@ -406,9 +406,21 @@ if not use_koreader then
   local logger = {
     dbg = function(...) end,
     info = function(...) end,
+    warn = function() end,
     err = function(...) end,
   }
   package.loaded["logger"] = logger
+
+  -- Pin the UI language: the plugin installs its locale catalog at load time,
+  -- so without this the suite would translate itself on a non-English host.
+  _G.G_reader_settings = {
+    readSetting = function(_, key)
+      if key == "language" then
+        return "en"
+      end
+    end,
+    saveSetting = function() end,
+  }
 
   -- gettext stub (KOReader uses gettext as function)
   package.loaded["gettext"] = function(s)
@@ -559,6 +571,15 @@ if not use_koreader then
     end,
     removeFile = function(path)
       os.remove(path)
+    end,
+    first_non_empty = function(...)
+      for i = 1, select("#", ...) do
+        local v = select(i, ...)
+        if type(v) == "string" and v ~= "" then
+          return v
+        end
+      end
+      return nil
     end,
   }
   package.loaded["utils/flight_helpers"] = H

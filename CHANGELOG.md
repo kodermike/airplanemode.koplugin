@@ -3,6 +3,8 @@
 ## [v2.0.0] (status: pre-release)
 
 - Fix for updater unarchive crashing koreader, introduced in 1.9.9
+- Add Brazilian Portuguese UI translation (`locales/pt_BR.po`), loaded per plugin
+  through `airplanemode_i18n.lua` because KOReader has no per-plugin locale loading
 
 ## [v1.9.9]
 
