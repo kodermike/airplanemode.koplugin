@@ -72,8 +72,8 @@ function M.parse_po(path)
     msgid, msgstr, in_id, in_str, drop_entry = nil, nil, false, false, false
   end
 
-  for line in handle:lines() do
-    line = line:match("^%s*(.-)%s*$")
+  for raw_line in handle:lines() do
+    local line = raw_line:match("^%s*(.-)%s*$")
     if line == "" then
       flush()
     elseif line:sub(1, 1) == "#" then
